@@ -302,8 +302,8 @@ public class ServiceUser {
         return switch (rarity) {
             case COMMON     -> Rarity.RARE;
             case RARE       -> Rarity.EPIC;
-            case EPIC       -> Rarity.LENGENDARY;
-            case LENGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
+            case EPIC       -> Rarity.LEGENDARY;
+            case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
         };
     }
 
