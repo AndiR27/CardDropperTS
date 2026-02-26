@@ -1,0 +1,740 @@
+# ==============================
+#   VERSION & META
+# ==============================
+openapi: 3.0.4
+info:
+  title: CardDropper API
+  description: API de gestion des utilisateurs, cartes, pool et génération de packs.
+  version: 1.0.0
+
+# ==============================
+#   SERVERS
+# ==============================
+servers:
+  - url: http://localhost:8080
+    description: Environnement local
+
+# ==============================
+#   TAGS
+# ==============================
+tags:
+  - name: user
+    description: Gestion des utilisateurs (CRUD + opérations liées aux cartes)
+  - name: card
+    description: Gestion des cartes (CRUD + recherche + transferts)
+  - name: pack
+    description: Génération de packs via templates
+
+x-tagGroups:
+  - name: Users
+    tags: [ user ]
+  - name: Cards
+    tags: [ card ]
+  - name: Packs
+    tags: [ pack ]
+
+# ==============================
+#   PATHS (ENDPOINTS)
+# ==============================
+paths:
+
+  # ========================================
+  #   USERS (CRUD)
+  # ========================================
+  /users:
+    get:
+      tags: [ user ]
+      summary: Liste des utilisateurs
+      description: Retourne tous les utilisateurs.
+      operationId: getUsers
+      responses:
+        '200':
+          description: Liste d'utilisateurs retournée.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '500':
+          description: Erreur interne.
+
+    post:
+      tags: [ user ]
+      summary: Créer un utilisateur
+      description: Crée un nouvel utilisateur (username et email uniques).
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+      responses:
+        '201':
+          description: Utilisateur créé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          description: Données invalides (username/email déjà pris, etc.).
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}:
+    get:
+      tags: [ user ]
+      summary: Détail d’un utilisateur
+      operationId: getUserById
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Utilisateur trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+    put:
+      tags: [ user ]
+      summary: Mettre à jour un utilisateur
+      operationId: updateUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+      responses:
+        '200':
+          description: Utilisateur mis à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          description: Utilisateur introuvable.
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+    delete:
+      tags: [ user ]
+      summary: Supprimer un utilisateur
+      description: Supprime un utilisateur (détache d'abord ses relations vers Card pour éviter les FK).
+      operationId: deleteUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '204':
+          description: Utilisateur supprimé.
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/by-username:
+    get:
+      tags: [ user ]
+      summary: Trouver un utilisateur par username
+      operationId: getUserByUsername
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+          example: "andi"
+      responses:
+        '200':
+          description: Utilisateur trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/by-email:
+    get:
+      tags: [ user ]
+      summary: Trouver un utilisateur par email
+      operationId: getUserByEmail
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+          example: "andi@mail.com"
+      responses:
+        '200':
+          description: Utilisateur trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   USERS -> CARDS (owned / created / targeting)
+  # ========================================
+  /users/{userId}/cards/owned:
+    get:
+      tags: [ user ]
+      summary: Cartes possédées par un utilisateur
+      operationId: getCardsOwnedByUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Liste de cartes possédées.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/cards/created:
+    get:
+      tags: [ user ]
+      summary: Cartes créées par un utilisateur
+      operationId: getCardsCreatedByUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Liste de cartes créées.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/cards/targeting:
+    get:
+      tags: [ user ]
+      summary: Cartes ciblant un utilisateur
+      operationId: getCardsTargetingUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Liste de cartes ciblant l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/cards:
+    post:
+      tags: [ user ]
+      summary: Créer une carte via un utilisateur (créateur)
+      description: |
+        Crée une nouvelle carte dans le pool global (userId = null).
+        Le créateur est l'utilisateur (createdBy=userId).
+        targetUserId peut être null ou égal à userId (sinon 400).
+      operationId: createCardForUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDto'
+      responses:
+        '201':
+          description: Carte créée et ajoutée au pool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Données invalides.
+        '404':
+          description: Utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/cards/trade:
+    post:
+      tags: [ user ]
+      summary: Échanger deux cartes entre deux utilisateurs
+      operationId: tradeCards
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+        - name: myCardId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 10
+        - name: targetUserId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 2
+        - name: theirCardId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 99
+      responses:
+        '204':
+          description: Échange effectué.
+        '400':
+          description: Données invalides (carte ne appartenant pas à l'utilisateur, etc.).
+        '404':
+          description: User ou Card introuvable.
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/packs/open:
+    post:
+      tags: [ user ]
+      summary: Ouvrir un pack (assigner des cartes du pool)
+      description: |
+        Assigne à l'utilisateur les cartes du pool (cartes dont user=null).
+        Si une carte est déjà possédée -> 409.
+      operationId: openPack
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int64
+            example: [ 10, 11, 12 ]
+      responses:
+        '200':
+          description: Cartes attribuées à l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Utilisateur ou carte introuvable.
+        '409':
+          description: Conflit (carte déjà possédée, donc pas dans le pool).
+        '500':
+          description: Erreur interne.
+
+  /users/{userId}/cards/merge:
+    post:
+      tags: [ user ]
+      summary: Fusionner 3 cartes pour obtenir une carte de rareté supérieure
+      description: |
+        Règles :
+          - COMMON x3 -> RARE
+          - RARE x3 -> EPIC
+          - EPIC x3 -> LEGENDARY
+          - LEGENDARY : impossible
+        Les cartes consommées retournent au pool (user=null).
+        La carte résultat est tirée dans le pool à rareté supérieure.
+      operationId: mergeCards
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int64
+            example: [ 10, 11, 12 ]
+      responses:
+        '200':
+          description: Carte résultante de la fusion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Règles de fusion non respectées.
+        '404':
+          description: Utilisateur ou carte introuvable.
+        '409':
+          description: Conflit (pool vide à rareté supérieure, ou autre conflit métier).
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   CARDS (CRUD + QUERIES)
+  # ========================================
+  /cards:
+    get:
+      tags: [ card ]
+      summary: Liste des cartes
+      operationId: getCards
+      responses:
+        '200':
+          description: Liste de cartes retournée.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '500':
+          description: Erreur interne.
+
+    post:
+      tags: [ card ]
+      summary: Créer une carte
+      description: |
+        Crée une carte.
+        Si targetUserId est fourni, il doit être égal à createdById (sinon 400).
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDto'
+      responses:
+        '201':
+          description: Carte créée.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+  /cards/{cardId}:
+    get:
+      tags: [ card ]
+      summary: Détail d’une carte
+      operationId: getCardById
+      parameters:
+        - $ref: '#/components/parameters/CardIdPath'
+      responses:
+        '200':
+          description: Carte trouvée.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Carte introuvable.
+        '500':
+          description: Erreur interne.
+
+    put:
+      tags: [ card ]
+      summary: Mettre à jour une carte
+      operationId: updateCard
+      parameters:
+        - $ref: '#/components/parameters/CardIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDto'
+      responses:
+        '200':
+          description: Carte mise à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Carte introuvable.
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+    delete:
+      tags: [ card ]
+      summary: Supprimer une carte
+      operationId: deleteCard
+      parameters:
+        - $ref: '#/components/parameters/CardIdPath'
+      responses:
+        '204':
+          description: Carte supprimée.
+        '404':
+          description: Carte introuvable.
+        '500':
+          description: Erreur interne.
+
+  /cards/by-rarity:
+    get:
+      tags: [ card ]
+      summary: Rechercher des cartes par rareté
+      operationId: getCardsByRarity
+      parameters:
+        - name: rarity
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Rarity'
+          example: COMMON
+      responses:
+        '200':
+          description: Liste de cartes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Paramètre invalides.
+        '500':
+          description: Erreur interne.
+
+  /cards/{cardId}/transfer:
+    post:
+      tags: [ card ]
+      summary: Transférer la propriété d’une carte à un utilisateur
+      operationId: transferCardOwnership
+      parameters:
+        - $ref: '#/components/parameters/CardIdPath'
+        - name: newOwnerId
+          in: query
+          required: true
+          description: Identifiant du nouvel utilisateur propriétaire.
+          schema: { type: integer, format: int64 }
+          example: 2
+      responses:
+        '200':
+          description: Carte transférée.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Carte ou utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   PACKS
+  # ========================================
+  /packs/generate:
+    post:
+      tags: [ pack ]
+      summary: Générer un pack à partir d’un template pour un utilisateur
+      description: |
+        Génère un pack selon le template (slots) puis assigne les cartes à l'utilisateur.
+        Met à jour les dropRates des cartes non-uniques tirées.
+      operationId: generatePack
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 1
+        - name: templateId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 5
+      responses:
+        '200':
+          description: Pack généré (cartes attribuées).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: User ou template introuvable.
+        '409':
+          description: Conflit (pool insuffisant, etc.).
+        '500':
+          description: Erreur interne.
+
+# ==============================
+#   COMPONENTS
+# ==============================
+components:
+
+  # ------------------------------
+  # Parameters
+  # ------------------------------
+  parameters:
+    UserIdPath:
+      name: userId
+      in: path
+      required: true
+      description: Identifiant de l'utilisateur.
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+    CardIdPath:
+      name: cardId
+      in: path
+      required: true
+      description: Identifiant de la carte.
+      schema:
+        type: integer
+        format: int64
+      example: 10
+
+  # ------------------------------
+  # Schemas
+  # ------------------------------
+  schemas:
+
+    # --- Enums ---
+    Rarity:
+      type: string
+      description: Rareté d'une carte.
+      enum: [ COMMON, RARE, EPIC, LEGENDARY ]
+      example: COMMON
+
+    # --- DTOs ---
+    CardDto:
+      type: object
+      description: Représentation d'une carte.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: "Dragon"
+        imageUrl:
+          type: string
+          example: "https://img.example.com/cards/dragon.png"
+        rarity:
+          $ref: '#/components/schemas/Rarity'
+        description:
+          type: string
+          example: "Carte légendaire très rare."
+        dropRate:
+          type: number
+          format: double
+          example: 0.12
+        uniqueCard:
+          type: boolean
+          example: false
+        userId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Propriétaire actuel (null = dans le pool).
+          example: 1
+        createdById:
+          type: integer
+          format: int64
+          nullable: true
+          description: Créateur de la carte.
+          example: 1
+        targetUserId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Utilisateur ciblé (optionnel).
+          example: 1
+      required: [ name, rarity, dropRate, uniqueCard ]
+      example:
+        id: 10
+        name: "Dragon"
+        imageUrl: "https://img.example.com/cards/dragon.png"
+        rarity: "EPIC"
+        description: "Une carte puissante."
+        dropRate: 0.08
+        uniqueCard: false
+        userId: null
+        createdById: 1
+        targetUserId: null
+
+    UserDto:
+      type: object
+      description: Représentation d'un utilisateur.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "andi"
+        email:
+          type: string
+          format: email
+          example: "andi@mail.com"
+        passwordHash:
+          type: string
+          description: Hash du mot de passe (si exposé dans l'API).
+          example: "$2a$10$something..."
+        cardsOwned:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDto'
+        cardsCreated:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDto'
+        cardsTargeting:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDto'
+      required: [ username, email ]
+      example:
+        id: 1
+        username: "andi"
+        email: "andi@mail.com"
+        passwordHash: "$2a$10$something..."
+        cardsOwned: [ ]
+        cardsCreated: [ ]
+        cardsTargeting: [ ]
+
+  # ------------------------------
+  # Security
+  # ------------------------------
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
