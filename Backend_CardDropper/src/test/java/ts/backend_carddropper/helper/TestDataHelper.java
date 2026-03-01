@@ -22,7 +22,6 @@ public class TestDataHelper {
         alice.setId(1L);
         alice.setUsername("alice");
         alice.setEmail("alice@test.com");
-        alice.setPasswordHash("hash_alice");
         alice.setCardsOwned(new ArrayList<>());
         alice.setCardsCreated(new ArrayList<>());
         alice.setCardsTargeting(new ArrayList<>());
@@ -31,7 +30,6 @@ public class TestDataHelper {
         bob.setId(2L);
         bob.setUsername("bob");
         bob.setEmail("bob@test.com");
-        bob.setPasswordHash("hash_bob");
         bob.setCardsOwned(new ArrayList<>());
         bob.setCardsCreated(new ArrayList<>());
         bob.setCardsTargeting(new ArrayList<>());

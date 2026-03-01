@@ -78,7 +78,7 @@ class TestServiceUser {
             when(repositoryUser.existsByEmail(alice.getEmail())).thenReturn(false);
             when(repositoryUser.save(any(User.class))).thenReturn(alice);
 
-            UserDto dto = new UserDto(null, "alice", "alice@test.com", "hash_alice", null, null, null);
+            UserDto dto = new UserDto(null, null, "alice", "alice@test.com", null, null, null);
             UserDto result = serviceUser.create(dto);
 
             assertNotNull(result);
@@ -91,7 +91,7 @@ class TestServiceUser {
         void testCreate_duplicateUsername() {
             when(repositoryUser.existsByUsername("alice")).thenReturn(true);
 
-            UserDto dto = new UserDto(null, "alice", "alice@test.com", "hash_alice", null, null, null);
+            UserDto dto = new UserDto(null, null, "alice", "alice@test.com", null, null, null);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
@@ -106,7 +106,7 @@ class TestServiceUser {
             when(repositoryUser.existsByUsername("alice")).thenReturn(false);
             when(repositoryUser.existsByEmail("alice@test.com")).thenReturn(true);
 
-            UserDto dto = new UserDto(null, "alice", "alice@test.com", "hash_alice", null, null, null);
+            UserDto dto = new UserDto(null, null, "alice", "alice@test.com", null, null, null);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
@@ -176,7 +176,7 @@ class TestServiceUser {
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.save(any(User.class))).thenReturn(alice);
 
-            UserDto aliceDto = new UserDto(alice.getId(), "Alice_updated", alice.getEmail(), alice.getPasswordHash(), null, null, null);
+            UserDto aliceDto = new UserDto(alice.getId(), null, "Alice_updated", alice.getEmail(), null, null, null);
             Optional<UserDto> resultOpt = serviceUser.update(alice.getId(), aliceDto);
 
             assertTrue(resultOpt.isPresent());
@@ -190,7 +190,7 @@ class TestServiceUser {
         void testUpdate_notFound() {
             when(repositoryUser.findById(999L)).thenReturn(Optional.empty());
 
-            UserDto dto = new UserDto(999L, "ghost", "ghost@test.com", "hash", null, null, null);
+            UserDto dto = new UserDto(999L, null, "ghost", "ghost@test.com", null, null, null);
             Optional<UserDto> result = serviceUser.update(999L, dto);
 
             assertTrue(result.isEmpty());
