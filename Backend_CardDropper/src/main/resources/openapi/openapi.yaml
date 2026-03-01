@@ -18,20 +18,24 @@ servers:
 #   TAGS
 # ==============================
 tags:
+  - name: me
+    description: Actions utilisateur authentifié (cartes, packs, échanges)
   - name: user
-    description: Gestion des utilisateurs (CRUD + opérations liées aux cartes)
+    description: Gestion des utilisateurs (CRUD admin + lookup)
   - name: card
-    description: Gestion des cartes (CRUD + recherche + transferts)
-  - name: pack
-    description: Génération de packs via templates
+    description: Gestion des cartes (CRUD + recherche)
+  - name: admin
+    description: Administration (templates, drop rates, gestion utilisateurs)
 
 x-tagGroups:
+  - name: Me
+    tags: [ me ]
   - name: Users
     tags: [ user ]
   - name: Cards
     tags: [ card ]
-  - name: Packs
-    tags: [ pack ]
+  - name: Admin
+    tags: [ admin ]
 
 # ==============================
 #   PATHS (ENDPOINTS)
@@ -39,7 +43,222 @@ x-tagGroups:
 paths:
 
   # ========================================
-  #   USERS (CRUD)
+  #   ME (authenticated user actions)
+  # ========================================
+  /me/cards/owned:
+    get:
+      tags: [ me ]
+      summary: Mes cartes possédées
+      operationId: getMyCardsOwned
+      responses:
+        '200':
+          description: Liste de cartes possédées.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '500':
+          description: Erreur interne.
+
+  /me/cards/created:
+    get:
+      tags: [ me ]
+      summary: Mes cartes créées
+      operationId: getMyCardsCreated
+      responses:
+        '200':
+          description: Liste de cartes créées.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '500':
+          description: Erreur interne.
+
+  /me/cards/targeting:
+    get:
+      tags: [ me ]
+      summary: Cartes me ciblant
+      operationId: getMyCardsTargeting
+      responses:
+        '200':
+          description: Liste de cartes ciblant l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '500':
+          description: Erreur interne.
+
+  /me/cards:
+    post:
+      tags: [ me ]
+      summary: Créer une carte (je suis le créateur)
+      description: |
+        Crée une nouvelle carte dans le pool global (userId = null).
+        Le créateur est l'utilisateur authentifié (createdBy = moi).
+        targetUserId peut être null ou égal à moi (sinon 400).
+      operationId: createMyCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDto'
+      responses:
+        '201':
+          description: Carte créée et ajoutée au pool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+  /me/cards/trade:
+    post:
+      tags: [ me ]
+      summary: Échanger deux cartes entre moi et un autre utilisateur
+      operationId: tradeMyCards
+      parameters:
+        - name: myCardId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 10
+        - name: targetUserId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 2
+        - name: theirCardId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 99
+      responses:
+        '204':
+          description: Échange effectué.
+        '400':
+          description: Données invalides (carte ne appartenant pas à l'utilisateur, etc.).
+        '404':
+          description: User ou Card introuvable.
+        '500':
+          description: Erreur interne.
+
+  /me/packs/open:
+    post:
+      tags: [ me ]
+      summary: Ouvrir un pack (assigner des cartes du pool)
+      description: |
+        Assigne à l'utilisateur les cartes du pool (cartes dont user=null).
+        Si une carte est déjà possédée -> 409.
+      operationId: openMyPack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int64
+            example: [ 10, 11, 12 ]
+      responses:
+        '200':
+          description: Cartes attribuées à l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Carte introuvable.
+        '409':
+          description: Conflit (carte déjà possédée, donc pas dans le pool).
+        '500':
+          description: Erreur interne.
+
+  /me/cards/merge:
+    post:
+      tags: [ me ]
+      summary: Fusionner 3 cartes pour obtenir une carte de rareté supérieure
+      description: |
+        Règles :
+          - COMMON x3 -> RARE
+          - RARE x3 -> EPIC
+          - EPIC x3 -> LEGENDARY
+          - LEGENDARY : impossible
+        Les cartes consommées retournent au pool (user=null).
+        La carte résultat est tirée dans le pool à rareté supérieure.
+      operationId: mergeMyCards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int64
+            example: [ 10, 11, 12 ]
+      responses:
+        '200':
+          description: Carte résultante de la fusion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Règles de fusion non respectées.
+        '404':
+          description: Carte introuvable.
+        '409':
+          description: Conflit (pool vide à rareté supérieure, ou autre conflit métier).
+        '500':
+          description: Erreur interne.
+
+  /me/packs/generate:
+    post:
+      tags: [ me ]
+      summary: Générer un pack à partir d'un template
+      description: |
+        Génère un pack selon le template (slots) puis assigne les cartes à l'utilisateur authentifié.
+        Met à jour les dropRates des cartes non-uniques tirées.
+      operationId: generateMyPack
+      parameters:
+        - name: templateId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 5
+      responses:
+        '200':
+          description: Pack généré (cartes attribuées).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '404':
+          description: Template introuvable.
+        '409':
+          description: Conflit (pool insuffisant, etc.).
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   USERS (admin CRUD + lookup)
   # ========================================
   /users:
     get:
@@ -83,24 +302,6 @@ paths:
           description: Erreur interne.
 
   /users/{userId}:
-    get:
-      tags: [ user ]
-      summary: Détail d’un utilisateur
-      operationId: getUserById
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      responses:
-        '200':
-          description: Utilisateur trouvé.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserDto'
-        '404':
-          description: Utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
     put:
       tags: [ user ]
       summary: Mettre à jour un utilisateur
@@ -189,212 +390,6 @@ paths:
           description: Erreur interne.
 
   # ========================================
-  #   USERS -> CARDS (owned / created / targeting)
-  # ========================================
-  /users/{userId}/cards/owned:
-    get:
-      tags: [ user ]
-      summary: Cartes possédées par un utilisateur
-      operationId: getCardsOwnedByUser
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      responses:
-        '200':
-          description: Liste de cartes possédées.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CardDto'
-        '404':
-          description: Utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/cards/created:
-    get:
-      tags: [ user ]
-      summary: Cartes créées par un utilisateur
-      operationId: getCardsCreatedByUser
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      responses:
-        '200':
-          description: Liste de cartes créées.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CardDto'
-        '404':
-          description: Utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/cards/targeting:
-    get:
-      tags: [ user ]
-      summary: Cartes ciblant un utilisateur
-      operationId: getCardsTargetingUser
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      responses:
-        '200':
-          description: Liste de cartes ciblant l'utilisateur.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CardDto'
-        '404':
-          description: Utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/cards:
-    post:
-      tags: [ user ]
-      summary: Créer une carte via un utilisateur (créateur)
-      description: |
-        Crée une nouvelle carte dans le pool global (userId = null).
-        Le créateur est l'utilisateur (createdBy=userId).
-        targetUserId peut être null ou égal à userId (sinon 400).
-      operationId: createCardForUser
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardDto'
-      responses:
-        '201':
-          description: Carte créée et ajoutée au pool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardDto'
-        '400':
-          description: Données invalides.
-        '404':
-          description: Utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/cards/trade:
-    post:
-      tags: [ user ]
-      summary: Échanger deux cartes entre deux utilisateurs
-      operationId: tradeCards
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-        - name: myCardId
-          in: query
-          required: true
-          schema: { type: integer, format: int64 }
-          example: 10
-        - name: targetUserId
-          in: query
-          required: true
-          schema: { type: integer, format: int64 }
-          example: 2
-        - name: theirCardId
-          in: query
-          required: true
-          schema: { type: integer, format: int64 }
-          example: 99
-      responses:
-        '204':
-          description: Échange effectué.
-        '400':
-          description: Données invalides (carte ne appartenant pas à l'utilisateur, etc.).
-        '404':
-          description: User ou Card introuvable.
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/packs/open:
-    post:
-      tags: [ user ]
-      summary: Ouvrir un pack (assigner des cartes du pool)
-      description: |
-        Assigne à l'utilisateur les cartes du pool (cartes dont user=null).
-        Si une carte est déjà possédée -> 409.
-      operationId: openPack
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-                format: int64
-            example: [ 10, 11, 12 ]
-      responses:
-        '200':
-          description: Cartes attribuées à l'utilisateur.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CardDto'
-        '404':
-          description: Utilisateur ou carte introuvable.
-        '409':
-          description: Conflit (carte déjà possédée, donc pas dans le pool).
-        '500':
-          description: Erreur interne.
-
-  /users/{userId}/cards/merge:
-    post:
-      tags: [ user ]
-      summary: Fusionner 3 cartes pour obtenir une carte de rareté supérieure
-      description: |
-        Règles :
-          - COMMON x3 -> RARE
-          - RARE x3 -> EPIC
-          - EPIC x3 -> LEGENDARY
-          - LEGENDARY : impossible
-        Les cartes consommées retournent au pool (user=null).
-        La carte résultat est tirée dans le pool à rareté supérieure.
-      operationId: mergeCards
-      parameters:
-        - $ref: '#/components/parameters/UserIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-                format: int64
-            example: [ 10, 11, 12 ]
-      responses:
-        '200':
-          description: Carte résultante de la fusion.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardDto'
-        '400':
-          description: Règles de fusion non respectées.
-        '404':
-          description: Utilisateur ou carte introuvable.
-        '409':
-          description: Conflit (pool vide à rareté supérieure, ou autre conflit métier).
-        '500':
-          description: Erreur interne.
-
-  # ========================================
   #   CARDS (CRUD + QUERIES)
   # ========================================
   /cards:
@@ -442,7 +437,7 @@ paths:
   /cards/{cardId}:
     get:
       tags: [ card ]
-      summary: Détail d’une carte
+      summary: Détail d'une carte
       operationId: getCardById
       parameters:
         - $ref: '#/components/parameters/CardIdPath'
@@ -524,66 +519,180 @@ paths:
         '500':
           description: Erreur interne.
 
-  /cards/{cardId}/transfer:
-    post:
-      tags: [ card ]
-      summary: Transférer la propriété d’une carte à un utilisateur
-      operationId: transferCardOwnership
-      parameters:
-        - $ref: '#/components/parameters/CardIdPath'
-        - name: newOwnerId
-          in: query
-          required: true
-          description: Identifiant du nouvel utilisateur propriétaire.
-          schema: { type: integer, format: int64 }
-          example: 2
+  # ========================================
+  #   ADMIN — PACK TEMPLATES
+  # ========================================
+  /admin/pack-templates:
+    get:
+      tags: [ admin ]
+      summary: Liste des pack templates
+      operationId: getPackTemplates
       responses:
         '200':
-          description: Carte transférée.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardDto'
-        '404':
-          description: Carte ou utilisateur introuvable.
-        '500':
-          description: Erreur interne.
-
-  # ========================================
-  #   PACKS
-  # ========================================
-  /packs/generate:
-    post:
-      tags: [ pack ]
-      summary: Générer un pack à partir d’un template pour un utilisateur
-      description: |
-        Génère un pack selon le template (slots) puis assigne les cartes à l'utilisateur.
-        Met à jour les dropRates des cartes non-uniques tirées.
-      operationId: generatePack
-      parameters:
-        - name: userId
-          in: query
-          required: true
-          schema: { type: integer, format: int64 }
-          example: 1
-        - name: templateId
-          in: query
-          required: true
-          schema: { type: integer, format: int64 }
-          example: 5
-      responses:
-        '200':
-          description: Pack généré (cartes attribuées).
+          description: Liste de templates retournée.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CardDto'
+                  $ref: '#/components/schemas/PackTemplateDto'
+        '500':
+          description: Erreur interne.
+
+    post:
+      tags: [ admin ]
+      summary: Créer un pack template
+      operationId: createPackTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackTemplateDto'
+      responses:
+        '201':
+          description: Template créé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackTemplateDto'
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+  /admin/pack-templates/{templateId}:
+    get:
+      tags: [ admin ]
+      summary: Détail d'un pack template
+      operationId: getPackTemplateById
+      parameters:
+        - $ref: '#/components/parameters/TemplateIdPath'
+      responses:
+        '200':
+          description: Template trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackTemplateDto'
         '404':
-          description: User ou template introuvable.
-        '409':
-          description: Conflit (pool insuffisant, etc.).
+          description: Template introuvable.
+        '500':
+          description: Erreur interne.
+
+    put:
+      tags: [ admin ]
+      summary: Mettre à jour un pack template
+      operationId: updatePackTemplate
+      parameters:
+        - $ref: '#/components/parameters/TemplateIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackTemplateDto'
+      responses:
+        '200':
+          description: Template mis à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackTemplateDto'
+        '404':
+          description: Template introuvable.
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+    delete:
+      tags: [ admin ]
+      summary: Supprimer un pack template
+      operationId: deletePackTemplate
+      parameters:
+        - $ref: '#/components/parameters/TemplateIdPath'
+      responses:
+        '204':
+          description: Template supprimé.
+        '404':
+          description: Template introuvable.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   ADMIN — DROP RATES
+  # ========================================
+  /admin/drop-rates/by-rarity:
+    put:
+      tags: [ admin ]
+      summary: Modifier le dropRate de toutes les cartes du pool pour une rareté
+      description: Met à jour le dropRate de toutes les cartes dans le pool (user=null) ayant la rareté spécifiée.
+      operationId: updateDropRateByRarity
+      parameters:
+        - name: rarity
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Rarity'
+          example: LEGENDARY
+        - name: dropRate
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 0.02
+      responses:
+        '200':
+          description: Nombre de cartes mises à jour.
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+        '400':
+          description: Paramètres invalides.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
+  #   ADMIN — USERS
+  # ========================================
+  /admin/users:
+    get:
+      tags: [ admin ]
+      summary: Liste de tous les utilisateurs (vue admin)
+      description: Retourne tous les utilisateurs avec leurs cartes possédées, créées et ciblées.
+      operationId: getAdminUsers
+      responses:
+        '200':
+          description: Liste d'utilisateurs retournée.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '500':
+          description: Erreur interne.
+
+  /admin/users/{userId}:
+    get:
+      tags: [ admin ]
+      summary: Détail d'un utilisateur (vue admin)
+      operationId: getAdminUserById
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Utilisateur trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          description: Utilisateur introuvable.
         '500':
           description: Erreur interne.
 
@@ -615,6 +724,16 @@ components:
         type: integer
         format: int64
       example: 10
+
+    TemplateIdPath:
+      name: templateId
+      in: path
+      required: true
+      description: Identifiant du pack template.
+      schema:
+        type: integer
+        format: int64
+      example: 5
 
   # ------------------------------
   # Schemas
@@ -726,6 +845,55 @@ components:
         cardsOwned: [ ]
         cardsCreated: [ ]
         cardsTargeting: [ ]
+
+    PackTemplateDto:
+      type: object
+      description: Template de pack définissant les slots et leurs probabilités.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        name:
+          type: string
+          example: "Standard Pack"
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackSlotDto'
+      required: [ name ]
+      example:
+        id: 5
+        name: "Standard Pack"
+        slots:
+          - fixedRarity: "RARE"
+          - rarityWeights:
+              COMMON: 70.0
+              RARE: 25.0
+              EPIC: 4.0
+              LEGENDARY: 1.0
+
+    PackSlotDto:
+      type: object
+      description: Slot d'un pack template (rareté fixe ou pondérée).
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        fixedRarity:
+          $ref: '#/components/schemas/Rarity'
+        rarityWeights:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: "Poids par rareté (ex: { COMMON: 70.0, RARE: 25.0 })"
+          example:
+            COMMON: 70.0
+            RARE: 25.0
+            EPIC: 4.0
+            LEGENDARY: 1.0
 
   # ------------------------------
   # Security

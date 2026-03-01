@@ -1,9 +1,9 @@
 package ts.backend_carddropper.rest;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import ts.backend_carddropper.api.CardApi;
 import ts.backend_carddropper.enums.Rarity;
@@ -42,16 +42,11 @@ public class RestControllerCard implements CardApi {
 
     @Override
     public ResponseEntity<CardDto> createCard(CardDto cardDto) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(serviceCard.createCard(cardDto));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(serviceCard.createCard(cardDto));
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardDto> updateCard(Long cardId, CardDto cardDto) {
         return serviceCard.update(cardId, cardDto)
                 .map(ResponseEntity::ok)
@@ -59,26 +54,9 @@ public class RestControllerCard implements CardApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCard(Long cardId) {
-        try {
-            serviceCard.delete(cardId);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-
-    //==============================
-    //    TRANSFER
-    //==============================
-
-    @Override
-    public ResponseEntity<CardDto> transferCardOwnership(Long cardId, Long newOwnerId) {
-        try {
-            return ResponseEntity.ok(serviceCard.transferOwnership(cardId, newOwnerId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        serviceCard.delete(cardId);
+        return ResponseEntity.noContent().build();
     }
 }

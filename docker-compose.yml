@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: ./Backend_CardDropper
+      dockerfile: src/main/docker/Dockerfile.jvm
+      target: runtime
+    image: zackrey27/carddropper-backend
+    container_name: carddropper-backend
+    environment:
+      # ==========================
+      # Base de données
+      # ==========================
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+
+      # ==========================
+      # JPA / Hibernate
+      # ==========================
+      SPRING_JPA_DDL_AUTO: update
+
+      # ==========================
+      # Keycloak / OAuth2
+      # ==========================
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
+
+      # ==========================
+      # CORS (front Angular)
+      # ==========================
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://carddropperts.local}
+
+      # ==========================
+      # Logs
+      # ==========================
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    networks:
+      - proxy
+      - db-network
+
+  frontend:
+    build:
+      context: ./Frontend_CardDropper
+      dockerfile: Dockerfile
+    image: zackrey27/carddropper-frontend
+    container_name: carddropper-frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+  db-network:
+    external: true
+    name: postgresql_default

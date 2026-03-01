@@ -1,6 +1,7 @@
 package ts.backend_carddropper.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,4 +35,8 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     List<Card> findAllByTargetUserId(@Param("userId") Long userId);
 
     boolean existsByName(String name);
+
+    @Modifying
+    @Query("UPDATE Card c SET c.dropRate = :dropRate WHERE c.rarity = :rarity AND c.user IS NULL")
+    int updateDropRateByRarityForPoolCards(@Param("rarity") Rarity rarity, @Param("dropRate") double dropRate);
 }
