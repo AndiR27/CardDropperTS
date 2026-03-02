@@ -1,0 +1,17 @@
+@use '@angular/material' as mat;
+
+// CardDropper warm dark theme — tavern wood + gold accents
+html {
+  @include mat.theme((
+    color: (
+      theme-type: dark,
+      primary: mat.$yellow-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: (
+      brand-family: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      plain-family: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    ),
+    density: 0,
+  ));
+}

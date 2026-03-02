@@ -33,6 +33,13 @@ services:
       # Logs
       # ==========================
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # ==========================
+      # Card images
+      # ==========================
+      CARD_IMAGES_DIR: /data/card-images
+    volumes:
+      - carddropper-images:/data/card-images
     restart: unless-stopped
     networks:
       - proxy
@@ -49,6 +56,9 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+
+volumes:
+  carddropper-images:
 
 networks:
   proxy:

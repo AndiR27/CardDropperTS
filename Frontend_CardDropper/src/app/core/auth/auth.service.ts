@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { OAuthService } from 'angular-oauth2-oidc';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { authConfig } from './auth.config';
 
 /**
@@ -15,16 +18,34 @@ import { authConfig } from './auth.config';
 export class AuthService {
 
   private readonly oauthService = inject(OAuthService);
+  private readonly http = inject(HttpClient);
 
   /**
    * Initialise la connexion OIDC.
    * Appelé au démarrage de l'app (APP_INITIALIZER dans app.config.ts).
    * - Charge le discovery document Keycloak (.well-known/openid-configuration)
    * - Tente de récupérer un token existant (refresh silencieux)
+   * - Si authentifié, appelle GET /auth/me pour créer l'utilisateur en DB si nécessaire
    */
   async init(): Promise<void> {
     this.oauthService.configure(authConfig);
     await this.oauthService.loadDiscoveryDocumentAndTryLogin();
+
+    if (this.isAuthenticated) {
+      await this.ensureUserInDb();
+    }
+  }
+
+  /**
+   * Appelle GET /auth/me pour s'assurer que l'utilisateur existe en base.
+   * Le backend crée automatiquement le user local s'il n'existe pas encore.
+   */
+  private async ensureUserInDb(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.get(`${environment.apiUrl}/auth/me`));
+    } catch (err) {
+      console.error('Failed to sync user with backend', err);
+    }
   }
 
   /** Redirige vers la page de login Keycloak */

@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 
 /**
  * Interceptor HTTP fonctionnel — attache le token JWT à chaque requête API.

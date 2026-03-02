@@ -1,0 +1,118 @@
+// ====== Hero ======
+.hero {
+  text-align: center;
+  padding: 4rem 1rem 3rem;
+}
+
+.hero__title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: var(--cd-text);
+}
+
+.hero__accent {
+  color: var(--cd-gold);
+}
+
+.hero__subtitle {
+  font-size: 1.15rem;
+  color: var(--cd-text-muted);
+  max-width: 520px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.hero__cta {
+  display: inline-block;
+  background: var(--cd-gold);
+  color: var(--cd-text-dark);
+  text-decoration: none;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--cd-gold-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 211, 105, 0.25);
+  }
+}
+
+// ====== Sections ======
+.section {
+  margin-bottom: 3rem;
+}
+
+.section__title {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cd-text);
+  margin-bottom: 1.5rem;
+}
+
+// ====== Video placeholder ======
+.video-placeholder {
+  max-width: 720px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-placeholder__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--cd-text-muted);
+}
+
+.video-placeholder__icon {
+  font-size: 3rem;
+  color: var(--cd-gold);
+}
+
+.video-placeholder__text {
+  font-size: 0.95rem;
+}
+
+// ====== Features ======
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.feature {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.feature__icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.feature__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--cd-gold);
+  margin: 0 0 0.5rem;
+}
+
+.feature__desc {
+  color: var(--cd-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}

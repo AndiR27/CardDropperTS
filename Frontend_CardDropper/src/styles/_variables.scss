@@ -1,0 +1,31 @@
+// ========================================
+//  CardDropper Design Tokens
+// ========================================
+
+:root {
+  // Brand — Gold (buttons, accents, highlights)
+  --cd-gold: #FFD369;
+  --cd-gold-deep: #E6A817;
+  --cd-gold-light: #FFE59E;
+
+  // Brand — Blue (links, info, secondary actions)
+  --cd-blue: #3D5A99;
+  --cd-blue-royal: #5B8DEF;
+  --cd-blue-glow: #7EAAFF;
+
+  // UI surfaces — soft dark, neutral cool
+  --cd-bg: #1E1E2A;
+  --cd-bg-light: #252535;
+  --cd-surface: #2A2A3C;
+  --cd-surface-light: #33334A;
+  --cd-border: rgba(255, 211, 105, 0.15);
+
+  // Text
+  --cd-text: #E0E0EC;
+  --cd-text-muted: rgba(224, 224, 236, 0.6);
+  --cd-text-dark: #1E1E2A;
+
+  // Semantic
+  --cd-accent: var(--cd-gold);
+  --cd-focus: var(--cd-blue-glow);
+}

@@ -1,0 +1,47 @@
+<!-- ====== HERO ====== -->
+<section class="hero">
+  <div class="hero__content">
+    <h1 class="hero__title">Collecte. Échange. <span class="hero__accent">Domine.</span></h1>
+    <p class="hero__subtitle">
+      Crée tes propres cartes, ouvre des packs et défie tes amis dans l'univers CardDropper.
+    </p>
+    @if (!auth.isAuthenticated) {
+      <button class="hero__cta" (click)="login()">Commencer l'aventure</button>
+    } @else {
+      <a routerLink="/cards" class="hero__cta">Voir les cartes</a>
+    }
+  </div>
+</section>
+
+<!-- ====== VIDEO / PRESENTATION ====== -->
+<section class="section">
+  <h2 class="section__title">Découvre CardDropper</h2>
+  <div class="video-placeholder">
+    <div class="video-placeholder__inner">
+      <span class="video-placeholder__icon">▶</span>
+      <span class="video-placeholder__text">Vidéo de présentation</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== FEATURES ====== -->
+<section class="section">
+  <h2 class="section__title">Comment ça marche ?</h2>
+  <div class="features">
+    <div class="feature cd-panel">
+      <div class="feature__icon">🎨</div>
+      <h3 class="feature__title">Crée tes cartes</h3>
+      <p class="feature__desc">Uploade une image, choisis la rareté et donne vie à ta collection.</p>
+    </div>
+    <div class="feature cd-panel">
+      <div class="feature__icon">📦</div>
+      <h3 class="feature__title">Ouvre des packs</h3>
+      <p class="feature__desc">Obtiens des cartes aléatoires et découvre des raretés légendaires.</p>
+    </div>
+    <div class="feature cd-panel">
+      <div class="feature__icon">🔄</div>
+      <h3 class="feature__title">Échange & fusionne</h3>
+      <p class="feature__desc">Trade avec tes amis ou fusionne 3 cartes pour monter en rareté.</p>
+    </div>
+  </div>
+</section>

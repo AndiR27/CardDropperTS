@@ -43,12 +43,12 @@ public class Card {
 
     // Propriétaire actuel de la carte (celui qui la possède)
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "owner_id")
     private User user;
 
     // Créateur de la carte
     @ManyToOne
-    @JoinColumn(name = "owner_id")
+    @JoinColumn(name = "creator_id")
     private User createdBy;
 
     //Relation pour une carte ciblée

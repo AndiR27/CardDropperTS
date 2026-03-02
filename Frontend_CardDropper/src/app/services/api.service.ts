@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../environments/environment';
 
 /**
  * Service générique pour communiquer avec le backend CardDropper.
@@ -39,5 +39,15 @@ export class ApiService {
   /** DELETE — supprimer une ressource */
   delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${path}`);
+  }
+
+  /** POST multipart — envoyer un formulaire avec fichier */
+  postMultipart<T>(path: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${this.baseUrl}${path}`, formData);
+  }
+
+  /** Construit l'URL complète d'une image de carte à partir de son imageUrl relative */
+  cardImageUrl(imageUrl: string): string {
+    return `${this.baseUrl}/cards/images/${imageUrl}`;
   }
 }
