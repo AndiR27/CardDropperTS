@@ -1,0 +1,51 @@
+<section class="cards-page">
+  <h1 class="cards-page__title">Toutes les cartes</h1>
+
+  <!-- Filters -->
+  <div class="cards-page__filters">
+    <span class="cards-page__filter-label">Filtres :</span>
+    <select class="cards-page__select">
+      <option value="">Toutes les raretés</option>
+      <option value="COMMON">Commune</option>
+      <option value="RARE">Rare</option>
+      <option value="EPIC">Épique</option>
+      <option value="LEGENDARY">Légendaire</option>
+    </select>
+
+    @if (auth.isAuthenticated) {
+      <select class="cards-page__select">
+        <option value="">Tous les créateurs</option>
+      </select>
+      <select class="cards-page__select">
+        <option value="">Toutes les cibles</option>
+      </select>
+    }
+  </div>
+
+  <!-- Card grid -->
+  @if (loading()) {
+    <p class="cd-text-muted" style="text-align: center;">Chargement des cartes...</p>
+  }
+
+  @if (cards().length > 0) {
+    <div class="card-grid">
+      @for (card of cards(); track card.id) {
+        <div class="card-item cd-panel cd-panel--hover">
+          @if (getImageUrl(card); as imgUrl) {
+            <img [src]="imgUrl" [alt]="card.name" class="card-item__img"/>
+          } @else {
+            <div class="card-item__placeholder">🃏</div>
+          }
+          <div class="card-item__info">
+            <span class="card-item__name">{{ card.name }}</span>
+            <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
+              {{ card.rarity }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (!loading()) {
+    <p class="cd-text-muted" style="text-align: center;">Aucune carte pour le moment.</p>
+  }
+</section>

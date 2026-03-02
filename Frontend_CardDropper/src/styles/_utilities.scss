@@ -1,0 +1,30 @@
+// ========================================
+//  Reusable utility classes
+// ========================================
+
+// Panel — card/surface container
+.cd-panel {
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.cd-panel--hover:hover {
+  border-color: rgba(255, 211, 105, 0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+// Gold accent border
+.cd-gold-border {
+  border: 1px solid var(--cd-gold-deep);
+}
+
+// Text helpers
+.cd-text-muted {
+  color: var(--cd-text-muted);
+}
+
+.cd-text-gold {
+  color: var(--cd-gold);
+}

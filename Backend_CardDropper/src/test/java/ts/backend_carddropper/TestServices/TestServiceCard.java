@@ -6,7 +6,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ts.backend_carddropper.entity.Card;
@@ -17,7 +19,11 @@ import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServiceCard;
+import ts.backend_carddropper.utils.ImageUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +41,9 @@ class TestServiceCard {
 
     @Autowired
     private TestDataHelper testDataHelper;
+
+    @Value("${app.card-images.dir}")
+    private String cardImagesDir;
 
     @MockitoBean
     private RepositoryCard repositoryCard;
@@ -425,6 +434,110 @@ class TestServiceCard {
 
             assertTrue(result.isPresent());
             assertEquals(bob.getId(), result.get().userId());
+        }
+    }
+
+
+    // ========================================
+    //      IMAGE UPLOAD TESTS
+    // ========================================
+
+    @Nested
+    @DisplayName("Image upload operations")
+    class ImageUploadTests {
+
+        @Test
+        @DisplayName("createCardWithImage stores image and sets imageUrl")
+        void testCreateCardWithImage_valid() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+
+            Card savedCard = new Card();
+            savedCard.setId(50L);
+            savedCard.setName("Dragon");
+            savedCard.setRarity(Rarity.EPIC);
+            savedCard.setDropRate(0.2);
+            savedCard.setCreatedBy(alice);
+
+            Card updatedCard = new Card();
+            updatedCard.setId(50L);
+            updatedCard.setName("Dragon");
+            updatedCard.setRarity(Rarity.EPIC);
+            updatedCard.setDropRate(0.2);
+            updatedCard.setCreatedBy(alice);
+            updatedCard.setImageUrl("alice/50_dragon.png");
+
+            when(repositoryCard.save(any(Card.class)))
+                    .thenReturn(savedCard)     // first save (create)
+                    .thenReturn(updatedCard);   // second save (with imageUrl)
+
+            MockMultipartFile image = new MockMultipartFile(
+                    "image", "dragon.png", "image/png", new byte[]{1, 2, 3, 4});
+
+            CardDto dto = new CardDto(null, "Dragon", null, Rarity.EPIC, null, 0.2, false, null, alice.getId(), null);
+            CardDto result = serviceCard.createCardWithImage(dto, image, "alice");
+
+            assertEquals("alice/50_dragon.png", result.imageUrl());
+            verify(repositoryCard, times(2)).save(any(Card.class));
+
+            // Vérifier que le fichier a été écrit sur disque
+            Path expectedFile = Paths.get(cardImagesDir, "alice", "50_dragon.png");
+            assertTrue(Files.exists(expectedFile));
+        }
+
+        @Test
+        @DisplayName("createCardWithImage rejects invalid content type")
+        void testCreateCardWithImage_invalidType() {
+            MockMultipartFile image = new MockMultipartFile(
+                    "image", "file.txt", "text/plain", new byte[]{1, 2, 3});
+
+            CardDto dto = new CardDto(null, "Bad", null, Rarity.COMMON, null, 1.0, false, null, alice.getId(), null);
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> serviceCard.createCardWithImage(dto, image, "alice")
+            );
+            assertTrue(ex.getMessage().contains("Invalid image type"));
+        }
+
+        @Test
+        @DisplayName("createCardWithImage rejects file exceeding 5MB")
+        void testCreateCardWithImage_tooLarge() {
+            byte[] largeContent = new byte[6 * 1024 * 1024]; // 6MB
+            MockMultipartFile image = new MockMultipartFile(
+                    "image", "big.png", "image/png", largeContent);
+
+            CardDto dto = new CardDto(null, "Big", null, Rarity.COMMON, null, 1.0, false, null, alice.getId(), null);
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> serviceCard.createCardWithImage(dto, image, "alice")
+            );
+            assertTrue(ex.getMessage().contains("too large"));
+        }
+
+        @Test
+        @DisplayName("createCardWithImage rejects empty file")
+        void testCreateCardWithImage_emptyFile() {
+            MockMultipartFile image = new MockMultipartFile(
+                    "image", "empty.png", "image/png", new byte[0]);
+
+            CardDto dto = new CardDto(null, "Empty", null, Rarity.COMMON, null, 1.0, false, null, alice.getId(), null);
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> serviceCard.createCardWithImage(dto, image, "alice")
+            );
+            assertTrue(ex.getMessage().contains("required"));
+        }
+
+        @Test
+        @DisplayName("sanitizeFilename removes special characters")
+        void testSanitizeFilename() {
+            assertEquals("hello_world.png", ImageUtils.sanitizeFilename("hello world.png"));
+            assertEquals("file__test_.jpg", ImageUtils.sanitizeFilename("file (test).jpg"));
+            assertEquals("image", ImageUtils.sanitizeFilename(null));
+            assertEquals("image", ImageUtils.sanitizeFilename(""));
+            assertEquals("normal-file_name.webp", ImageUtils.sanitizeFilename("normal-file_name.webp"));
         }
     }
 }

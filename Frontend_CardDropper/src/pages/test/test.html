@@ -1,0 +1,84 @@
+<div style="padding: 2rem; font-family: sans-serif;">
+  <h1>CardDropper — Test Security</h1>
+
+  <!-- Auth -->
+  @if (auth.isAuthenticated) {
+    <p>Connecté : <strong>{{ auth.username }}</strong></p>
+    <button (click)="logout()">Se déconnecter</button>
+  } @else {
+    <p>Non connecté.</p>
+    <button (click)="login()">Se connecter via Keycloak</button>
+  }
+
+  <hr/>
+
+  <!-- ====== PUBLIC ====== -->
+  <h2>Public (pas de JWT)</h2>
+  <p style="color: var(--cd-text-muted); font-size: 0.9em;">Doit fonctionner même sans être connecté.</p>
+  <button (click)="loadAllCards()">GET /cards</button>
+
+  <hr/>
+
+  <!-- ====== AUTHENTICATED ====== -->
+  <h2>Authentifié (JWT requis)</h2>
+  <p style="color: var(--cd-text-muted); font-size: 0.9em;">Doit retourner 401 si non connecté.</p>
+  <button (click)="loadMyCards()">GET /me/cards/owned</button>
+
+  <hr/>
+
+  <!-- ====== ADMIN ====== -->
+  <h2>Admin (ROLE_ADMIN requis)</h2>
+  <p style="color: var(--cd-text-muted); font-size: 0.9em;">Doit retourner 403 si connecté mais pas admin.</p>
+  <div style="display: flex; gap: 0.5rem;">
+    <button (click)="loadUsers()">GET /admin/users</button>
+    <button (click)="loadPackTemplates()">GET /admin/pack-templates</button>
+  </div>
+
+  <hr/>
+
+  <!-- Results -->
+  @if (loading()) {
+    <p>Chargement...</p>
+  }
+
+  @if (lastTest()) {
+    <h3>{{ lastTest() }}</h3>
+  }
+
+  <app-error-display [message]="error()" />
+
+  <!-- Cards -->
+  @if (cards().length > 0) {
+    <p>{{ cards().length }} carte(s) trouvée(s)</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      @for (card of cards(); track card.id) {
+        <div class="cd-panel cd-panel--hover" style="padding: 0.5rem; width: 200px;">
+          @if (getImageUrl(card); as imgUrl) {
+            <img [src]="imgUrl" [alt]="card.name" style="width: 100%; border-radius: 4px;"/>
+          }
+          <div class="cd-text-muted" style="font-size: 0.85em;">{{ card.description }}</div>
+          <strong>{{ card.name }}</strong>
+          <span class="cd-text-gold" style="margin-left: 0.25rem; font-size: 0.8em;">[{{ card.rarity }}]</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- My cards -->
+  @if (myCards().length > 0) {
+    <p>{{ myCards().length }} carte(s) possédée(s)</p>
+    <pre class="cd-panel" style="padding: 1rem;">{{ myCards() | json }}</pre>
+  }
+
+  <!-- Users (admin) -->
+  @if (users().length > 0) {
+    <p>{{ users().length }} utilisateur(s)</p>
+    <pre class="cd-panel" style="padding: 1rem;">{{ users() | json }}</pre>
+  }
+
+  <!-- Pack templates (admin) -->
+  @if (templates().length > 0) {
+    <p>{{ templates().length }} template(s)</p>
+    <pre class="cd-panel" style="padding: 1rem;">{{ templates() | json }}</pre>
+  }
+</div>

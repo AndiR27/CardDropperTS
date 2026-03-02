@@ -1,0 +1,30 @@
+.my-cards-page {
+  padding: 2rem 1rem;
+}
+
+.my-cards-page__title {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cd-text);
+  margin-bottom: 2rem;
+}
+
+.my-cards-page__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.my-cards-page__section {
+  padding: 1.5rem;
+}
+
+.my-cards-page__section-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--cd-gold);
+  margin: 0 0 0.75rem;
+}

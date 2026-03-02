@@ -123,6 +123,40 @@ paths:
         '500':
           description: Erreur interne.
 
+  /me/cards/with-image:
+    post:
+      tags: [ me ]
+      summary: Créer une carte avec image
+      description: |
+        Crée une nouvelle carte avec une image uploadée.
+        Le créateur est l'utilisateur authentifié.
+        L'image est stockée sur le serveur et le champ imageUrl est renseigné automatiquement.
+      operationId: createMyCardWithImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ card, image ]
+              properties:
+                card:
+                  $ref: '#/components/schemas/CardDto'
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Carte créée avec image.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Données invalides (type image, taille, etc.).
+        '500':
+          description: Erreur interne.
+
   /me/cards/trade:
     post:
       tags: [ me ]

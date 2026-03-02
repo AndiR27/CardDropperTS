@@ -1,0 +1,17 @@
+.create-card-page {
+  padding: 2rem 1rem;
+}
+
+.create-card-page__title {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cd-text);
+  margin-bottom: 2rem;
+}
+
+.create-card-page__form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+}

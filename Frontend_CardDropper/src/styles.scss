@@ -1,1 +1,23 @@
-/* You can add global styles to this file, and also import other style files */
+@use './styles/theme';
+@use './styles/variables';
+@use './styles/utilities';
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cd-bg);
+  color: var(--cd-text);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a {
+  color: var(--cd-gold);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cd-gold-light);
+  }
+}
