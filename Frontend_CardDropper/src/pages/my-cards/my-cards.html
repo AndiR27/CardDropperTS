@@ -1,20 +1,233 @@
 <section class="my-cards-page">
-  <h1 class="my-cards-page__title">Mes Cartes</h1>
+  <h1 class="cd-page-title">Mon Grimoire</h1>
+  <p class="cd-page-subtitle">Tes cartes, ta collection, ta puissance</p>
 
-  <div class="my-cards-page__sections">
-    <div class="my-cards-page__section cd-panel">
-      <h2 class="my-cards-page__section-title">Cartes possédées</h2>
-      <p class="cd-text-muted">Bientôt disponible...</p>
-    </div>
+  <!-- ====== Tab bar ====== -->
+  <nav class="tabs">
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'cards'"
+            (click)="activeTab.set('cards')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="18" rx="3"/>
+        <path d="M12 8v8M8 12h8"/>
+      </svg>
+      Mes Cartes
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'merge'"
+            (click)="activeTab.set('merge')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 6l4-4 4 4"/><path d="M12 2v10.5"/>
+        <path d="M4 14l4 4 4-4"/><path d="M16 14l-4 4"/>
+      </svg>
+      Fusion
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'creations'"
+            (click)="activeTab.set('creations')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>
+      </svg>
+      Créations
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'targets'"
+            (click)="activeTab.set('targets')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+      </svg>
+      Cibles
+    </button>
+  </nav>
 
-    <div class="my-cards-page__section cd-panel">
-      <h2 class="my-cards-page__section-title">Cartes créées</h2>
-      <p class="cd-text-muted">Bientôt disponible...</p>
-    </div>
+  <!-- ====== Tab: Mes Cartes ====== -->
+  @if (activeTab() === 'cards') {
+    @if (loading()) {
+      <div class="my-cards-page__status">
+        <span class="my-cards-page__loader"></span>
+        Chargement de ton grimoire...
+      </div>
+    } @else if (ownedCards().length === 0) {
+      <div class="my-cards-page__empty">
+        <span class="my-cards-page__empty-icon">&#x1F0CF;</span>
+        <p>Tu ne possèdes aucune carte pour le moment.</p>
+        <p class="cd-text-muted">Ouvre des packs ou forge tes propres cartes !</p>
+      </div>
+    } @else {
+      <div class="carousel">
+        <button class="carousel__arrow carousel__arrow--left"
+                [class.carousel__arrow--disabled]="!canPrev()"
+                (click)="prev()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
 
-    <div class="my-cards-page__section cd-panel">
-      <h2 class="my-cards-page__section-title">Cartes ciblées</h2>
-      <p class="cd-text-muted">Bientôt disponible...</p>
+        <div class="carousel__stage">
+          @for (card of ownedCards(); track card.id; let i = $index) {
+            <div class="carousel__card carousel__card--rarity-{{ card.rarity | lowercase }}"
+                 [class.carousel__card--active]="i === activeIndex()"
+                 [class.carousel__card--prev]="i === activeIndex() - 1"
+                 [class.carousel__card--next]="i === activeIndex() + 1"
+                 [class.carousel__card--far-left]="i < activeIndex() - 1"
+                 [class.carousel__card--far-right]="i > activeIndex() + 1"
+                 (click)="goTo(i)">
+              <div class="carousel__card-inner">
+                @if (getImageUrl(card); as imgUrl) {
+                  <img [src]="imgUrl" [alt]="card.name" class="carousel__card-img"/>
+                } @else {
+                  <div class="carousel__card-placeholder">
+                    <span>?</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <button class="carousel__arrow carousel__arrow--right"
+                [class.carousel__arrow--disabled]="!canNext()"
+                (click)="next()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (activeCard(); as card) {
+        <div class="card-info">
+          <h2 class="card-info__name">{{ card.name }}</h2>
+          <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+            {{ card.rarity }}
+          </span>
+          @if (card.description) {
+            <p class="card-info__desc">{{ card.description }}</p>
+          }
+          @if (card.targetUserId) {
+            <span class="card-info__target">
+              Cible : <strong>{{ getTargetName(card) ?? 'Inconnu' }}</strong>
+            </span>
+          }
+          @if (card.uniqueCard) {
+            <span class="card-info__unique">Carte unique</span>
+          }
+
+          <button class="use-btn" (click)="openUseModal()">
+            <svg class="use-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            Utiliser
+          </button>
+        </div>
+      }
+
+      <div class="carousel__dots">
+        @for (card of ownedCards(); track card.id; let i = $index) {
+          <button class="carousel__dot"
+                  [class.carousel__dot--active]="i === activeIndex()"
+                  (click)="goTo(i)"></button>
+        }
+      </div>
+
+      <p class="carousel__counter">{{ activeIndex() + 1 }} / {{ ownedCards().length }}</p>
+    }
+  }
+
+  <!-- ====== Tab: Fusion ====== -->
+  @if (activeTab() === 'merge') {
+    <app-merge-cards [cards]="ownedCards()" (merged)="onMerged()"/>
+  }
+
+  <!-- ====== Tab: Créations ====== -->
+  @if (activeTab() === 'creations') {
+    <app-card-list [cards]="createdCards()" [title]="'Mes Créations'"/>
+  }
+
+  <!-- ====== Tab: Cibles ====== -->
+  @if (activeTab() === 'targets') {
+    <app-card-list [cards]="targetingCards()" [title]="'Mes Cibles'"/>
+  }
+</section>
+
+<!-- ====== Use Card Modal ====== -->
+@if (showUseModal() && activeCard(); as card) {
+  <div class="use-modal" (click)="onModalOverlayClick($event)">
+    <div class="use-modal__content">
+      <button class="use-modal__close" (click)="closeUseModal()">✕</button>
+
+      <div class="use-modal__card">
+        @if (getImageUrl(card); as imgUrl) {
+          <img [src]="imgUrl" [alt]="card.name"
+               class="use-modal__card-img use-modal__card-img--{{ card.rarity | lowercase }}"/>
+        }
+        <h3 class="use-modal__card-name">{{ card.name }}</h3>
+        <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+      </div>
+
+      @if (useStep() === 'choose') {
+        <div class="use-modal__choose">
+          <h3 class="use-modal__title">Choisir une cible</h3>
+          <div class="use-modal__search-wrap">
+            <svg class="use-modal__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+            </svg>
+            <input class="use-modal__search" type="text" placeholder="Rechercher un joueur..."
+                   [value]="userSearch()"
+                   (input)="userSearch.set($any($event.target).value)"/>
+          </div>
+          <div class="use-modal__user-list">
+            @for (user of filteredUsers(); track user.id) {
+              <button class="use-modal__user" (click)="selectUser(user)">
+                <span class="use-modal__user-avatar">{{ user.username.charAt(0) | uppercase }}</span>
+                <span class="use-modal__user-name">{{ user.username }}</span>
+                <svg class="use-modal__user-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            } @empty {
+              <p class="use-modal__no-users">Aucun joueur trouvé</p>
+            }
+          </div>
+        </div>
+      }
+
+      @if (useStep() === 'confirm' && selectedTarget(); as target) {
+        <div class="use-modal__confirm">
+          <h3 class="use-modal__title">Confirmer l'utilisation</h3>
+
+          <div class="use-modal__summary">
+            <div class="use-modal__summary-card">
+              <span class="use-modal__summary-label">Carte</span>
+              <strong>{{ card.name }}</strong>
+            </div>
+            <svg class="use-modal__summary-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+            <div class="use-modal__summary-target">
+              <span class="use-modal__summary-label">Cible</span>
+              <strong>{{ target.username }}</strong>
+            </div>
+          </div>
+
+          @if (card.targetUserId) {
+            <p class="use-modal__fixed-note">Cette carte cible spécifiquement ce joueur.</p>
+          }
+
+          <div class="use-modal__actions">
+            @if (!card.targetUserId) {
+              <button class="use-modal__btn use-modal__btn--back" (click)="backToChoose()">
+                Retour
+              </button>
+            }
+            <button class="use-modal__btn use-modal__btn--confirm" (click)="confirmUse()">
+              Confirmer
+            </button>
+          </div>
+        </div>
+      }
     </div>
   </div>
-</section>
+}

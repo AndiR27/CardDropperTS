@@ -11,6 +11,7 @@ import { AuthService } from '../../app/core/auth/auth.service';
 })
 export class HomePage {
   protected readonly auth = inject(AuthService);
+  heroLoaded = false;
 
   login(): void {
     this.auth.login();

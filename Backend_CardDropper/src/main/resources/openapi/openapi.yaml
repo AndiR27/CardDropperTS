@@ -292,6 +292,58 @@ paths:
           description: Erreur interne.
 
   # ========================================
+  #   ME — USE CARD + LIVE FEED
+  # ========================================
+  /me/cards/use:
+    post:
+      tags: [ me ]
+      summary: Utiliser une carte sur un autre utilisateur
+      description: |
+        Retire la carte de la collection du propriétaire (retourne au pool)
+        et publie un événement live feed.
+      operationId: useMyCard
+      parameters:
+        - name: cardId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 10
+        - name: targetUserId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 2
+      responses:
+        '204':
+          description: Carte utilisée avec succès.
+        '400':
+          description: Données invalides (carte ne ciblant pas cet utilisateur, etc.).
+        '404':
+          description: Utilisateur ou carte introuvable.
+        '500':
+          description: Erreur interne.
+
+  # /me/live-feed/stream is hand-written (SSE — not compatible with OpenAPI codegen)
+
+  /me/live-feed/today:
+    get:
+      tags: [ me ]
+      summary: Événements du jour
+      description: Retourne tous les événements live feed persistés depuis le début de la journée.
+      operationId: getTodayLiveFeed
+      responses:
+        '200':
+          description: Liste des événements du jour.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LiveFeedEventDto'
+        '500':
+          description: Erreur interne.
+
+  # ========================================
   #   USERS (admin CRUD + lookup)
   # ========================================
   /users:
@@ -906,6 +958,32 @@ components:
               RARE: 25.0
               EPIC: 4.0
               LEGENDARY: 1.0
+
+    LiveFeedEventDto:
+      type: object
+      description: Événement du live feed (utilisation de carte).
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        actorUsername:
+          type: string
+          example: "andi"
+        cardName:
+          type: string
+          example: "Dragon"
+        cardRarity:
+          type: string
+          example: "EPIC"
+        targetUsername:
+          type: string
+          example: "bob"
+        createdAt:
+          type: string
+          description: Date/heure ISO-8601.
+          example: "2026-03-05T14:30:00"
+      required: [ actorUsername, cardName, cardRarity, targetUsername, createdAt ]
 
     PackSlotDto:
       type: object

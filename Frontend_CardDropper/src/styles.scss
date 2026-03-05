@@ -2,6 +2,32 @@
 @use './styles/variables';
 @use './styles/utilities';
 
+@font-face {
+  font-family: 'BlizzardGlobal';
+  src: url('assets/fonts/BlizzardGlobal.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GBJenLei';
+  src: url('assets/fonts/GBJenLei/GBJenLei-Medium.woff2') format('woff2'),
+       url('assets/fonts/GBJenLei/GBJenLei-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'FranklinGothic';
+  src: url('assets/fonts/FranklinGothic/FranklinGothic-MediumCond.woff2') format('woff2'),
+       url('assets/fonts/FranklinGothic/FranklinGothic-MediumCond.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 html, body {
   height: 100%;
 }

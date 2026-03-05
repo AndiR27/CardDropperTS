@@ -1,0 +1,291 @@
+$card-preview-width: 300px;
+
+.add-card {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.add-card__title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+  align-self: flex-start;
+}
+
+// ====== Top row: HearthCards + Upload ======
+.add-card__top-row {
+  width: 100%;
+  display: flex;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+// -- HearthCards banner (left) --
+.add-card__hearthcards {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1.5rem;
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-border);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: var(--cd-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.add-card__hearthcards-img {
+  max-height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.add-card__hearthcards-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+}
+
+.add-card__hearthcards-hint {
+  font-size: 0.8rem;
+  color: var(--cd-text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+// -- Upload dropzone (right) --
+.add-card__dropzone {
+  flex: 1;
+  border: 2px dashed var(--cd-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: border-color 0.2s, background 0.2s;
+
+  &--active {
+    border-color: var(--cd-gold);
+    background: rgba(139, 90, 43, 0.08);
+  }
+}
+
+.add-card__dropzone-text {
+  color: var(--cd-text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.add-card__dropzone-or {
+  color: var(--cd-text-muted);
+  font-size: 0.8rem;
+}
+
+.add-card__file-label {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  background: var(--cd-gold);
+  color: #1a1a1a;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover { opacity: 0.85; }
+}
+
+// ====== Editor: form left, preview right ======
+.add-card__editor {
+  width: 100%;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.add-card__form {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-card__form-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+}
+
+.add-card__preview {
+  width: $card-preview-width;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: sticky;
+  top: 80px;
+}
+
+.add-card__preview-img {
+  width: $card-preview-width;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.add-card__remove-btn {
+  background: transparent;
+  color: var(--cd-text-muted);
+  border: 1px solid var(--cd-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--cd-gold);
+    color: var(--cd-text);
+  }
+}
+
+// ====== Buttons ======
+.add-card__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.add-card__back-btn {
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  color: var(--cd-text-muted);
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+
+  &:hover {
+    border-color: var(--cd-gold);
+    color: var(--cd-text);
+  }
+}
+
+.add-card__save-btn {
+  padding: 0.6rem 1.25rem;
+  background: var(--cd-gold);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) { opacity: 0.85; }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ====== Reuse field styles ======
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field__input {
+  background: var(--cd-bg);
+  color: var(--cd-text);
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cd-gold);
+  }
+
+  &--textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+  }
+}
+
+.field--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field__checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cd-gold);
+  cursor: pointer;
+}
+
+.field__label--inline {
+  text-transform: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+// ====== Responsive ======
+@media (max-width: 767px) {
+  .add-card__top-row {
+    flex-direction: column;
+  }
+
+  .add-card__editor {
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+
+  .add-card__preview {
+    width: 240px;
+    position: static;
+  }
+
+  .add-card__preview-img {
+    width: 240px;
+  }
+
+  .add-card__form {
+    width: 100%;
+  }
+}

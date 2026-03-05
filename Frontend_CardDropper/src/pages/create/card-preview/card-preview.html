@@ -1,0 +1,125 @@
+<div class="card-wrapper">
+<div class="card" #cardEl
+     [class.card--spell]="isSpell()"
+     [class.card--minion]="isMinion()"
+     [class.card--weapon]="isWeapon()">
+
+  <!-- Base card frame (bottom layer) -->
+  <img [src]="baseFrameUrl()" alt="card frame" class="card__frame"/>
+
+  <!-- Custom card art (clipped to art window, above frame) -->
+  @if (cardImageUrl()) {
+    <div class="card__art-container"
+         [class.card__art-container--spell]="isSpell()"
+         [class.card__art-container--minion]="isMinion()"
+         [class.card__art-container--weapon]="isWeapon()"
+         (wheel)="onWheel($event)"
+         (mousedown)="onMouseDown($event)"
+         (mousemove)="onMouseMove($event)"
+         (mouseup)="onMouseUp()"
+         (mouseleave)="onMouseUp()">
+      <img [src]="cardImageUrl()" alt="card art"
+           class="card__art"
+           [style.transform]="artTransform()"
+           draggable="false"/>
+    </div>
+  }
+
+  <!-- Cost crystal (spell/minion only) -->
+  @if (isSpell() || isMinion()) {
+    <img src="assets/cardsCreation/cost-crystal.png" alt="" class="card__cost-crystal"/>
+  }
+
+  <!-- Name banner -->
+  <img [src]="nameBarUrl()" alt="" class="card__name-bar"
+       [class.card__name-bar--spell]="isSpell()"
+       [class.card__name-bar--minion]="isMinion()"
+       [class.card__name-bar--weapon]="isWeapon()"/>
+
+  <!-- Name text: curved for spell/minion, straight for weapon -->
+  @if (name()) {
+    @if (isWeapon()) {
+      <div class="card__name-text card__name-text--weapon"
+           [style.font-size.px]="nameFontSize() * 0.55">
+        {{ name() }}
+      </div>
+    } @else {
+      <div class="card__name-arc"
+           [class.card__name-arc--spell]="isSpell()"
+           [class.card__name-arc--minion]="isMinion()"
+           [style.--name-font-size.px]="nameFontSize()">
+        <app-arc-text
+          [path]="isSpell() ? 'M 10 120 C 80 -10 420 -10 490 120' : 'M 10 130 C 60 30 440 -20 490 80'"
+          [pathId]="isSpell() ? 'spellArc' : 'minionArc'"
+          viewBox="0 0 500 150">
+          {{ name() }}
+        </app-arc-text>
+      </div>
+    }
+  }
+
+  <!-- Rarity mask + crystal -->
+  <img [src]="rarityMaskUrl()" alt=""
+       class="card__rarity-mask"
+       [class.card__rarity-mask--spell]="isSpell()"
+       [class.card__rarity-mask--minion]="isMinion()"
+       [class.card__rarity-mask--weapon]="isWeapon()"/>
+
+  <img [src]="rarityCrystalUrl()" alt=""
+       class="card__rarity-crystal"
+       [class.card__rarity-crystal--spell]="isSpell()"
+       [class.card__rarity-crystal--minion]="isMinion()"
+       [class.card__rarity-crystal--weapon]="isWeapon()"/>
+
+  <!-- Legendary dragon frame -->
+  @if (isLegendary()) {
+    <img [src]="dragonUrl()" alt=""
+         class="card__dragon"
+         [class.card__dragon--spell]="isSpell()"
+         [class.card__dragon--minion]="isMinion()"
+         [class.card__dragon--weapon]="isWeapon()"/>
+  }
+
+  <!-- Description area background (minion only) -->
+  @if (isMinion()) {
+    <img [src]="descAreaUrl()" alt="" class="card__desc-area card__desc-area--minion"/>
+  }
+
+  <!-- Description text -->
+  @if (description()) {
+    <div class="card__desc-text"
+         [class.card__desc-text--spell]="isSpell()"
+         [class.card__desc-text--minion]="isMinion()"
+         [class.card__desc-text--weapon]="isWeapon()"
+         [style.--desc-font-size.px]="descFontSize()">
+      {{ description() }}
+    </div>
+  }
+
+  <!-- Target banner + username -->
+  @if (targetName()) {
+    <img [src]="targetBannerUrl()" alt="" class="card__target-banner"
+         [class.card__target-banner--spell]="isSpell()"
+         [class.card__target-banner--minion]="isMinion()"
+         [class.card__target-banner--weapon]="isWeapon()"/>
+    <div class="card__target-text"
+         [class.card__target-text--spell]="isSpell()"
+         [class.card__target-text--minion]="isMinion()"
+         [class.card__target-text--weapon]="isWeapon()">
+      {{ targetName() }}
+    </div>
+  }
+</div>
+</div>
+
+<!-- Zoom controls (only when image is loaded) -->
+@if (cardImageUrl()) {
+  <div class="card-controls">
+    <label class="card-controls__label">Zoom</label>
+    <input type="range" class="card-controls__slider"
+           min="0.5" max="3" step="0.05"
+           [ngModel]="zoom()" (ngModelChange)="setZoom($event)"/>
+    <span class="card-controls__value">{{ (zoom() * 100).toFixed(0) }}%</span>
+    <button class="card-controls__reset" (click)="resetPosition()">Reset</button>
+  </div>
+}

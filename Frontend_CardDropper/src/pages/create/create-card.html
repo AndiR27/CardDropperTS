@@ -1,7 +1,177 @@
-<section class="create-card-page">
-  <h1 class="create-card-page__title">Créer une carte</h1>
+@if (mode() === 'choose') {
 
-  <div class="create-card-page__form cd-panel">
-    <p class="cd-text-muted">Formulaire de création bientôt disponible...</p>
-  </div>
-</section>
+  <!-- ====== Choice screen ====== -->
+  <section class="choose-page">
+    <h1 class="cd-page-title">La Forge</h1>
+    <p class="cd-page-subtitle">Choisis comment forger ta carte</p>
+
+    <div class="choose-page__cards">
+      <button class="choose-card" (click)="mode.set('add')">
+        <span class="choose-card__icon">📥</span>
+        <span class="choose-card__label">Importer une carte</span>
+        <span class="choose-card__desc">Tu as déjà une illustration ? Importe-la directement.</span>
+      </button>
+
+      <button class="choose-card" (click)="mode.set('build')">
+        <span class="choose-card__icon">🔨</span>
+        <span class="choose-card__label">Forger une carte</span>
+        <span class="choose-card__desc">Utilise l'atelier pour assembler ta carte pièce par pièce.</span>
+      </button>
+    </div>
+  </section>
+
+} @else if (mode() === 'add') {
+
+  <app-add-card (back)="mode.set('choose')"/>
+
+} @else {
+
+  <!-- ====== Build mode (existing card builder) ====== -->
+  <section class="create-page">
+
+    @if (step() === 'edit') {
+
+      <!-- ====== LEFT: Form ====== -->
+      <div class="create-page__form cd-panel">
+        <div class="create-page__form-header">
+          <button class="create-page__back-link" (click)="mode.set('choose')">&larr; Retour</button>
+          <h2 class="create-page__section-title">L'Atelier</h2>
+        </div>
+
+        <!-- Card type -->
+        <label class="field">
+          <span class="field__label">Type</span>
+          <select class="field__input" [ngModel]="cardType()" (ngModelChange)="cardType.set($event)">
+            @for (t of cardTypes; track t) {
+              <option [value]="t">{{ t === 'spell' ? 'Sort' : t === 'minion' ? 'Serviteur' : 'Arme' }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Card class -->
+        <label class="field">
+          <span class="field__label">Classe</span>
+          <select class="field__input" [ngModel]="cardClass()" (ngModelChange)="cardClass.set($event)">
+            @for (c of cardClasses; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Name -->
+        <label class="field">
+          <span class="field__label">Nom</span>
+          <input class="field__input" type="text" placeholder="Nom de la carte"
+                 maxlength="20"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)"/>
+        </label>
+
+        <!-- Description -->
+        <label class="field">
+          <span class="field__label">Description</span>
+          <textarea class="field__input field__input--textarea" rows="3"
+                    placeholder="Texte de la carte..."
+                    maxlength="80"
+                    [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+        </label>
+
+        <!-- Rarity -->
+        <label class="field">
+          <span class="field__label">Rareté</span>
+          <select class="field__input" [ngModel]="rarity()" (ngModelChange)="rarity.set($event)">
+            @for (r of rarities; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Card image upload -->
+        <div class="field">
+          <span class="field__label">Image</span>
+          <input #fileInput type="file" accept="image/*" class="field__file" (change)="onFileSelected($event)"/>
+          @if (cardImageUrl()) {
+            <button class="field__remove-btn" (click)="removeImage()">Supprimer l'image</button>
+          }
+        </div>
+
+        <!-- Targeting toggle -->
+        <label class="field field--row">
+          <input type="checkbox" class="field__checkbox"
+                 [ngModel]="targeting()" (ngModelChange)="targeting.set($event)"/>
+          <span class="field__label field__label--inline">Carte ciblée (targeting)</span>
+        </label>
+        @if (targeting()) {
+          <p class="field__hint">La carte ciblera "{{ targetName() }}" — son nom apparaîtra sur la carte.</p>
+        }
+
+        <!-- Create button -->
+        <button class="create-btn" (click)="onCreateClick()" [disabled]="creating()">
+          @if (creating()) {
+            Génération en cours...
+          } @else {
+            Créer la carte
+          }
+        </button>
+      </div>
+
+      <!-- ====== RIGHT: Live Preview ====== -->
+      <div class="create-page__preview">
+        <h2 class="create-page__section-title">Aperçu</h2>
+        <app-card-preview
+          [cardType]="cardType()"
+          [cardClass]="cardClass()"
+          [name]="name()"
+          [description]="description()"
+          [rarity]="rarity()"
+          [cardImageUrl]="cardImageUrl()"
+          [targetName]="targetName()"
+        />
+      </div>
+
+    } @else {
+
+      <!-- ====== Confirmation view ====== -->
+      <div class="confirm-page">
+        <h2 class="create-page__section-title">Confirmer la forge</h2>
+
+        <div class="confirm-page__content">
+          <!-- Rendered card image -->
+          @if (renderedImageUrl()) {
+            <img [src]="renderedImageUrl()" alt="Carte rendue" class="confirm-page__image"/>
+          }
+
+          <!-- Card details summary -->
+          <div class="confirm-page__details cd-panel">
+            <h3 class="confirm-page__subtitle">Récapitulatif</h3>
+            <ul class="confirm-page__list">
+              <li><strong>Nom :</strong> {{ name() || '(sans nom)' }}</li>
+              <li><strong>Type :</strong> {{ cardType() }}</li>
+              <li><strong>Classe :</strong> {{ cardClass() }}</li>
+              <li><strong>Rareté :</strong> {{ rarity() }}</li>
+              @if (description()) {
+                <li><strong>Description :</strong> {{ description() }}</li>
+              }
+              @if (targeting()) {
+                <li><strong>Cible :</strong> {{ targetName() }}</li>
+              }
+            </ul>
+
+            <div class="confirm-page__actions">
+              <button class="confirm-page__btn confirm-page__btn--back" (click)="onBack()">Retour</button>
+              <button class="confirm-page__btn confirm-page__btn--validate" (click)="onConfirm()" [disabled]="submitting()">
+                @if (submitting()) {
+                  Envoi en cours...
+                } @else {
+                  Valider
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    }
+
+  </section>
+
+}
