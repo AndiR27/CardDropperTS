@@ -4,10 +4,12 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.enums.Rarity;
+import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.mapping.MapperCard;
 import ts.backend_carddropper.mapping.MapperUser;
 import ts.backend_carddropper.models.CardDto;
@@ -31,13 +33,14 @@ public class ServiceUser {
     private final MapperCard mapperCard;
     private final RepositoryUser repositoryUser;
     private final RepositoryCard repositoryCard;
+    private final ApplicationEventPublisher eventPublisher;
 
     // Nombre de cartes requises pour une fusion
     private static final int MERGE_REQUIRED_COUNT = 3;
 
 
     //==============================
-    //    CRUD USER METHODS
+    //    CRUD UTILISATEUR
     //==============================
 
     /**
@@ -122,7 +125,7 @@ public class ServiceUser {
 
 
     //==============================
-    //    USER CARD METHODS
+    //    GESTION DES CARTES
     //==============================
 
     /**
@@ -275,9 +278,55 @@ public class ServiceUser {
 
 
     //==============================
-    //       PRIVATE METHODS
+    //    UTILISER UNE CARTE
     //==============================
 
+    /**
+     * Utilise une carte sur un autre utilisateur.
+     * - Carte unique : retirée de la collection du propriétaire (retourne au pool).
+     * - Carte non-unique : le propriétaire la conserve.
+     * Publie un UseCardEvent pour le live feed.
+     */
+    @Transactional
+    public void useCard(Long userId, Long cardId, Long targetUserId) {
+        User user = findUserOrThrow(userId);
+        Card card = findOwnedCardOrThrow(cardId, userId);
+        User target = findUserOrThrow(targetUserId);
+
+        // Si la carte a une cible définie, vérifier qu'elle correspond
+        if (card.getTargetUser() != null && !card.getTargetUser().getId().equals(targetUserId)) {
+            throw new IllegalArgumentException(
+                    "Card id=" + cardId + " targets user id=" + card.getTargetUser().getId()
+                            + ", not user id=" + targetUserId);
+        }
+
+        // Carte unique → consommée (retourne au pool)
+        // Carte non-unique → le propriétaire la conserve
+        if (card.isUniqueCard()) {
+            card.setUser(null);
+            repositoryCard.save(card);
+        }
+
+        log.info("User '{}' used card '{}' ({}) on user '{}' (unique={})",
+                user.getUsername(), card.getName(), card.getRarity(), target.getUsername(), card.isUniqueCard());
+
+        // Publier l'événement pour le live feed
+        eventPublisher.publishEvent(new UseCardEvent(
+                this,
+                user.getUsername(),
+                card.getName(),
+                card.getRarity().name(),
+                target.getUsername()));
+    }
+
+
+    //==============================
+    //       MÉTHODES PRIVÉES
+    //==============================
+
+    /**
+     * Retourne l'utilisateur ou lève une EntityNotFoundException.
+     */
     private User findUserOrThrow(Long id) {
         return repositoryUser.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));

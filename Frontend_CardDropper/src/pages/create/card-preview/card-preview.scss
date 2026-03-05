@@ -1,0 +1,326 @@
+// ── Wrapper (visual background, not captured) ──
+.card-wrapper {
+  background: #1a1a1a;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+// ── Container (captured element — no background) ──
+.card {
+  position: relative;
+  width: 270px;
+  aspect-ratio: 540 / 670;
+  overflow: hidden;
+  border-radius: 12px;
+
+  img {
+    position: absolute;
+    pointer-events: none;
+  }
+}
+
+// ── Base frame ──
+.card__frame {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+// ── Art container (behind frame, clipped to art window) ──
+.card__art-container {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  cursor: grab;
+  // Full card size — clip-path handles the precise window shape
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  &:active { cursor: grabbing; }
+
+  // Spell: rounded rectangle window
+  &--spell {
+    clip-path: inset(9% 12% 45% 12% round 8px);
+  }
+
+  // Minion: vertical ellipse
+  &--minion {
+    clip-path: ellipse(34% 24% at 50% 30%);
+  }
+
+  // Weapon: circle
+  &--weapon {
+    clip-path: circle(25% at 50% 30%);
+  }
+}
+
+.card__art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center center;
+  pointer-events: none;
+  user-select: none;
+}
+
+// ── Cost crystal (top-left, spell/minion) ──
+.card__cost-crystal {
+  z-index: 3;
+  width: 18%;
+  top: 12%;
+  left: 12%;
+}
+
+// ── Name banner image ──
+.card__name-bar {
+  z-index: 3;
+  left: 50%;
+  transform: translateX(-50%);
+
+  &--spell  { width: 69%; top: 47%;   }
+  &--minion { width: 65%; top: 48.2%; }
+  &--weapon { width: 69%; top: 48.2%; }
+}
+
+// ── Name text: straight (weapon only) ──
+.card__name-text {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'GBJenLei', 'BlizzardGlobal', serif;
+  color: #fff;
+  font-weight: 500;
+  text-shadow:
+    -1.2px -1.2px 0 #000,
+     1.2px -1.2px 0 #000,
+    -1.2px  1.2px 0 #000,
+     1.2px  1.2px 0 #000;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  max-width: 56%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--weapon { top: 49.5%; font-size: 1rem; }
+}
+
+// ── Name text: arc (spell / minion) ──
+.card__name-arc {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  left: 0;
+  width: 100%;
+
+  &--spell  { top: 49%; }
+  &--minion { top: 49.5%; }
+
+  app-arc-text {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  // SVG text styling — uses CSS var for dynamic sizing
+  ::ng-deep text {
+    font-size: var(--name-font-size, 30px);
+    font-weight: 700;
+    stroke-width: 3px;
+  }
+}
+
+// ── Description area background (minion) ──
+.card__desc-area {
+  z-index: 2;
+  left: 50%;
+  transform: translateX(-50%);
+
+  &--minion {
+    width: 61%;
+    top: 62.5%;
+  }
+}
+
+// ── Rarity mask ──
+.card__rarity-mask {
+  z-index: 3;
+  left: 50%;
+  transform: translateX(-50%);
+
+  &--spell  { width: 18%; top: 56.5%; }
+  &--minion { width: 21%; top: 57%;   }
+  &--weapon { width: 12%; top: 57%;   }
+}
+
+// ── Rarity crystal ──
+.card__rarity-crystal {
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+
+  &--spell  { width: 5.5%; top: 58%;   }
+  &--minion { width: 5.5%; top: 58.5%; }
+  &--weapon { width: 5.5%; top: 58.5%; }
+}
+
+// ── Legendary dragon ──
+.card__dragon {
+  z-index: 6;
+
+  &--spell  { width: 64%; top: 7%;  left: 25%; }
+  &--minion { width: 58%; top: 0%;  left: 22%; }
+  &--weapon { width: 56%; top: 5%;  left: 24%; }
+}
+
+// ── Description text ──
+.card__desc-text {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'BlizzardGlobal', serif;
+  font-weight: 800;
+  text-align: center;
+  font-size: var(--desc-font-size, 16px);
+  line-height: 1.4;
+  overflow: hidden;
+  pointer-events: none;
+  word-wrap: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--spell {
+    color: #1a1a1a;
+    top: 66.9%;
+    width: 48.6%;
+    height: 18.4%;
+  }
+
+  &--minion {
+    color: #1a1a1a;
+    top: 62.7%;
+    width: 51.9%;
+    height: 21%;
+  }
+
+  &--weapon {
+    color: #ccc;
+    top: 64.2%;
+    width: 51.5%;
+    height: 20.1%;
+  }
+}
+
+// ── Target banner ──
+.card__target-banner {
+  z-index: 5;
+  left: 50%;
+  transform: translateX(-50%);
+
+  // Spell target is full-card-sized (540×670)
+  &--spell {
+    width: 100%;
+    height: 100%;
+    inset: 0;
+    transform: none;
+  }
+
+  // Minion target is a small banner (297×70)
+  &--minion {
+    width: 55%;
+    top: 82%;
+  }
+
+  // Weapon target is a small banner (203×37)
+  &--weapon {
+    width: 38%;
+    top: 87%;
+  }
+}
+
+// ── Target username text ──
+.card__target-text {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'GBJenLei', 'BlizzardGlobal', serif;
+  color: #fff;
+  font-weight: 500;
+  text-shadow:
+    -1.2px -1.2px 0 #000,
+     1.2px -1.2px 0 #000,
+    -1.2px  1.2px 0 #000,
+     1.2px  1.2px 0 #000;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+
+  &--spell  { top: 90%;   font-size: 0.7rem; }
+  &--minion { top: 87.5%; font-size: 0.7rem; }
+  &--weapon { top: 88%;   font-size: 0.55rem; }
+}
+
+// ── Zoom / pan controls (centered under preview) ──
+.card-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.card-controls__label {
+  font-size: 0.8rem;
+  color: var(--cd-text-muted);
+  font-weight: 600;
+}
+
+.card-controls__slider {
+  width: 120px;
+  accent-color: var(--cd-gold);
+}
+
+.card-controls__value {
+  font-size: 0.75rem;
+  color: var(--cd-text-muted);
+  min-width: 3ch;
+}
+
+.card-controls__reset {
+  background: transparent;
+  color: var(--cd-text-muted);
+  border: 1px solid var(--cd-border);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--cd-gold);
+    color: var(--cd-text);
+  }
+}
+
+// ── Responsive scale-up ──
+@media (min-width: 768px) {
+  .card { width: 360px; }
+
+  .card__name-text--weapon { font-size: 1.3rem; }
+  .card__desc-text         { font-size: 0.75rem; }
+  .card__target-text       { font-size: 0.7rem;  }
+}
+
+@media (min-width: 1200px) {
+  .card { width: 432px; }
+
+  .card__name-text--weapon { font-size: 1.55rem; }
+  .card__desc-text         { font-size: 0.9rem;  }
+  .card__target-text       { font-size: 0.85rem; }
+}

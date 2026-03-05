@@ -1,0 +1,58 @@
+<!-- Rarity filter pills -->
+<div class="merge__filters">
+  @for (r of rarities; track r.value) {
+    <button class="merge__pill merge__pill--{{ r.value | lowercase }}"
+            [class.merge__pill--active]="rarityFilter() === r.value"
+            (click)="setRarity(r.value)">
+      {{ r.label }}
+    </button>
+  }
+</div>
+
+<!-- Compact grid -->
+<div class="merge__grid">
+  @for (card of filteredCards(); track card.id) {
+    <button class="merge__thumb"
+            [class.merge__thumb--selected]="isSelected(card)"
+            (click)="toggleCard(card)">
+      <div class="merge__thumb-img-wrap">
+        @if (getImageUrl(card); as imgUrl) {
+          <img [src]="imgUrl" [alt]="card.name" class="merge__thumb-img"/>
+        } @else {
+          <div class="merge__thumb-placeholder">?</div>
+        }
+      </div>
+      <span class="merge__thumb-name">{{ card.name }}</span>
+    </button>
+  } @empty {
+    <p class="merge__empty">Aucune carte de cette rareté</p>
+  }
+</div>
+
+<!-- Selection count + merge button -->
+<div class="merge__actions">
+  <span class="merge__count">{{ selectionCount() }} / 3 sélectionnées</span>
+  <button class="merge__btn"
+          [class.merge__btn--ready]="canMerge()"
+          [disabled]="!canMerge() || merging()"
+          (click)="merge()">
+    @if (merging()) {
+      Fusion en cours...
+    } @else {
+      Fusionner
+    }
+  </button>
+</div>
+
+<!-- Celebration overlay -->
+@if (mergeResult(); as result) {
+  <div class="merge__celebration">
+    <div class="merge__celebration-inner">
+      <p class="merge__celebration-title">Nouvelle carte obtenue !</p>
+      <p class="merge__celebration-name">{{ result.name }}</p>
+      <span class="merge__celebration-rarity merge__celebration-rarity--{{ result.rarity | lowercase }}">
+        {{ result.rarity }}
+      </span>
+    </div>
+  </div>
+}

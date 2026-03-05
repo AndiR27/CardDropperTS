@@ -32,6 +32,13 @@ export class CardService {
     return this.api.delete<void>(`/cards/${id}`);
   }
 
+  createWithImage(card: Partial<Card>, image: Blob, filename: string): Observable<Card> {
+    const formData = new FormData();
+    formData.append('cardDto', new Blob([JSON.stringify(card)], { type: 'application/json' }));
+    formData.append('image', image, filename);
+    return this.api.postMultipart<Card>('/me/cards/with-image', formData);
+  }
+
   /** Construit l'URL complète de l'image d'une carte */
   imageUrl(card: Card): string | null {
     return card.imageUrl ? this.api.cardImageUrl(card.imageUrl) : null;

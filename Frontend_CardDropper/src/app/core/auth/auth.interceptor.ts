@@ -17,7 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Ne pas injecter le token sur des requêtes qui ne ciblent pas notre API
   const isApiRequest = req.url.startsWith(environment.apiUrl);
 
-  if (isApiRequest && auth.isAuthenticated) {
+  if (isApiRequest && auth.isAuthenticated && auth.accessToken) {
     const cloned = req.clone({
       setHeaders: { Authorization: `Bearer ${auth.accessToken}` }
     });

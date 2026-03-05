@@ -1,0 +1,221 @@
+:host {
+  display: block;
+}
+
+// ── Filter pills ──
+.merge__filters {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.merge__pill {
+  padding: 0.35rem 1rem;
+  border-radius: 50px;
+  border: 1.5px solid var(--cd-border-strong);
+  background: var(--cd-surface);
+  color: var(--cd-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(.merge__pill--active) {
+    border-color: var(--cd-gold-deep);
+    color: var(--cd-text);
+  }
+
+  &--active {
+    color: var(--cd-text-dark);
+    border-color: transparent;
+
+    &.merge__pill--common {
+      background: var(--cd-rarity-common);
+    }
+    &.merge__pill--rare {
+      background: var(--cd-rarity-rare);
+    }
+    &.merge__pill--epic {
+      background: var(--cd-rarity-epic);
+    }
+  }
+}
+
+// ── Grid ──
+.merge__grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 100px;
+}
+
+.merge__thumb {
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.merge__thumb-img-wrap {
+  width: 130px;
+  transition: all 0.2s;
+
+  .merge__thumb--selected & {
+    filter: drop-shadow(0 0 10px var(--cd-gold-glow));
+  }
+}
+
+.merge__thumb-img {
+  width: 100%;
+  display: block;
+}
+
+.merge__thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cd-text-muted);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.merge__thumb-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--cd-text-muted);
+  text-align: center;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+
+  .merge__thumb--selected & {
+    color: var(--cd-gold);
+  }
+}
+
+.merge__empty {
+  color: var(--cd-text-muted);
+  font-size: 0.85rem;
+  width: 100%;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 0;
+}
+
+// ── Actions ──
+.merge__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.merge__count {
+  font-size: 0.8rem;
+  color: var(--cd-text-muted);
+  font-weight: 600;
+}
+
+.merge__btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--cd-surface-light);
+  color: var(--cd-text-muted);
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  &--ready:not(:disabled) {
+    background: linear-gradient(180deg, var(--cd-gold-light) 0%, var(--cd-gold) 40%, var(--cd-gold-deep) 100%);
+    color: var(--cd-text-dark);
+    box-shadow: 0 4px 16px rgba(240, 178, 50, 0.3);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(240, 178, 50, 0.45);
+    }
+  }
+}
+
+// ── Celebration overlay ──
+.merge__celebration {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: celebFadeIn 0.3s ease;
+}
+
+.merge__celebration-inner {
+  text-align: center;
+  animation: celebPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.merge__celebration-title {
+  font-size: 0.85rem;
+  color: var(--cd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+}
+
+.merge__celebration-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0 0 0.5rem;
+  text-shadow: 0 2px 12px rgba(240, 178, 50, 0.5);
+}
+
+.merge__celebration-rarity {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  display: inline-block;
+
+  &--common    { background: var(--cd-rarity-common); color: #fff; }
+  &--rare      { background: var(--cd-rarity-rare);   color: #fff; }
+  &--epic      { background: var(--cd-rarity-epic);   color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}
+
+@keyframes celebFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes celebPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

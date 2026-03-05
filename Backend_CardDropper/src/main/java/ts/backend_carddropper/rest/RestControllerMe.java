@@ -2,14 +2,19 @@ package ts.backend_carddropper.rest;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ts.backend_carddropper.api.MeApi;
 import ts.backend_carddropper.models.CardDto;
+import ts.backend_carddropper.models.LiveFeedEventDto;
 import ts.backend_carddropper.security.SecurityUtils;
 import ts.backend_carddropper.service.ServiceAuth;
 import ts.backend_carddropper.service.ServiceCard;
+import ts.backend_carddropper.service.ServiceLiveFeed;
 import ts.backend_carddropper.service.ServicePack;
 import ts.backend_carddropper.service.ServiceUser;
 
@@ -23,10 +28,11 @@ public class RestControllerMe implements MeApi {
     private final ServiceUser serviceUser;
     private final ServiceCard serviceCard;
     private final ServicePack servicePack;
+    private final ServiceLiveFeed serviceLiveFeed;
 
 
     //==============================
-    //    CARD QUERIES
+    //    REQUÊTES CARTES
     //==============================
 
     @Override
@@ -49,7 +55,7 @@ public class RestControllerMe implements MeApi {
 
 
     //==============================
-    //    CARD ACTIONS
+    //    ACTIONS CARTES
     //==============================
 
     @Override
@@ -89,7 +95,7 @@ public class RestControllerMe implements MeApi {
 
 
     //==============================
-    //    PACK ACTIONS
+    //    ACTIONS PACKS
     //==============================
 
     @Override
@@ -102,5 +108,32 @@ public class RestControllerMe implements MeApi {
     public ResponseEntity<List<CardDto>> generateMyPack(Long templateId) {
         Long userId = serviceAuth.getCurrentUserId();
         return ResponseEntity.ok(servicePack.generatePack(userId, templateId));
+    }
+
+
+    //==============================
+    //    UTILISER UNE CARTE
+    //==============================
+
+    @Override
+    public ResponseEntity<Void> useMyCard(Long cardId, Long targetUserId) {
+        Long userId = serviceAuth.getCurrentUserId();
+        serviceUser.useCard(userId, cardId, targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    //==============================
+    //    FLUX EN DIRECT
+    //==============================
+
+    @GetMapping(value = "/me/live-feed/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamLiveFeed() {
+        return serviceLiveFeed.subscribe();
+    }
+
+    @Override
+    public ResponseEntity<List<LiveFeedEventDto>> getTodayLiveFeed() {
+        return ResponseEntity.ok(serviceLiveFeed.getTodayEvents());
     }
 }

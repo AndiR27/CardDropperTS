@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  authEnabled: true,
   // En prod, l'API est sur un sous-domaine dédié (via NPM)
   apiUrl: 'https://api.carddropperts.local',
   keycloak: {

@@ -1,0 +1,104 @@
+<div class="add-card">
+  <h2 class="add-card__title">Importer une carte</h2>
+
+  <!-- ====== Top row: HearthCards banner + Upload zone ====== -->
+  @if (!imagePreviewUrl()) {
+    <div class="add-card__top-row">
+
+      <!-- Left: HearthCards banner -->
+      <a class="add-card__hearthcards" href="https://www.hearthcards.net/" target="_blank" rel="noopener">
+        <img src="assets/logos/hearthcard_logo.png" alt="HearthCards" class="add-card__hearthcards-img"/>
+        <span class="add-card__hearthcards-text">Créer sur HearthCards</span>
+        <span class="add-card__hearthcards-hint">Créez votre carte, puis importez-la ici &rarr;</span>
+      </a>
+
+      <!-- Right: Upload dropzone -->
+      <div class="add-card__dropzone"
+           [class.add-card__dropzone--active]="dragOver()"
+           (drop)="onDrop($event)"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave()">
+        <p class="add-card__dropzone-text">Glissez votre carte ici</p>
+        <span class="add-card__dropzone-or">ou</span>
+        <label class="add-card__file-label">
+          Choisir un fichier
+          <input type="file" accept="image/*" hidden (change)="onFileSelected($event)"/>
+        </label>
+      </div>
+
+    </div>
+
+    <button class="add-card__back-btn" (click)="onBack()">Retour</button>
+  } @else {
+    <!-- ====== Image loaded: form left, preview right ====== -->
+    <div class="add-card__editor">
+
+      <!-- Left: Form -->
+      <div class="add-card__form cd-panel">
+        <h3 class="add-card__form-title">Détails de la carte</h3>
+
+        <!-- Name -->
+        <label class="field">
+          <span class="field__label">Nom *</span>
+          <input class="field__input" type="text" placeholder="Nom de la carte"
+                 maxlength="20"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)"/>
+        </label>
+
+        <!-- Rarity -->
+        <label class="field">
+          <span class="field__label">Rareté</span>
+          <select class="field__input" [ngModel]="rarity()" (ngModelChange)="rarity.set($event)">
+            @for (r of rarities; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Unique card -->
+        <label class="field field--row">
+          <input type="checkbox" class="field__checkbox"
+                 [ngModel]="uniqueCard()" (ngModelChange)="uniqueCard.set($event)"/>
+          <span class="field__label field__label--inline">Carte unique</span>
+        </label>
+
+        <!-- Description -->
+        <label class="field">
+          <span class="field__label">Description</span>
+          <textarea class="field__input field__input--textarea" rows="3"
+                    placeholder="Description optionnelle..."
+                    maxlength="80"
+                    [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+        </label>
+
+        <!-- Target -->
+        <label class="field field--row">
+          <input type="checkbox" class="field__checkbox"
+                 [ngModel]="targeting()" (ngModelChange)="targeting.set($event)"/>
+          <span class="field__label field__label--inline">Carte ciblée (targeting)</span>
+        </label>
+
+        <!-- Actions -->
+        <div class="add-card__actions">
+          <button class="add-card__back-btn" (click)="onBack()">Retour</button>
+          <button class="add-card__save-btn" (click)="onSave()"
+                  [disabled]="submitting() || !name()">
+            @if (submitting()) {
+              Envoi en cours...
+            } @else {
+              Sauvegarder la carte
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Card preview -->
+      <div class="add-card__preview">
+        <img [src]="imagePreviewUrl()" alt="Aperçu" class="add-card__preview-img"/>
+        <button class="add-card__remove-btn" (click)="removeImage()">Changer l'image</button>
+      </div>
+
+    </div>
+  }
+
+</div>

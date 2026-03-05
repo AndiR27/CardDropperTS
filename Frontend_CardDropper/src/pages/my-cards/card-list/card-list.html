@@ -1,0 +1,31 @@
+<!-- Search bar -->
+<div class="cl__search-wrap">
+  <svg class="cl__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+  </svg>
+  <input class="cl__search" type="text" placeholder="Rechercher par nom..."
+         [value]="search()"
+         (input)="search.set($any($event.target).value)"/>
+</div>
+
+<!-- List -->
+<div class="cl__list">
+  @for (card of filteredCards(); track card.id) {
+    <div class="cl__row"
+         (mouseenter)="onRowEnter(card, $event)"
+         (mouseleave)="onRowLeave()">
+      <span class="cl__dot cl__dot--{{ card.rarity | lowercase }}"></span>
+      <span class="cl__name">{{ card.name }}</span>
+      <span class="cl__badge cl__badge--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
+
+      <!-- Hover preview -->
+      @if (hoveredCard() === card && getImageUrl(card); as imgUrl) {
+        <div class="cl__preview cl__preview--{{ card.rarity | lowercase }}">
+          <img [src]="imgUrl" [alt]="card.name" class="cl__preview-img"/>
+        </div>
+      }
+    </div>
+  } @empty {
+    <p class="cl__empty">Aucune carte trouvée</p>
+  }
+</div>

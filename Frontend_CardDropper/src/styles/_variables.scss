@@ -1,31 +1,46 @@
 // ========================================
-//  CardDropper Design Tokens
+//  CardDropper Design Tokens — Hearthstone Tavern
 // ========================================
 
 :root {
   // Brand — Gold (buttons, accents, highlights)
-  --cd-gold: #FFD369;
-  --cd-gold-deep: #E6A817;
-  --cd-gold-light: #FFE59E;
+  --cd-gold: #F0B232;
+  --cd-gold-deep: #C8880A;
+  --cd-gold-light: #FFD369;
+  --cd-gold-glow: rgba(240, 178, 50, 0.25);
 
-  // Brand — Blue (links, info, secondary actions)
+  // Brand — Blue (links, info, legendary shimmer)
   --cd-blue: #3D5A99;
   --cd-blue-royal: #5B8DEF;
   --cd-blue-glow: #7EAAFF;
 
-  // UI surfaces — soft dark, neutral cool
-  --cd-bg: #1E1E2A;
-  --cd-bg-light: #252535;
-  --cd-surface: #2A2A3C;
-  --cd-surface-light: #33334A;
-  --cd-border: rgba(255, 211, 105, 0.15);
+  // Rarity colors
+  --cd-rarity-common: #8B8D8B;
+  --cd-rarity-rare: #2196F3;
+  --cd-rarity-epic: #9C27B0;
+  --cd-rarity-legendary: #FF8F00;
 
-  // Text
-  --cd-text: #E0E0EC;
-  --cd-text-muted: rgba(224, 224, 236, 0.6);
-  --cd-text-dark: #1E1E2A;
+  // UI surfaces — cool slate
+  --cd-bg: #1B1F2A;
+  --cd-bg-light: #222838;
+  --cd-surface: #2A3040;
+  --cd-surface-hover: #333A4C;
+  --cd-surface-light: #3A4258;
+  --cd-border: rgba(160, 175, 210, 0.15);
+  --cd-border-strong: rgba(160, 175, 210, 0.30);
+
+  // Text — soft light
+  --cd-text: #E0E4ED;
+  --cd-text-muted: rgba(224, 228, 237, 0.50);
+  --cd-text-dark: #1B1F2A;
 
   // Semantic
   --cd-accent: var(--cd-gold);
-  --cd-focus: var(--cd-blue-glow);
+  --cd-focus: var(--cd-gold-light);
+
+  // Shadows
+  --cd-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --cd-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --cd-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --cd-shadow-gold: 0 0 16px rgba(240, 178, 50, 0.15);
 }

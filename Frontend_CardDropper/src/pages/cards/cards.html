@@ -1,41 +1,125 @@
 <section class="cards-page">
-  <h1 class="cards-page__title">Toutes les cartes</h1>
+  <h1 class="cd-page-title">Collection</h1>
+  <p class="cd-page-subtitle">Toutes les cartes forgées par les aventuriers</p>
 
-  <!-- Filters -->
-  <div class="cards-page__filters">
-    <span class="cards-page__filter-label">Filtres :</span>
-    <select class="cards-page__select">
-      <option value="">Toutes les raretés</option>
-      <option value="COMMON">Commune</option>
-      <option value="RARE">Rare</option>
-      <option value="EPIC">Épique</option>
-      <option value="LEGENDARY">Légendaire</option>
-    </select>
+  <!-- ====== Filters ====== -->
+  <div class="filters">
 
-    @if (auth.isAuthenticated) {
-      <select class="cards-page__select">
-        <option value="">Tous les créateurs</option>
-      </select>
-      <select class="cards-page__select">
-        <option value="">Toutes les cibles</option>
-      </select>
-    }
+    <!-- Search inputs stacked -->
+    <div class="filters__searches">
+      <div class="filters__input-wrap">
+        <svg class="filters__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+        </svg>
+        <input class="filters__input" type="text" placeholder="Rechercher par nom..."
+               [ngModel]="searchName()" (ngModelChange)="searchName.set($event)"/>
+        @if (searchName()) {
+          <button class="filters__input-clear" (click)="searchName.set('')">✕</button>
+        }
+      </div>
+
+      @if (auth.isAuthenticated) {
+        <div class="filters__input-wrap">
+          <svg class="filters__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+          </svg>
+          <input class="filters__input" type="text" placeholder="Rechercher par cible..."
+                 [ngModel]="targetInput()"
+                 (ngModelChange)="onTargetInputChange($event)"
+                 (focus)="onTargetFocus()"
+                 (blur)="onTargetBlur()"/>
+          @if (filterTarget()) {
+            <button class="filters__input-clear" (click)="clearTarget()">✕</button>
+          }
+          @if (showTargetSuggestions() && targetSuggestions().length > 0) {
+            <div class="target-dropdown">
+              @for (name of targetSuggestions(); track name) {
+                <button class="target-dropdown__option" (mousedown)="selectTarget(name)">
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Row 2: Sort + Rarity + Checkboxes -->
+    <div class="filters__more">
+      <div class="filters__sort-wrap">
+        <select class="filters__sort" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
+          <option value="">Trier par...</option>
+          <option value="name-asc">Nom A → Z</option>
+          <option value="name-desc">Nom Z → A</option>
+          <option value="rarity-asc">Rareté ↑</option>
+          <option value="rarity-desc">Rareté ↓</option>
+        </select>
+      </div>
+
+      <span class="filters__sep"></span>
+
+      <div class="rarity-picker">
+        @for (opt of rarityOptions; track opt.value) {
+          <button class="rarity-picker__item"
+                  [class.rarity-picker__item--active]="filterRarity() === opt.value"
+                  (click)="selectRarity(opt.value)"
+                  [title]="opt.label">
+            @if (opt.image) {
+              <img [src]="opt.image" [alt]="opt.label" class="rarity-picker__crystal"/>
+            }
+            <span class="rarity-picker__text">{{ opt.label }}</span>
+          </button>
+        }
+      </div>
+
+      <span class="filters__sep"></span>
+
+      <label class="filters__check">
+        <input type="checkbox" [ngModel]="filterUnique()" (ngModelChange)="filterUnique.set($event)"/>
+        <span>Unique</span>
+      </label>
+
+      @if (auth.isAuthenticated) {
+        <label class="filters__check">
+          <input type="checkbox" [ngModel]="hideTargeted()" (ngModelChange)="hideTargeted.set($event)"/>
+          <span>Sans cible</span>
+        </label>
+      }
+    </div>
   </div>
 
-  <!-- Card grid -->
+  <!-- Count -->
+  <p class="cards-page__count">
+    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }}@if (cardCount() !== totalCount()) { <span> / {{ totalCount() }}</span> }
+  </p>
+
+  <!-- ====== Card grid ====== -->
   @if (loading()) {
-    <p class="cd-text-muted" style="text-align: center;">Chargement des cartes...</p>
+    <div class="cards-page__status">
+      <span class="cards-page__loader"></span>
+      Chargement de la collection...
+    </div>
   }
 
-  @if (cards().length > 0) {
+  @if (filteredCards().length > 0) {
     <div class="card-grid">
-      @for (card of cards(); track card.id) {
-        <div class="card-item cd-panel cd-panel--hover">
-          @if (getImageUrl(card); as imgUrl) {
-            <img [src]="imgUrl" [alt]="card.name" class="card-item__img"/>
-          } @else {
-            <div class="card-item__placeholder">🃏</div>
-          }
+      @for (card of filteredCards(); track card.id) {
+        <div class="card-item" (click)="openZoom(card)">
+          <div class="card-item__frame">
+            @if (getImageUrl(card); as imgUrl) {
+              <img [src]="imgUrl" [alt]="card.name" class="card-item__img"/>
+            } @else {
+              <div class="card-item__placeholder">
+                <span>?</span>
+              </div>
+            }
+            <div class="card-item__overlay">
+              <span class="card-item__creator">{{ getCreatorName(card) }}</span>
+              @if (getTargetName(card); as target) {
+                <span class="card-item__target">→ {{ target }}</span>
+              }
+            </div>
+          </div>
           <div class="card-item__info">
             <span class="card-item__name">{{ card.name }}</span>
             <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
@@ -46,6 +130,36 @@
       }
     </div>
   } @else if (!loading()) {
-    <p class="cd-text-muted" style="text-align: center;">Aucune carte pour le moment.</p>
+    <p class="cards-page__status">Aucune carte ne correspond à ta recherche.</p>
   }
 </section>
+
+<!-- ====== Zoom overlay ====== -->
+@if (zoomedCard(); as card) {
+  <div class="zoom-overlay" (click)="onOverlayClick($event)">
+    <div class="zoom-card">
+      @if (getImageUrl(card); as imgUrl) {
+        <img [src]="imgUrl" [alt]="card.name" class="zoom-card__img"/>
+      }
+      <div class="zoom-card__details">
+        <h2 class="zoom-card__name">{{ card.name }}</h2>
+        <span class="zoom-card__badge card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+        @if (card.description) {
+          <p class="zoom-card__desc">{{ card.description }}</p>
+        }
+        <div class="zoom-card__meta">
+          <span>Forgée par <strong>{{ getCreatorName(card) }}</strong></span>
+          @if (getTargetName(card); as target) {
+            <span>Cible : <strong>{{ target }}</strong></span>
+          }
+          @if (card.uniqueCard) {
+            <span class="zoom-card__unique">Carte unique</span>
+          }
+        </div>
+      </div>
+      <button class="zoom-card__close" (click)="closeZoom()">✕</button>
+    </div>
+  </div>
+}

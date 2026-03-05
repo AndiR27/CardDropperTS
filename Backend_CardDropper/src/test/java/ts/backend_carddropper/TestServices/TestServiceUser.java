@@ -17,6 +17,7 @@ import ts.backend_carddropper.mapping.MapperUser;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.repository.RepositoryCard;
+import ts.backend_carddropper.repository.RepositoryLiveFeed;
 import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServiceUser;
 
@@ -49,6 +50,9 @@ class TestServiceUser {
     @MockitoBean
     private RepositoryCard repositoryCard;
 
+    @MockitoBean
+    private RepositoryLiveFeed repositoryLiveFeed;
+
     private List<User> users;
     private List<Card> cards;
     private User alice;
@@ -60,6 +64,15 @@ class TestServiceUser {
         alice = users.getFirst();
         bob = users.get(1);
         cards = testDataHelper.createCards(alice);
+
+        // Mock par défaut pour le live feed (déclenché lors de useCard)
+        when(repositoryLiveFeed.save(any(ts.backend_carddropper.entity.LiveFeedEvent.class)))
+                .thenAnswer(inv -> {
+                    ts.backend_carddropper.entity.LiveFeedEvent e = inv.getArgument(0);
+                    e.setId(1L);
+                    e.setCreatedAt(java.time.LocalDateTime.now());
+                    return e;
+                });
     }
 
 
@@ -575,6 +588,152 @@ class TestServiceUser {
 
             assertThrows(IllegalStateException.class,
                     () -> serviceUser.mergeCards(alice.getId(), cardIds));
+        }
+    }
+
+
+    // ========================================
+    //         UTILISER UNE CARTE
+    // ========================================
+
+    @Nested
+    @DisplayName("Utilisation de carte (useCard)")
+    class UseCardTests {
+
+        @Test
+        @DisplayName("carte unique — consommée (retourne au pool) et événement persisté")
+        void testUseCard_uniqueCard_consumed() {
+            Card card = cards.get(0);
+            card.setUser(alice);
+            card.setUniqueCard(true);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
+
+            // Carte unique → retourne au pool (user = null)
+            assertNull(card.getUser());
+            verify(repositoryCard).save(card);
+
+            // Vérifier que l'événement a été persisté via ServiceLiveFeed
+            var captor = org.mockito.ArgumentCaptor.forClass(ts.backend_carddropper.entity.LiveFeedEvent.class);
+            verify(repositoryLiveFeed).save(captor.capture());
+
+            var savedEvent = captor.getValue();
+            assertEquals("alice", savedEvent.getActorUsername());
+            assertEquals(card.getName(), savedEvent.getCardName());
+            assertEquals(Rarity.COMMON.name(), savedEvent.getCardRarity());
+            assertEquals("bob", savedEvent.getTargetUsername());
+        }
+
+        @Test
+        @DisplayName("carte non-unique — conservée par le propriétaire et événement persisté")
+        void testUseCard_nonUniqueCard_kept() {
+            Card card = cards.get(0);
+            card.setUser(alice);
+            card.setUniqueCard(false);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+
+            serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
+
+            // Carte non-unique → le propriétaire la conserve
+            assertEquals(alice, card.getUser());
+            verify(repositoryCard, never()).save(any(Card.class));
+
+            // L'événement est quand même persisté
+            verify(repositoryLiveFeed).save(any(ts.backend_carddropper.entity.LiveFeedEvent.class));
+        }
+
+        @Test
+        @DisplayName("échoue quand l'utilisateur n'existe pas")
+        void testUseCard_userNotFound() {
+            when(repositoryUser.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> serviceUser.useCard(999L, 1L, bob.getId()));
+        }
+
+        @Test
+        @DisplayName("échoue quand la carte n'appartient pas à l'utilisateur")
+        void testUseCard_cardNotOwned() {
+            Card card = cards.get(0);
+            card.setUser(bob); // appartient à bob, pas alice
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> serviceUser.useCard(alice.getId(), card.getId(), bob.getId()));
+        }
+
+        @Test
+        @DisplayName("échoue quand la carte cible un autre utilisateur que celui spécifié")
+        void testUseCard_wrongTarget() {
+            Card card = cards.get(0);
+            card.setUser(alice);
+            // La carte cible alice, pas bob
+            card.setTargetUser(alice);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> serviceUser.useCard(alice.getId(), card.getId(), bob.getId())
+            );
+            assertTrue(ex.getMessage().contains("targets user id="));
+        }
+
+        @Test
+        @DisplayName("réussit quand la carte unique cible le bon utilisateur")
+        void testUseCard_correctTarget() {
+            Card card = cards.get(0);
+            card.setUser(alice);
+            card.setUniqueCard(true);
+            // La carte cible bob explicitement
+            card.setTargetUser(bob);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
+
+            // Carte unique → retourne au pool
+            assertNull(card.getUser());
+            verify(repositoryCard).save(card);
+        }
+
+        @Test
+        @DisplayName("échoue quand la cible n'existe pas")
+        void testUseCard_targetNotFound() {
+            Card card = cards.get(0);
+            card.setUser(alice);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryUser.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> serviceUser.useCard(alice.getId(), card.getId(), 999L));
+        }
+
+        @Test
+        @DisplayName("échoue quand la carte n'existe pas")
+        void testUseCard_cardNotFound() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> serviceUser.useCard(alice.getId(), 999L, bob.getId()));
         }
     }
 }
