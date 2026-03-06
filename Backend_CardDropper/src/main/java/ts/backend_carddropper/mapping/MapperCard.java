@@ -9,17 +9,16 @@ import ts.backend_carddropper.models.CardDto;
 @Mapper(config = CentralConfig.class)
 public interface MapperCard {
 
-    @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "createdById", source = "createdBy.id")
     @Mapping(target = "targetUserId", source = "targetUser.id")
     CardDto toDto(Card entity);
 
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "owners", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "targetUser", ignore = true)
     Card toEntity(CardDto dto);
 
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "owners", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "targetUser", ignore = true)
     void updateEntity(CardDto dto, @MappingTarget Card entity);

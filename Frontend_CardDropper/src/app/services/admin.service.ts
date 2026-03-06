@@ -1,12 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { PackTemplate, Rarity, User } from '../models';
+import { PackSlot, PackTemplate, Rarity, User } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
 
   private readonly api = inject(ApiService);
+
+  // ====== Pack Slots ======
+
+  getPackSlots(): Observable<PackSlot[]> {
+    return this.api.get<PackSlot[]>('/admin/pack-slots');
+  }
+
+  createPackSlot(slot: PackSlot): Observable<PackSlot> {
+    return this.api.post<PackSlot>('/admin/pack-slots', slot);
+  }
 
   // ====== Pack Templates ======
 

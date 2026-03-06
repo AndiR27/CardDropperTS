@@ -16,15 +16,17 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     // Trouver toutes les cartes par rareté
     List<Card> findByRarity(Rarity rarity);
 
-    // Trouver toutes les cartes du pool (sans owner) par rareté — utilisé pour la fusion
-    List<Card> findByRarityAndUserIsNull(Rarity rarity);
+    // Cartes disponibles dans le pool : non-uniques (toujours disponibles) + uniques sans propriétaire
+    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.owners IS EMPTY)")
+    List<Card> findPoolCardsByRarity(@Param("rarity") Rarity rarity);
 
-    // Trouver les cartes du pool par rareté en excluant celles déjà sélectionnées — utilisé pour la génération de pack
-    List<Card> findByRarityAndUserIsNullAndIdNotIn(Rarity rarity, List<Long> excludedIds);
+    // Cartes du pool en excluant celles déjà sélectionnées — utilisé pour la génération de pack
+    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.owners IS EMPTY) AND c.id NOT IN :excludedIds")
+    List<Card> findPoolCardsByRarityExcluding(@Param("rarity") Rarity rarity, @Param("excludedIds") List<Long> excludedIds);
 
-    // Trouver toutes les cartes possédées par un utilisateur
-    @Query("SELECT c FROM Card c WHERE c.user.id = :userId")
-    List<Card> findAllByUserId(@Param("userId") Long userId);
+    //Trouver toutes les cartes possédées par un utilisateur
+    @Query("SELECT c FROM Card c JOIN c.owners o WHERE o.id = :userId")
+    List<Card> findAllByOwnersId(@Param("userId") Long userId);
 
     // Trouver toutes les cartes créées par un utilisateur
     @Query("SELECT c FROM Card c WHERE c.createdBy.id = :userId")
@@ -37,6 +39,6 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     boolean existsByName(String name);
 
     @Modifying
-    @Query("UPDATE Card c SET c.dropRate = :dropRate WHERE c.rarity = :rarity AND c.user IS NULL")
+    @Query("UPDATE Card c SET c.dropRate = :dropRate WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.owners IS EMPTY)")
     int updateDropRateByRarityForPoolCards(@Param("rarity") Rarity rarity, @Param("dropRate") double dropRate);
 }

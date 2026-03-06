@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ts.backend_carddropper.enums.Rarity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "card")
 @Getter
@@ -41,10 +44,9 @@ public class Card {
     @Column(name = "is_unique", nullable = false)
     private boolean uniqueCard;
 
-    // Propriétaire actuel de la carte (celui qui la possède)
-    @ManyToOne
-    @JoinColumn(name = "owner_id")
-    private User user;
+    // Propriétaires de la carte (relation ManyToMany gérée côté User)
+    @ManyToMany(mappedBy = "cardsOwned")
+    private List<User> owners = new ArrayList<>();
 
     // Créateur de la carte
     @ManyToOne
@@ -56,4 +58,10 @@ public class Card {
     @JoinColumn(name = "target_user_id")
     private User targetUser;
 
+    public void addOwner(User user) {
+        if (!owners.contains(user)) {
+            owners.add(user);
+            user.getCardsOwned().add(this);
+        }
+    }
 }

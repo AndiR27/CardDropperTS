@@ -5,6 +5,6 @@ import java.util.List;
 public record PackTemplateDto(
         Long id,
         String name,
-        List<PackSlotDto> slots
+        List<PackTemplateSlotDto> slots
 ) {
 }

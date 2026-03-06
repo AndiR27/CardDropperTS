@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Card } from '../models';
+import type { User } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
@@ -20,10 +21,6 @@ export class MeService {
 
   getCardsTargeting(): Observable<Card[]> {
     return this.api.get<Card[]>('/me/cards/targeting');
-  }
-
-  createCard(card: Card): Observable<Card> {
-    return this.api.post<Card>('/me/cards', card);
   }
 
   createCardWithImage(card: Card, image: File): Observable<Card> {
@@ -46,6 +43,12 @@ export class MeService {
 
   mergeCards(cardIds: number[]): Observable<Card> {
     return this.api.post<Card>('/me/cards/merge', cardIds);
+  }
+
+  // ====== Joueurs ======
+
+  getAllUsers(): Observable<User[]> {
+    return this.api.get<User[]>('/me/users');
   }
 
   // ====== Packs ======

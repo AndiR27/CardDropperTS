@@ -8,7 +8,6 @@ export interface Card {
   description: string | null;
   dropRate: number;
   uniqueCard: boolean;
-  userId: number | null;
   createdById: number | null;
   targetUserId: number | null;
 }

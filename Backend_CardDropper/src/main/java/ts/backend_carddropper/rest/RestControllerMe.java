@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ts.backend_carddropper.api.MeApi;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.LiveFeedEventDto;
+import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.security.SecurityUtils;
 import ts.backend_carddropper.service.ServiceAuth;
 import ts.backend_carddropper.service.ServiceCard;
@@ -60,24 +61,17 @@ public class RestControllerMe implements MeApi {
 
     @Override
     public ResponseEntity<CardDto> createMyCard(CardDto cardDto) {
-        Long userId = serviceAuth.getCurrentUserId();
-        return ResponseEntity.status(HttpStatus.CREATED).body(serviceUser.createCard(userId, cardDto));
+        // Toute création passe par createMyCardWithImage — cet endpoint n'est plus utilisé
+        throw new UnsupportedOperationException("Use POST /me/cards/with-image to create cards");
     }
 
     @Override
-    public ResponseEntity<CardDto> createMyCardWithImage(CardDto cardDto, MultipartFile image) {
+    public ResponseEntity<CardDto> createMyCardWithImage(CardDto card, MultipartFile image) {
         Long userId = serviceAuth.getCurrentUserId();
         String username = SecurityUtils.getCurrentUsername();
 
-        // Forcer le créateur à l'utilisateur connecté
-        CardDto withCreator = new CardDto(
-                cardDto.id(), cardDto.name(), cardDto.imageUrl(), cardDto.rarity(),
-                cardDto.description(), cardDto.dropRate(), cardDto.uniqueCard(),
-                null, userId, cardDto.targetUserId()
-        );
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(serviceCard.createCardWithImage(withCreator, image, username));
+                .body(serviceCard.createCardWithImage(card, image, userId, username));
     }
 
     @Override
@@ -108,6 +102,16 @@ public class RestControllerMe implements MeApi {
     public ResponseEntity<List<CardDto>> generateMyPack(Long templateId) {
         Long userId = serviceAuth.getCurrentUserId();
         return ResponseEntity.ok(servicePack.generatePack(userId, templateId));
+    }
+
+
+    //==============================
+    //    LISTE JOUEURS
+    //==============================
+
+    @Override
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        return ResponseEntity.ok(serviceUser.findAll());
     }
 
 

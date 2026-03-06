@@ -1,0 +1,291 @@
+<section class="admin-page">
+  <h1 class="cd-page-title">Administration</h1>
+  <p class="cd-page-subtitle">Gestion des packs, utilisateurs et cartes</p>
+
+  <!-- ====== Error banner ====== -->
+  @if (error()) {
+    <div class="admin-page__error">
+      <p>{{ error() }}</p>
+      <button class="admin-page__error-close" (click)="error.set(null)">✕</button>
+    </div>
+  }
+
+  <!-- ====== Tab bar ====== -->
+  <nav class="tabs">
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'packs'"
+            (click)="activeTab.set('packs')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Packs
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'users'"
+            (click)="activeTab.set('users')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+      Users
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'cards'"
+            (click)="activeTab.set('cards')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="18" rx="3"/>
+        <path d="M12 8v8M8 12h8"/>
+      </svg>
+      Cards
+    </button>
+    <button class="tabs__item"
+            [class.tabs__item--active]="activeTab() === 'others'"
+            (click)="activeTab.set('others')">
+      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      Autres
+    </button>
+  </nav>
+
+  <!-- ====== Loading ====== -->
+  @if (loading()) {
+    <div class="admin-page__status">
+      <span class="admin-page__loader"></span>
+      Chargement...
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!--              TAB: PACKS                      -->
+  <!-- ============================================ -->
+  @if (activeTab() === 'packs') {
+    <div class="admin-page__content">
+
+      <!-- ── SLOTS section ── -->
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <h2 class="admin-section__title">Slots réutilisables</h2>
+          <span class="admin-section__count">{{ packSlots().length }}</span>
+        </div>
+
+        <div class="slot-grid">
+          @for (slot of packSlots(); track slot.id) {
+            <div class="slot-card" [attr.title]="slot.rarityWeights ? slotWeightsSummary(slot) : null">
+              <span class="slot-card__name">{{ slot.name }}</span>
+              <span class="slot-card__type" [class]="'slot-card__type--' + (slot.fixedRarity ? (slot.fixedRarity | lowercase) : 'weighted')">
+                @if (slot.fixedRarity) {
+                  {{ slot.fixedRarity }}
+                } @else {
+                  Weighted
+                }
+              </span>
+            </div>
+          } @empty {
+            <p class="cd-text-muted">Aucun slot défini.</p>
+          }
+        </div>
+
+        <!-- New slot form -->
+        <div class="admin-form">
+          <h3 class="admin-form__title">Ajouter un slot</h3>
+          <div class="admin-form__row">
+            <input type="text" class="admin-form__input" placeholder="Nom du slot" [(ngModel)]="newSlotName"/>
+            <select class="admin-form__input admin-form__input--select" [(ngModel)]="newSlotFixedRarity">
+              <option [ngValue]="null">Weighted (poids)</option>
+              @for (r of rarities; track r) {
+                <option [ngValue]="r">{{ r }}</option>
+              }
+            </select>
+            <button class="cd-btn--gold" [disabled]="!newSlotName.trim()" (click)="createSlot()">Créer</button>
+          </div>
+          @if (!newSlotFixedRarity) {
+            <div class="weight-row">
+              @for (r of rarities; track r) {
+                <label class="weight-row__item">
+                  <span class="weight-row__label" [class]="'weight-row__label--' + (r | lowercase)">{{ r }}</span>
+                  <input type="number" class="weight-row__input" min="0" max="100" [(ngModel)]="newSlotWeights[r]"/>
+                  <span class="weight-row__pct">%</span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── TEMPLATES section ── -->
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <h2 class="admin-section__title">Pack Templates</h2>
+          <span class="admin-section__count">{{ packTemplates().length }}</span>
+        </div>
+
+        <div class="template-list">
+          @for (tpl of packTemplates(); track tpl.id) {
+            <div class="template-card" [class.template-card--expanded]="expandedTemplateId() === tpl.id">
+              <div class="template-card__header" (click)="toggleTemplate(tpl.id!)">
+                <div class="template-card__info">
+                  <span class="template-card__name">{{ tpl.name }}</span>
+                  <span class="template-card__meta">{{ tpl.slots.length }} slot(s) · {{ templateTotalCards()(tpl) }} carte(s)</span>
+                </div>
+                <div class="template-card__actions">
+                  <button class="template-card__delete" (click)="deleteTemplate(tpl.id!); $event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
+                  <svg class="template-card__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+              </div>
+
+              @if (expandedTemplateId() === tpl.id) {
+                <div class="template-card__body">
+                  @for (s of tpl.slots; track s.id) {
+                    <div class="template-slot-row">
+                      <span class="template-slot-row__name">{{ s.slotName }}</span>
+                      <span class="template-slot-row__count">x{{ s.count }}</span>
+                    </div>
+                  } @empty {
+                    <p class="cd-text-muted">Aucun slot dans ce template.</p>
+                  }
+                </div>
+              }
+            </div>
+          } @empty {
+            <p class="cd-text-muted">Aucun template défini.</p>
+          }
+        </div>
+
+        <!-- New template form -->
+        <div class="admin-form">
+          <h3 class="admin-form__title">Créer un template</h3>
+          <div class="admin-form__row">
+            <input type="text" class="admin-form__input" placeholder="Nom du template" [(ngModel)]="newTemplateName"/>
+          </div>
+
+          @for (row of templateSlotRows; track $index; let i = $index) {
+            <div class="admin-form__row">
+              <select class="admin-form__input admin-form__input--select" [(ngModel)]="row.slotId">
+                <option [ngValue]="null">-- Choisir un slot --</option>
+                @for (slot of packSlots(); track slot.id) {
+                  <option [ngValue]="slot.id">{{ slot.name }}</option>
+                }
+              </select>
+              <input type="number" class="admin-form__input admin-form__input--count" min="1" [(ngModel)]="row.count" placeholder="x"/>
+              <button class="admin-form__remove" (click)="removeTemplateSlotRow(i)">✕</button>
+            </div>
+          }
+
+          <div class="admin-form__actions">
+            <button class="cd-btn--outline" (click)="addTemplateSlotRow()">+ Ajouter un slot</button>
+            <button class="cd-btn--gold" [disabled]="!newTemplateName.trim() || templateSlotRows.length === 0" (click)="createTemplate()">Créer Template</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!--              TAB: USERS                      -->
+  <!-- ============================================ -->
+  @if (activeTab() === 'users') {
+    <div class="admin-page__content">
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <h2 class="admin-section__title">Utilisateurs</h2>
+          <span class="admin-section__count">{{ users().length }}</span>
+        </div>
+
+        <div class="user-list">
+          @for (user of users(); track user.id) {
+            <div class="user-row">
+              <span class="user-row__avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+              <div class="user-row__info">
+                <span class="user-row__name">{{ user.username }}</span>
+                <span class="user-row__email">{{ user.email }}</span>
+              </div>
+              <div class="user-row__stats">
+                <span class="user-row__stat">{{ user.cardsOwned.length }} possédées</span>
+                <span class="user-row__stat">{{ user.cardsCreated.length }} créées</span>
+              </div>
+            </div>
+          } @empty {
+            <p class="cd-text-muted">Aucun utilisateur.</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!--              TAB: CARDS                      -->
+  <!-- ============================================ -->
+  @if (activeTab() === 'cards') {
+    <div class="admin-page__content">
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <h2 class="admin-section__title">Cartes</h2>
+          <span class="admin-section__count">{{ cards().length }}</span>
+        </div>
+
+        <!-- Rarity breakdown -->
+        <div class="rarity-grid">
+          @for (r of rarities; track r) {
+            <div class="rarity-card rarity-card--{{ r | lowercase }}">
+              <span class="rarity-card__count">{{ cardCountByRarity(r) }}</span>
+              <span class="rarity-card__label">{{ r }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Card list -->
+        <div class="card-list">
+          @for (card of cards(); track card.id) {
+            <div class="card-row">
+              <div class="card-row__img-wrap">
+                @if (getImageUrl(card); as imgUrl) {
+                  <img [src]="imgUrl" [alt]="card.name" class="card-row__img"/>
+                } @else {
+                  <div class="card-row__img-placeholder">?</div>
+                }
+              </div>
+              <div class="card-row__info">
+                <span class="card-row__name">{{ card.name }}</span>
+                <span class="card-row__rarity card-row__rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
+              </div>
+              <div class="card-row__meta">
+                @if (card.uniqueCard) {
+                  <span class="card-row__unique">Unique</span>
+                }
+                <span class="card-row__drop">Drop: {{ card.dropRate }}</span>
+              </div>
+            </div>
+          } @empty {
+            <p class="cd-text-muted">Aucune carte.</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!--              TAB: OTHERS                     -->
+  <!-- ============================================ -->
+  @if (activeTab() === 'others') {
+    <div class="admin-page__content">
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <h2 class="admin-section__title">Autres fonctionnalités</h2>
+        </div>
+        <div class="admin-page__placeholder">
+          <span class="admin-page__placeholder-icon">&#x2699;</span>
+          <p>D'autres outils d'administration seront disponibles ici.</p>
+          <p class="cd-text-muted">Drop rates, événements, configuration...</p>
+        </div>
+      </div>
+    </div>
+  }
+</section>

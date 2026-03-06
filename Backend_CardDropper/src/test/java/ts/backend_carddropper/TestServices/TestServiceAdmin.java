@@ -14,17 +14,17 @@ import ts.backend_carddropper.entity.PackTemplate;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.helper.TestDataHelper;
-import ts.backend_carddropper.models.PackSlotDto;
 import ts.backend_carddropper.models.PackTemplateDto;
+import ts.backend_carddropper.models.PackTemplateSlotDto;
 import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.repository.RepositoryCard;
+import ts.backend_carddropper.repository.RepositoryPackSlot;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServiceAdmin;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,13 +50,18 @@ class TestServiceAdmin {
     @MockitoBean
     private RepositoryUser repositoryUser;
 
+    @MockitoBean
+    private RepositoryPackSlot repositoryPackSlot;
+
     private PackTemplate template;
     private List<User> users;
+    private List<PackSlot> packSlots;
 
     @BeforeEach
     void setUp() {
         template = testDataHelper.createPackTemplate();
         users = testDataHelper.createUsers();
+        packSlots = testDataHelper.createPackSlots();
     }
 
 
@@ -129,9 +134,12 @@ class TestServiceAdmin {
                 t.setId(10L);
                 return t;
             });
+            // Mock PackSlot lookups
+            when(repositoryPackSlot.findById(packSlots.get(2).getId())).thenReturn(Optional.of(packSlots.get(2)));
+            when(repositoryPackSlot.findById(packSlots.get(0).getId())).thenReturn(Optional.of(packSlots.get(0)));
 
-            PackSlotDto slot1 = new PackSlotDto(null, Rarity.RARE, null);
-            PackSlotDto slot2 = new PackSlotDto(null, null, Map.of("COMMON", 70.0, "RARE", 25.0, "EPIC", 4.0, "LEGENDARY", 1.0));
+            PackTemplateSlotDto slot1 = new PackTemplateSlotDto(null, packSlots.get(2).getId(), null, 1);
+            PackTemplateSlotDto slot2 = new PackTemplateSlotDto(null, packSlots.get(0).getId(), null, 2);
             PackTemplateDto dto = new PackTemplateDto(null, "New Pack", List.of(slot1, slot2));
 
             PackTemplateDto result = serviceAdmin.createPackTemplate(dto);
@@ -171,7 +179,6 @@ class TestServiceAdmin {
         @Test
         @DisplayName("updatePackTemplate replaces slots")
         void testUpdate_replacesSlots() {
-            // Start with the 3-slot template from helper
             PackTemplate mutableTemplate = new PackTemplate();
             mutableTemplate.setId(1L);
             mutableTemplate.setName("Standard Pack");
@@ -179,9 +186,9 @@ class TestServiceAdmin {
 
             when(repositoryPackTemplate.findById(1L)).thenReturn(Optional.of(mutableTemplate));
             when(repositoryPackTemplate.save(any(PackTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(repositoryPackSlot.findById(packSlots.get(2).getId())).thenReturn(Optional.of(packSlots.get(2)));
 
-            // Update with only 1 slot
-            PackSlotDto newSlot = new PackSlotDto(null, Rarity.LEGENDARY, null);
+            PackTemplateSlotDto newSlot = new PackTemplateSlotDto(null, packSlots.get(2).getId(), null, 1);
             PackTemplateDto dto = new PackTemplateDto(null, "Updated Pack", List.of(newSlot));
 
             Optional<PackTemplateDto> result = serviceAdmin.updatePackTemplate(1L, dto);

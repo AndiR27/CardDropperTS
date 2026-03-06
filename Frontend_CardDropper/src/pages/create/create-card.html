@@ -2,6 +2,14 @@
 
   <!-- ====== Choice screen ====== -->
   <section class="choose-page">
+
+    @if (successMessage()) {
+      <div class="success-banner">
+        <span>{{ successMessage() }}</span>
+        <button class="success-banner__close" (click)="successMessage.set(null)">&times;</button>
+      </div>
+    }
+
     <h1 class="cd-page-title">La Forge</h1>
     <p class="cd-page-subtitle">Choisis comment forger ta carte</p>
 

@@ -41,8 +41,10 @@ public class RestControllerCard implements CardApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardDto> createCard(CardDto cardDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(serviceCard.createCard(cardDto));
+        // Création admin sans image — peu utilisé, gardé pour compatibilité API
+        throw new UnsupportedOperationException("Use POST /me/cards/with-image to create cards");
     }
 
     @Override

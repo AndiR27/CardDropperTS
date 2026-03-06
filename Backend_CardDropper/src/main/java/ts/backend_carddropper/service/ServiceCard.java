@@ -84,17 +84,6 @@ public class ServiceCard {
     }
 
     /**
-     * Trouver toutes les cartes possédées par un utilisateur
-     */
-    public List<CardDto> findAllByUserId(Long userId) {
-        findUserOrThrow(userId);
-        return repositoryCard.findAllByUserId(userId)
-                .stream()
-                .map(mapperCard::toDto)
-                .toList();
-    }
-
-    /**
      * Trouver toutes les cartes créées par un utilisateur
      */
     public List<CardDto> findAllByCreatedById(Long userId) {
@@ -117,23 +106,7 @@ public class ServiceCard {
     }
 
     /**
-     * Créer une carte.
-     * Règle : si un targetUser est fourni, il doit être le même que le créateur.
-     */
-    @Transactional
-    public CardDto createCard(CardDto cardDto) {
-        if (cardDto.targetUserId() != null && !cardDto.targetUserId().equals(cardDto.createdById())) {
-            throw new IllegalArgumentException("targetUser must be the card creator itself");
-        }
-        Card card = mapperCard.toEntity(cardDto);
-        applyUserRelations(cardDto, card);
-        Card saved = repositoryCard.save(card);
-        log.info("Created card '{}' (rarity={}) with id: {}", saved.getName(), saved.getRarity(), saved.getId());
-        return mapperCard.toDto(saved);
-    }
-
-    /**
-     * Mettre à jour une carte
+     * Mettre à jour une carte (admin)
      */
     @Transactional
     public Optional<CardDto> update(Long id, CardDto cardDto) {
@@ -150,20 +123,7 @@ public class ServiceCard {
     }
 
     /**
-     * Transférer la propriété d'une carte à un autre utilisateur
-     */
-    @Transactional
-    public CardDto transferOwnership(Long cardId, Long newOwnerId) {
-        Card card = repositoryCard.findById(cardId)
-                .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + cardId));
-        card.setUser(findUserOrThrow(newOwnerId));
-        Card updated = repositoryCard.save(card);
-        log.info("Transferred card id={} to user id={}", cardId, newOwnerId);
-        return mapperCard.toDto(updated);
-    }
-
-    /**
-     * Supprimer une carte par son id
+     * Supprimer une carte par son id (admin)
      */
     @Transactional
     public void delete(Long id) {
@@ -181,16 +141,21 @@ public class ServiceCard {
 
     /**
      * Crée une carte avec une image uploadée.
+     * Le créateur est défini par creatorId, la carte entre dans le pool (pas de propriétaire).
      * L'image est stockée dans {baseDir}/{username}/{cardId}_{sanitizedFilename}.
-     * Le champ imageUrl de la carte contient uniquement le nom du fichier.
      */
     @Transactional
-    public CardDto createCardWithImage(CardDto cardDto, MultipartFile image, String username) {
+    public CardDto createCardWithImage(CardDto cardDto, MultipartFile image, Long creatorId, String username) {
         validateImage(image);
 
-        // Sauvegarder la carte d'abord pour obtenir l'id généré
+        User creator = findUserOrThrow(creatorId);
+
+        // Construire l'entité et appliquer les relations
         Card card = mapperCard.toEntity(cardDto);
-        applyUserRelations(cardDto, card);
+        card.setCreatedBy(creator);
+        if (cardDto.targetUserId() != null) {
+            card.setTargetUser(findUserOrThrow(cardDto.targetUserId()));
+        }
         Card saved = repositoryCard.save(card);
 
         // Construire le nom de fichier et stocker l'image
@@ -238,11 +203,10 @@ public class ServiceCard {
     }
 
     /**
-     * Applique les relations User (owner, creator, target) sur une entité Card
+     * Applique les relations User (creator, target) sur une entité Card
      * à partir des IDs portés par le DTO.
      */
     private void applyUserRelations(CardDto dto, Card card) {
-        if (dto.userId() != null)       card.setUser(findUserOrThrow(dto.userId()));
         if (dto.createdById() != null)  card.setCreatedBy(findUserOrThrow(dto.createdById()));
         if (dto.targetUserId() != null) card.setTargetUser(findUserOrThrow(dto.targetUserId()));
     }

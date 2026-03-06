@@ -34,7 +34,7 @@ export class CardService {
 
   createWithImage(card: Partial<Card>, image: Blob, filename: string): Observable<Card> {
     const formData = new FormData();
-    formData.append('cardDto', new Blob([JSON.stringify(card)], { type: 'application/json' }));
+    formData.append('card', new Blob([JSON.stringify(card)], { type: 'application/json' }));
     formData.append('image', image, filename);
     return this.api.postMultipart<Card>('/me/cards/with-image', formData);
   }

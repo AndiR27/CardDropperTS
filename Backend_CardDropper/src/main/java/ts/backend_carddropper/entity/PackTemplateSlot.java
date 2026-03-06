@@ -6,25 +6,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "pack_template")
+@Table(name = "pack_template_slot")
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class PackTemplate {
+public class PackTemplateSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "pack_template_id", nullable = false)
+    private PackTemplate packTemplate;
 
-    @OneToMany(mappedBy = "packTemplate", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PackTemplateSlot> slots = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "pack_slot_id", nullable = false)
+    private PackSlot packSlot;
+
+    @Column(nullable = false)
+    private int count = 1;
 }

@@ -344,6 +344,29 @@ paths:
           description: Erreur interne.
 
   # ========================================
+  #   ME — LISTE JOUEURS (pour sélection de cible)
+  # ========================================
+  /me/users:
+    get:
+      tags: [ me ]
+      summary: Liste des joueurs (id + username uniquement)
+      description: |
+        Retourne tous les utilisateurs avec seulement id et username.
+        Utilisé pour la sélection de cible lors de l'utilisation d'une carte.
+      operationId: getAllUsers
+      responses:
+        '200':
+          description: Liste des joueurs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '500':
+          description: Erreur interne.
+
+  # ========================================
   #   USERS (admin CRUD + lookup)
   # ========================================
   /users:
@@ -606,6 +629,48 @@ paths:
           description: Erreur interne.
 
   # ========================================
+  #   ADMIN — PACK SLOTS
+  # ========================================
+  /admin/pack-slots:
+    get:
+      tags: [ admin ]
+      summary: Liste des pack slots réutilisables
+      operationId: getPackSlots
+      responses:
+        '200':
+          description: Liste de slots retournée.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackSlotDto'
+        '500':
+          description: Erreur interne.
+
+    post:
+      tags: [ admin ]
+      summary: Créer un pack slot réutilisable
+      operationId: createPackSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackSlotDto'
+      responses:
+        '201':
+          description: Slot créé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackSlotDto'
+        '400':
+          description: Données invalides.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
   #   ADMIN — PACK TEMPLATES
   # ========================================
   /admin/pack-templates:
@@ -860,12 +925,6 @@ components:
         uniqueCard:
           type: boolean
           example: false
-        userId:
-          type: integer
-          format: int64
-          nullable: true
-          description: Propriétaire actuel (null = dans le pool).
-          example: 1
         createdById:
           type: integer
           format: int64
@@ -887,7 +946,6 @@ components:
         description: "Une carte puissante."
         dropRate: 0.08
         uniqueCard: false
-        userId: null
         createdById: 1
         targetUserId: null
 
@@ -946,18 +1004,42 @@ components:
         slots:
           type: array
           items:
-            $ref: '#/components/schemas/PackSlotDto'
+            $ref: '#/components/schemas/PackTemplateSlotDto'
       required: [ name ]
       example:
         id: 5
         name: "Standard Pack"
         slots:
-          - fixedRarity: "RARE"
-          - rarityWeights:
-              COMMON: 70.0
-              RARE: 25.0
-              EPIC: 4.0
-              LEGENDARY: 1.0
+          - slotId: 5
+            slotName: "randomClassic"
+            count: 2
+          - slotId: 2
+            slotName: "fixedRare"
+            count: 1
+
+    PackTemplateSlotDto:
+      type: object
+      description: Association entre un template et un slot réutilisable, avec un nombre de tirages.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        slotId:
+          type: integer
+          format: int64
+          description: ID du PackSlot référencé.
+          example: 5
+        slotName:
+          type: string
+          description: Nom du PackSlot (lecture seule).
+          example: "randomClassic"
+        count:
+          type: integer
+          format: int32
+          description: Nombre de cartes tirées pour ce slot.
+          example: 2
+      required: [ slotId, count ]
 
     LiveFeedEventDto:
       type: object
@@ -987,12 +1069,16 @@ components:
 
     PackSlotDto:
       type: object
-      description: Slot d'un pack template (rareté fixe ou pondérée).
+      description: Slot réutilisable (rareté fixe ou pondérée).
       properties:
         id:
           type: integer
           format: int64
           example: 1
+        name:
+          type: string
+          description: Nom unique du slot.
+          example: "randomClassic"
         fixedRarity:
           $ref: '#/components/schemas/Rarity'
         rarityWeights:

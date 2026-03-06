@@ -21,6 +21,7 @@ import { AuthService } from '../../core/auth/auth.service';
             <a routerLink="/my-cards" routerLinkActive="header__link--active" class="header__link">Mon Grimoire</a>
             <a routerLink="/create" routerLinkActive="header__link--active" class="header__link">Forge</a>
             <a routerLink="/packs" routerLinkActive="header__link--active" class="header__link">Packs</a>
+            <a routerLink="/admin" routerLinkActive="header__link--active" class="header__link">Admin</a>
           }
         </nav>
 
