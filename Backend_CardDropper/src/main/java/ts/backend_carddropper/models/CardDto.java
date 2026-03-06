@@ -10,7 +10,6 @@ public record CardDto(
         String description,
         double dropRate,
         boolean uniqueCard,
-        Long userId,
         Long createdById,
         Long targetUserId
 ) {

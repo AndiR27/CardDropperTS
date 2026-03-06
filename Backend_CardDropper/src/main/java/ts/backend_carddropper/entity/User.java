@@ -1,17 +1,12 @@
 package ts.backend_carddropper.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -35,9 +30,14 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    //Liste des cartes possédées par l'utilisateur
-    @OneToMany(mappedBy = "user")
-    private List<Card> cardsOwned;
+    //Liste des cartes possédées par l'utilisateur (ManyToMany — join table user_cards)
+    @ManyToMany
+    @JoinTable(
+            name = "user_cards",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "card_id")
+    )
+    private List<Card> cardsOwned = new ArrayList<>();
 
     //Liste des cartes créées par l'utilisateur
     @OneToMany(mappedBy = "createdBy")
@@ -46,9 +46,4 @@ public class User {
     //Liste des cartes qui ciblent cet utilisateur
     @OneToMany(mappedBy = "targetUser")
     private List<Card> cardsTargeting;
-
-
-    public void addCardsOwned(List<Card> cards) {
-        this.cardsOwned.addAll(cards);
-    }
 }

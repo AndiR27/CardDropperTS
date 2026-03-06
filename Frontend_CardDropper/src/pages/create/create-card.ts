@@ -1,6 +1,5 @@
 import { Component, computed, HostListener, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { CardPreview, CardType, CardClass } from './card-preview/card-preview';
 import { AddCard } from './add-card/add-card';
 import { AuthService } from '../../app/core/auth/auth.service';
@@ -18,7 +17,6 @@ export class CreateCardPage {
 
   private readonly auth = inject(AuthService);
   private readonly cardService = inject(CardService);
-  private readonly router = inject(Router);
 
   // ── Mode ──
   mode = signal<'choose' | 'add' | 'build'>('choose');
@@ -39,6 +37,7 @@ export class CreateCardPage {
   submitting = signal(false);
   renderedImageBlob = signal<Blob | null>(null);
   renderedImageUrl = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
 
   // ── Form state (signals for live preview) ──
   cardType     = signal<CardType>('spell');
@@ -93,6 +92,25 @@ export class CreateCardPage {
     }
   }
 
+  // ── Réinitialise le formulaire après création réussie ──
+  private resetForm(): void {
+    const prevUrl = this.renderedImageUrl();
+    if (prevUrl) URL.revokeObjectURL(prevUrl);
+
+    this.mode.set('choose');
+    this.step.set('edit');
+    this.name.set('');
+    this.description.set('');
+    this.rarity.set(Rarity.COMMON);
+    this.cardType.set('spell');
+    this.cardClass.set('neutral');
+    this.cardImageUrl.set(null);
+    this.targeting.set(false);
+    this.uploadedFile = null;
+    this.renderedImageBlob.set(null);
+    this.renderedImageUrl.set(null);
+  }
+
   // ── Create flow ──
   async onCreateClick(): Promise<void> {
     const preview = this.cardPreview();
@@ -140,7 +158,8 @@ export class CreateCardPage {
     this.cardService.createWithImage(card, blob, filename).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.router.navigate(['/my-cards']);
+        this.resetForm();
+        this.successMessage.set(`La carte "${card.name}" a été forgée avec succès !`);
       },
       error: (err) => {
         console.error('Failed to create card:', err);

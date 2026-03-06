@@ -6,6 +6,7 @@ import java.util.Map;
 
 public record PackSlotDto(
         Long id,
+        String name,
         Rarity fixedRarity,
         Map<String, Double> rarityWeights
 ) {

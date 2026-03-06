@@ -1,7 +1,7 @@
-import { PackSlot } from './pack-slot.model';
+import { PackTemplateSlot } from './pack-template-slot.model';
 
 export interface PackTemplate {
   id: number | null;
   name: string;
-  slots: PackSlot[];
+  slots: PackTemplateSlot[];
 }

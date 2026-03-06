@@ -9,14 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import ts.backend_carddropper.entity.Card;
-import ts.backend_carddropper.entity.PackSlot;
-import ts.backend_carddropper.entity.PackTemplate;
-import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.*;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.helper.TestDataHelper;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.repository.RepositoryCard;
+import ts.backend_carddropper.repository.RepositoryPackSlot;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServicePack;
@@ -46,7 +44,11 @@ class TestServicePack {
     @MockitoBean
     private RepositoryUser repositoryUser;
 
+    @MockitoBean
+    private RepositoryPackSlot repositoryPackSlot;
+
     private User alice;
+    private User bob;
     private List<Card> cards;
     private PackTemplate packTemplate;
 
@@ -54,18 +56,16 @@ class TestServicePack {
     void setUp() {
         List<User> users = testDataHelper.createUsers();
         alice = users.getFirst();
+        bob = users.get(1);
         cards = testDataHelper.createCards(alice);
         packTemplate = testDataHelper.createPackTemplate();
     }
 
-    /**
-     * Mocks all pool lookups (both with and without exclusions) for every rarity.
-     */
     private void mockAllPools() {
         for (Rarity rarity : Rarity.values()) {
             List<Card> pool = cards.stream().filter(c -> c.getRarity() == rarity).toList();
-            when(repositoryCard.findByRarityAndUserIsNull(rarity)).thenReturn(pool);
-            when(repositoryCard.findByRarityAndUserIsNullAndIdNotIn(eq(rarity), anyList()))
+            when(repositoryCard.findPoolCardsByRarity(rarity)).thenReturn(pool);
+            when(repositoryCard.findPoolCardsByRarityExcluding(eq(rarity), anyList()))
                     .thenAnswer(inv -> {
                         List<Long> excluded = inv.getArgument(1);
                         return pool.stream().filter(c -> !excluded.contains(c.getId())).toList();
@@ -73,16 +73,30 @@ class TestServicePack {
         }
     }
 
-    /**
-     * Mocks the common infrastructure needed for a full generatePack call (saveAll, findAllById, user lookup).
-     */
     private void mockPackInfrastructure() {
-        when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
         when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
             List<Long> ids = inv.getArgument(0);
             return cards.stream().filter(c -> ids.contains(c.getId())).toList();
         });
         when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+    }
+
+    /**
+     * Helper to create a single-slot template using PackTemplateSlot.
+     */
+    private PackTemplate createSingleSlotTemplate(Long templateId, String name, PackSlot slot, int count) {
+        PackTemplate template = new PackTemplate();
+        template.setId(templateId);
+        template.setName(name);
+
+        PackTemplateSlot ts = new PackTemplateSlot();
+        ts.setId(templateId);
+        ts.setPackTemplate(template);
+        ts.setPackSlot(slot);
+        ts.setCount(count);
+        template.setSlots(List.of(ts));
+
+        return template;
     }
 
 
@@ -116,10 +130,7 @@ class TestServicePack {
 
             List<CardDto> result = servicePack.generatePack(alice.getId(), packTemplate.getId());
 
-            // After openPack, all returned cards should have userId = alice
-            for (CardDto dto : result) {
-                assertEquals(alice.getId(), dto.userId());
-            }
+            assertEquals(3, alice.getCardsOwned().size());
         }
 
         @Test
@@ -134,20 +145,15 @@ class TestServicePack {
         @Test
         @DisplayName("throws when pool is empty for a required rarity")
         void testGeneratePack_emptyPool() {
-            // Template with a single fixed LENGENDARY slot
-            PackTemplate legendaryTemplate = new PackTemplate();
-            legendaryTemplate.setId(10L);
-            legendaryTemplate.setName("Legendary Only");
+            PackSlot legendarySlot = new PackSlot();
+            legendarySlot.setId(10L);
+            legendarySlot.setName("fixedLegendary");
+            legendarySlot.setFixedRarity(Rarity.LEGENDARY);
 
-            PackSlot slot = new PackSlot();
-            slot.setId(10L);
-            slot.setPackTemplate(legendaryTemplate);
-            slot.setFixedRarity(Rarity.LEGENDARY);
-            legendaryTemplate.setSlots(List.of(slot));
+            PackTemplate legendaryTemplate = createSingleSlotTemplate(10L, "Legendary Only", legendarySlot, 1);
 
             when(repositoryPackTemplate.findById(legendaryTemplate.getId())).thenReturn(Optional.of(legendaryTemplate));
-            // Empty pool for LEGENDARY
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.LEGENDARY)).thenReturn(Collections.emptyList());
+            when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(Collections.emptyList());
 
             assertThrows(IllegalStateException.class,
                     () -> servicePack.generatePack(alice.getId(), legendaryTemplate.getId()));
@@ -156,114 +162,107 @@ class TestServicePack {
 
 
     // ========================================
-    //         DROP RATE TESTS
+    //     OWNER-BASED WEIGHTING TESTS
     // ========================================
 
     @Nested
-    @DisplayName("Drop rate mechanics")
-    class DropRateTests {
+    @DisplayName("Owner-based weighting")
+    class WeightingTests {
 
         @Test
-        @DisplayName("non-unique cards get their dropRate reduced after being picked")
-        void testDropRateReduced_nonUnique() {
-            // Single-slot template to control exactly which card is picked
-            PackTemplate singleSlot = new PackTemplate();
-            singleSlot.setId(20L);
-            singleSlot.setName("Single Slot");
+        @DisplayName("cards with fewer owners are more likely to be picked")
+        void testOwnerWeighting_favorsLessOwned() {
+            Card lessOwned = new Card();
+            lessOwned.setId(100L);
+            lessOwned.setName("less_owned");
+            lessOwned.setRarity(Rarity.COMMON);
+            lessOwned.setDropRate(1.0);
+            lessOwned.setUniqueCard(false);
+            lessOwned.setCreatedBy(alice);
 
-            PackSlot slot = new PackSlot();
-            slot.setId(20L);
-            slot.setPackTemplate(singleSlot);
-            slot.setFixedRarity(Rarity.COMMON);
-            singleSlot.setSlots(List.of(slot));
+            Card moreOwned = new Card();
+            moreOwned.setId(101L);
+            moreOwned.setName("more_owned");
+            moreOwned.setRarity(Rarity.COMMON);
+            moreOwned.setDropRate(1.0);
+            moreOwned.setUniqueCard(false);
+            moreOwned.setCreatedBy(alice);
+            for (int i = 0; i < 10; i++) {
+                User owner = new User();
+                owner.setId(100L + i);
+                owner.setUsername("user" + i);
+                owner.setCardsOwned(new ArrayList<>());
+                moreOwned.addOwner(owner);
+            }
 
-            // Single card in pool — non-unique, dropRate 1.0
-            Card poolCard = new Card();
-            poolCard.setId(50L);
-            poolCard.setName("common_test");
-            poolCard.setRarity(Rarity.COMMON);
-            poolCard.setDropRate(1.0);
-            poolCard.setUniqueCard(false);
-            poolCard.setCreatedBy(alice);
+            PackSlot commonSlot = new PackSlot();
+            commonSlot.setId(30L);
+            commonSlot.setName("fixedCommon");
+            commonSlot.setFixedRarity(Rarity.COMMON);
 
-            double originalDropRate = poolCard.getDropRate();
+            PackTemplate singleSlot = createSingleSlotTemplate(30L, "Weighting Test", commonSlot, 1);
 
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.COMMON)).thenReturn(List.of(poolCard));
-            when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
-            when(repositoryCard.findAllById(anyList())).thenReturn(List.of(poolCard));
+            when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(lessOwned, moreOwned));
+            when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
+                List<Long> ids = inv.getArgument(0);
+                return List.of(lessOwned, moreOwned).stream()
+                        .filter(c -> ids.contains(c.getId())).toList();
+            });
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
-            servicePack.generatePack(alice.getId(), singleSlot.getId());
+            int lessOwnedCount = 0;
+            int iterations = 1000;
+            for (int i = 0; i < iterations; i++) {
+                alice.setCardsOwned(new ArrayList<>());
+                List<CardDto> result = servicePack.generatePack(alice.getId(), singleSlot.getId());
+                if (result.getFirst().id().equals(lessOwned.getId())) {
+                    lessOwnedCount++;
+                }
+            }
 
-            // dropRate should have been reduced: 1.0 * (1 - 0.05) = 0.95
-            assertTrue(poolCard.getDropRate() < originalDropRate);
-            assertEquals(0.95, poolCard.getDropRate(), 0.001);
+            double lessOwnedRatio = (double) lessOwnedCount / iterations;
+            assertTrue(lessOwnedRatio > 0.80,
+                    "Card with 0 owners should be picked >80% of the time, was " + lessOwnedRatio);
+            assertTrue(lessOwnedRatio < 0.99,
+                    "Card with 10 owners should still be picked sometimes, ratio was " + lessOwnedRatio);
         }
 
         @Test
-        @DisplayName("unique cards keep their dropRate unchanged")
-        void testDropRateUnchanged_unique() {
-            PackTemplate singleSlot = new PackTemplate();
-            singleSlot.setId(21L);
-            singleSlot.setName("Single Unique");
+        @DisplayName("cards with equal owner count have equal probability")
+        void testOwnerWeighting_equalOwners() {
+            Card card1 = cards.get(0);
+            Card card2 = cards.get(1);
 
-            PackSlot slot = new PackSlot();
-            slot.setId(21L);
-            slot.setPackTemplate(singleSlot);
-            slot.setFixedRarity(Rarity.RARE);
-            singleSlot.setSlots(List.of(slot));
+            PackSlot commonSlot = new PackSlot();
+            commonSlot.setId(31L);
+            commonSlot.setName("fixedCommonEqual");
+            commonSlot.setFixedRarity(Rarity.COMMON);
 
-            Card uniqueCard = new Card();
-            uniqueCard.setId(51L);
-            uniqueCard.setName("rare_unique");
-            uniqueCard.setRarity(Rarity.RARE);
-            uniqueCard.setDropRate(0.5);
-            uniqueCard.setUniqueCard(true);
-            uniqueCard.setCreatedBy(alice);
+            PackTemplate singleSlot = createSingleSlotTemplate(31L, "Equal Test", commonSlot, 1);
 
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.RARE)).thenReturn(List.of(uniqueCard));
-            when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
-            when(repositoryCard.findAllById(anyList())).thenReturn(List.of(uniqueCard));
+            when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(card1, card2));
+            when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
+                List<Long> ids = inv.getArgument(0);
+                return List.of(card1, card2).stream()
+                        .filter(c -> ids.contains(c.getId())).toList();
+            });
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
-            servicePack.generatePack(alice.getId(), singleSlot.getId());
+            int card1Count = 0;
+            int iterations = 1000;
+            for (int i = 0; i < iterations; i++) {
+                alice.setCardsOwned(new ArrayList<>());
+                List<CardDto> result = servicePack.generatePack(alice.getId(), singleSlot.getId());
+                if (result.getFirst().id().equals(card1.getId())) {
+                    card1Count++;
+                }
+            }
 
-            assertEquals(0.5, uniqueCard.getDropRate(), 0.001);
-        }
-
-        @Test
-        @DisplayName("dropRate never goes below floor (0.01)")
-        void testDropRateFloor() {
-            PackTemplate singleSlot = new PackTemplate();
-            singleSlot.setId(22L);
-            singleSlot.setName("Floor Test");
-
-            PackSlot slot = new PackSlot();
-            slot.setId(22L);
-            slot.setPackTemplate(singleSlot);
-            slot.setFixedRarity(Rarity.COMMON);
-            singleSlot.setSlots(List.of(slot));
-
-            Card almostZero = new Card();
-            almostZero.setId(52L);
-            almostZero.setName("almost_zero");
-            almostZero.setRarity(Rarity.COMMON);
-            almostZero.setDropRate(0.005); // below floor after reduction
-            almostZero.setUniqueCard(false);
-            almostZero.setCreatedBy(alice);
-
-            when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.COMMON)).thenReturn(List.of(almostZero));
-            when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
-            when(repositoryCard.findAllById(anyList())).thenReturn(List.of(almostZero));
-            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-
-            servicePack.generatePack(alice.getId(), singleSlot.getId());
-
-            // Max(0.01, 0.005 * 0.95) = Max(0.01, 0.00475) = 0.01
-            assertEquals(0.01, almostZero.getDropRate(), 0.001);
+            double ratio = (double) card1Count / iterations;
+            assertTrue(ratio > 0.35 && ratio < 0.65,
+                    "Two cards with equal owners should be picked roughly equally, ratio was " + ratio);
         }
     }
 
@@ -279,21 +278,17 @@ class TestServicePack {
         @Test
         @DisplayName("fixed rarity slot always picks from that rarity pool")
         void testFixedRaritySlot() {
-            PackTemplate fixedTemplate = new PackTemplate();
-            fixedTemplate.setId(30L);
-            fixedTemplate.setName("Fixed Epic");
+            PackSlot epicSlot = new PackSlot();
+            epicSlot.setId(30L);
+            epicSlot.setName("fixedEpic");
+            epicSlot.setFixedRarity(Rarity.EPIC);
 
-            PackSlot slot = new PackSlot();
-            slot.setId(30L);
-            slot.setPackTemplate(fixedTemplate);
-            slot.setFixedRarity(Rarity.EPIC);
-            fixedTemplate.setSlots(List.of(slot));
+            PackTemplate fixedTemplate = createSingleSlotTemplate(30L, "Fixed Epic", epicSlot, 1);
 
             List<Card> epicPool = cards.stream().filter(c -> c.getRarity() == Rarity.EPIC).toList();
 
             when(repositoryPackTemplate.findById(fixedTemplate.getId())).thenReturn(Optional.of(fixedTemplate));
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.EPIC)).thenReturn(epicPool);
-            when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+            when(repositoryCard.findPoolCardsByRarity(Rarity.EPIC)).thenReturn(epicPool);
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);
                 return cards.stream().filter(c -> ids.contains(c.getId())).toList();
@@ -309,16 +304,12 @@ class TestServicePack {
         @Test
         @DisplayName("slot with no fixedRarity and no rarityWeights throws")
         void testSlot_noRarityConfig() {
-            PackTemplate badTemplate = new PackTemplate();
-            badTemplate.setId(31L);
-            badTemplate.setName("Bad Slot");
-
             PackSlot emptySlot = new PackSlot();
             emptySlot.setId(31L);
-            emptySlot.setPackTemplate(badTemplate);
-            // No fixedRarity, no rarityWeights
+            emptySlot.setName("emptySlot");
             emptySlot.setRarityWeights(new HashMap<>());
-            badTemplate.setSlots(List.of(emptySlot));
+
+            PackTemplate badTemplate = createSingleSlotTemplate(31L, "Bad Slot", emptySlot, 1);
 
             when(repositoryPackTemplate.findById(badTemplate.getId())).thenReturn(Optional.of(badTemplate));
 
@@ -329,37 +320,24 @@ class TestServicePack {
         @Test
         @DisplayName("cards already picked in same pack are excluded from subsequent slots")
         void testNoDuplicatesWithinPack() {
-            // 2-slot template, both fixed LENGENDARY — only 2 legendary cards exist
-            PackTemplate twoSlot = new PackTemplate();
-            twoSlot.setId(32L);
-            twoSlot.setName("Two Legendary");
+            PackSlot legendarySlot = new PackSlot();
+            legendarySlot.setId(32L);
+            legendarySlot.setName("fixedLegendaryDup");
+            legendarySlot.setFixedRarity(Rarity.LEGENDARY);
 
-            PackSlot slot1 = new PackSlot();
-            slot1.setId(32L);
-            slot1.setPackTemplate(twoSlot);
-            slot1.setFixedRarity(Rarity.LEGENDARY);
-
-            PackSlot slot2 = new PackSlot();
-            slot2.setId(33L);
-            slot2.setPackTemplate(twoSlot);
-            slot2.setFixedRarity(Rarity.LEGENDARY);
-            twoSlot.setSlots(List.of(slot1, slot2));
+            // Use count=2 to get 2 cards from the same slot
+            PackTemplate twoSlot = createSingleSlotTemplate(32L, "Two Legendary", legendarySlot, 2);
 
             List<Card> legendaryPool = cards.stream().filter(c -> c.getRarity() == Rarity.LEGENDARY).toList();
-            Card leg1 = legendaryPool.get(0);
-            Card leg2 = legendaryPool.get(1);
 
-            // First slot: full pool
-            when(repositoryCard.findByRarityAndUserIsNull(Rarity.LEGENDARY)).thenReturn(List.of(leg1, leg2));
-            // Second slot: exclude picked card — return only the other
-            when(repositoryCard.findByRarityAndUserIsNullAndIdNotIn(eq(Rarity.LEGENDARY), anyList()))
+            when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(legendaryPool);
+            when(repositoryCard.findPoolCardsByRarityExcluding(eq(Rarity.LEGENDARY), anyList()))
                     .thenAnswer(inv -> {
                         List<Long> excluded = inv.getArgument(1);
                         return legendaryPool.stream().filter(c -> !excluded.contains(c.getId())).toList();
                     });
 
             when(repositoryPackTemplate.findById(twoSlot.getId())).thenReturn(Optional.of(twoSlot));
-            when(repositoryCard.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);
                 return legendaryPool.stream().filter(c -> ids.contains(c.getId())).toList();
@@ -369,7 +347,6 @@ class TestServicePack {
             List<CardDto> result = servicePack.generatePack(alice.getId(), twoSlot.getId());
 
             assertEquals(2, result.size());
-            // The two cards should be different
             assertNotEquals(result.get(0).id(), result.get(1).id());
         }
     }

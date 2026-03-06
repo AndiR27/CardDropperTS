@@ -2,7 +2,6 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { LowerCasePipe, UpperCasePipe } from '@angular/common';
 import { MeService } from '../../app/services/me.service';
 import { CardService } from '../../app/services/card.service';
-import { UserService } from '../../app/services/user.service';
 import { Card } from '../../app/models';
 import type { User } from '../../app/models';
 import { MergeCardsComponent } from './merge-cards/merge-cards';
@@ -18,7 +17,6 @@ import { CardListComponent } from './card-list/card-list';
 export class MyCardsPage implements OnInit {
   private readonly meService = inject(MeService);
   private readonly cardService = inject(CardService);
-  private readonly userService = inject(UserService);
 
   // ── Tabs ──
   protected readonly activeTab = signal<'cards' | 'merge' | 'creations' | 'targets'>('cards');
@@ -64,7 +62,7 @@ export class MyCardsPage implements OnInit {
     this.meService.getCardsTargeting().subscribe({
       next: (cards) => this.targetingCards.set(cards),
     });
-    this.userService.getAll().subscribe({
+    this.meService.getAllUsers().subscribe({
       next: (data) => this.users.set(data),
     });
   }

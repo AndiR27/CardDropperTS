@@ -1,7 +1,6 @@
 export const environment = {
   production: false,
-  // Set to false to bypass Keycloak auth in local dev (NAS off)
-  authEnabled: false,
+  authEnabled: true,
   // URL du backend Spring Boot en local
   apiUrl: 'http://localhost:8080',
   keycloak: {

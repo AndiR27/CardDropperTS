@@ -97,6 +97,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
+
+        <!-- Flyway -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -170,11 +184,19 @@
                                 <typeMapping>UserDto = ts.backend_carddropper.models.UserDto</typeMapping>
                                 <typeMapping>CardDto = ts.backend_carddropper.models.CardDto</typeMapping>
                                 <typeMapping>Rarity = ts.backend_carddropper.enums.Rarity</typeMapping>
+                                <typeMapping>PackSlotDto = ts.backend_carddropper.models.PackSlotDto</typeMapping>
+                                <typeMapping>PackTemplateSlotDto = ts.backend_carddropper.models.PackTemplateSlotDto</typeMapping>
+                                <typeMapping>PackTemplateDto = ts.backend_carddropper.models.PackTemplateDto</typeMapping>
+                                <typeMapping>LiveFeedEventDto = ts.backend_carddropper.models.LiveFeedEventDto</typeMapping>
                             </typeMappings>
                             <importMappings>
                                 <importMapping>UserDto = ts.backend_carddropper.models.UserDto</importMapping>
                                 <importMapping>CardDto = ts.backend_carddropper.models.CardDto</importMapping>
                                 <importMapping>Rarity = ts.backend_carddropper.enums.Rarity</importMapping>
+                                <importMapping>PackSlotDto = ts.backend_carddropper.models.PackSlotDto</importMapping>
+                                <importMapping>PackTemplateSlotDto = ts.backend_carddropper.models.PackTemplateSlotDto</importMapping>
+                                <importMapping>PackTemplateDto = ts.backend_carddropper.models.PackTemplateDto</importMapping>
+                                <importMapping>LiveFeedEventDto = ts.backend_carddropper.models.LiveFeedEventDto</importMapping>
                             </importMappings>
 
                             <generateApiTests>false</generateApiTests>

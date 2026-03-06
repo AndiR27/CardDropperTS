@@ -23,9 +23,8 @@ public class PackSlot {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "pack_template_id", nullable = false)
-    private PackTemplate packTemplate;
+    @Column(unique = true)
+    private String name;
 
     // Si non null : rareté fixe pour ce slot (ex: toujours RARE)
     // Si null : la rareté est tirée aléatoirement via rarityWeights

@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import ts.backend_carddropper.api.AdminApi;
 import ts.backend_carddropper.enums.Rarity;
+import ts.backend_carddropper.models.PackSlotDto;
 import ts.backend_carddropper.models.PackTemplateDto;
 import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.service.ServiceAdmin;
@@ -19,6 +20,21 @@ import java.util.List;
 public class RestControllerAdmin implements AdminApi {
 
     private final ServiceAdmin serviceAdmin;
+
+
+    //==============================
+    //    PACK SLOTS
+    //==============================
+
+    @Override
+    public ResponseEntity<List<PackSlotDto>> getPackSlots() {
+        return ResponseEntity.ok(serviceAdmin.findAllPackSlots());
+    }
+
+    @Override
+    public ResponseEntity<PackSlotDto> createPackSlot(PackSlotDto packSlotDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(serviceAdmin.createPackSlot(packSlotDto));
+    }
 
 
     //==============================
