@@ -567,22 +567,23 @@ class TestServiceUser {
         }
 
         @Test
-        @DisplayName("carte non-unique — conservée par le propriétaire et événement persisté")
-        void testUseCard_nonUniqueCard_kept() {
+        @DisplayName("carte non-unique — retirée de la collection après utilisation et événement persisté")
+        void testUseCard_nonUniqueCard_consumed() {
             Card card = cards.get(0);
             card.setUniqueCard(false);
             alice.getCardsOwned().add(card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
 
-            // Carte non-unique → le propriétaire la conserve
-            assertTrue(alice.getCardsOwned().contains(card));
-            verify(repositoryUser, never()).save(any(User.class));
+            // Carte non-unique → également retirée après utilisation
+            assertFalse(alice.getCardsOwned().contains(card));
+            verify(repositoryUser).save(alice);
 
-            // L'événement est quand même persisté
+            // L'événement est persisté
             verify(repositoryLiveFeed).save(any(ts.backend_carddropper.entity.LiveFeedEvent.class));
         }
 

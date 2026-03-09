@@ -28,10 +28,6 @@ export class AuthService {
    * - Si authentifié, appelle GET /auth/me pour créer l'utilisateur en DB si nécessaire
    */
   async init(): Promise<void> {
-    if (!environment.authEnabled) {
-      console.warn('[AuthService] Auth disabled — skipping Keycloak init');
-      return;
-    }
     this.oauthService.configure(authConfig);
     await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
@@ -64,7 +60,6 @@ export class AuthService {
 
   /** Vérifie si l'utilisateur possède un token valide (non expiré) */
   get isAuthenticated(): boolean {
-    if (!environment.authEnabled) return true;
     return this.oauthService.hasValidAccessToken();
   }
 
@@ -80,8 +75,20 @@ export class AuthService {
 
   /** Retourne le username depuis les claims */
   get username(): string | null {
-    if (!environment.authEnabled) return 'dev';
     const claims = this.identityClaims;
     return (claims?.['preferred_username'] as string) ?? null;
+  }
+
+  /** Vérifie si l'utilisateur connecté possède le rôle admin (realm_access.roles) */
+  get isAdmin(): boolean {
+    const token = this.accessToken;
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const roles: string[] = payload?.realm_access?.roles ?? [];
+      return roles.some(r => r.toLowerCase() === 'admin');
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, adminGuard } from './core/auth/auth.guard';
 import { canLeaveCreate } from '../pages/create/create-card.guard';
 
 export const routes: Routes = [
@@ -8,6 +8,6 @@ export const routes: Routes = [
   { path: 'my-cards', loadComponent: () => import('../pages/my-cards/my-cards').then(m => m.MyCardsPage), canActivate: [authGuard] },
   { path: 'create',  loadComponent: () => import('../pages/create/create-card').then(m => m.CreateCardPage), canActivate: [authGuard], canDeactivate: [canLeaveCreate] },
   { path: 'packs',   loadComponent: () => import('../pages/packs/packs').then(m => m.PacksPage), canActivate: [authGuard] },
-  { path: 'admin',   loadComponent: () => import('../pages/admin/admin-view').then(m => m.AdminViewPage), canActivate: [authGuard] },
+  { path: 'admin',   loadComponent: () => import('../pages/admin/admin-view').then(m => m.AdminViewPage), canActivate: [adminGuard] },
   { path: 'test',    loadComponent: () => import('../pages/test/test').then(m => m.TestPage) },
 ];

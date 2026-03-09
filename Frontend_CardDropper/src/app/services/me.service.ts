@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Card } from '../models';
-import type { User } from '../models';
+import type { User, LiveFeedEvent } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
@@ -43,6 +43,18 @@ export class MeService {
 
   mergeCards(cardIds: number[]): Observable<Card> {
     return this.api.post<Card>('/me/cards/merge', cardIds);
+  }
+
+  // ====== Use Card ======
+
+  useCard(cardId: number, targetUserId: number): Observable<void> {
+    return this.api.post<void>(`/me/cards/use?cardId=${cardId}&targetUserId=${targetUserId}`, null);
+  }
+
+  // ====== Live Feed ======
+
+  getLiveFeedToday(): Observable<LiveFeedEvent[]> {
+    return this.api.get<LiveFeedEvent[]>('/me/live-feed/today');
   }
 
   // ====== Joueurs ======

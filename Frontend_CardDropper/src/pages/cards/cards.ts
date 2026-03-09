@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../app/core/auth/auth.service';
 import { CardService } from '../../app/services/card.service';
 import { UserService } from '../../app/services/user.service';
+import { MeService } from '../../app/services/me.service';
 import { Card, Rarity } from '../../app/models';
 import type { User } from '../../app/models';
 
@@ -17,7 +18,7 @@ import type { User } from '../../app/models';
 export class CardsPage implements OnInit {
   protected readonly auth = inject(AuthService);
   private readonly cardService = inject(CardService);
-  private readonly userService = inject(UserService);
+  private readonly meService = inject(MeService);
 
   // ── Data ──
   private readonly allCards = signal<Card[]>([]);
@@ -201,7 +202,7 @@ export class CardsPage implements OnInit {
   }
 
   private loadUsers(): void {
-    this.userService.getAll().subscribe({
+    this.meService.getAllUsers().subscribe({
       next: (data) => {
         this.users.set(data);
         const map = new Map<number, string>();

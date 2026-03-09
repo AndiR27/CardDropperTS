@@ -59,9 +59,7 @@ public class Card {
     private User targetUser;
 
     public void addOwner(User user) {
-        if (!owners.contains(user)) {
-            owners.add(user);
-            user.getCardsOwned().add(this);
-        }
+        owners.add(user);
+        user.getCardsOwned().add(this);
     }
 }

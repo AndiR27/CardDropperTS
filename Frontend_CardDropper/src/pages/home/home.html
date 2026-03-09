@@ -22,6 +22,35 @@
 
 <hr class="cd-divider"/>
 
+<!-- ====== LIVE FEED ====== -->
+@if (auth.isAuthenticated) {
+  <section class="section">
+    <h2 class="section__title">Fil d'activité</h2>
+    <div class="live-feed cd-panel">
+      @if (liveFeed.events().length === 0) {
+        <p class="live-feed__empty">Aucune activité pour le moment. Utilise une carte pour lancer les hostilités !</p>
+      } @else {
+        <div class="live-feed__list">
+          @for (event of liveFeed.events(); track event.id) {
+            <div class="live-feed__item">
+              <span class="live-feed__actor">{{ event.actorUsername }}</span>
+              <span class="live-feed__verb">a utilisé</span>
+              <span class="live-feed__card live-feed__card--{{ event.cardRarity | lowercase }}">{{ event.cardName }}</span>
+              <span class="live-feed__verb">sur</span>
+              <span class="live-feed__target">{{ event.targetUsername }}</span>
+              @if (event.createdAt) {
+                <span class="live-feed__time">{{ formatEventDate(event.createdAt) }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+}
+
+<hr class="cd-divider"/>
+
 <!-- ====== FEATURES ====== -->
 <section class="section">
   <h2 class="section__title">L'aventure commence ici</h2>

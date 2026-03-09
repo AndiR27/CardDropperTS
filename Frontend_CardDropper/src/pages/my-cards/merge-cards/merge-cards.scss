@@ -159,40 +159,272 @@
   }
 }
 
-// ── Celebration overlay ──
-.merge__celebration {
+
+// ============================================================
+//  CONFIRM MODAL
+// ============================================================
+.merge-confirm {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 900;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: celebFadeIn 0.3s ease;
+  padding: 2rem;
+  animation: modalFadeIn 0.2s ease;
 }
 
-.merge__celebration-inner {
+.merge-confirm__content {
+  position: relative;
+  background: linear-gradient(180deg, var(--cd-surface-light) 0%, var(--cd-surface) 100%);
+  border: 1px solid var(--cd-border-strong);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: modalSlideUp 0.3s ease;
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7), 0 0 30px var(--cd-gold-glow);
+}
+
+.merge-confirm__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--cd-border-strong);
+  background: var(--cd-surface);
+  color: var(--cd-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--cd-surface-light);
+    color: var(--cd-text);
+    border-color: var(--cd-gold-deep);
+  }
+}
+
+.merge-confirm__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cd-text);
+  margin: 0;
+}
+
+.merge-confirm__cards {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.merge-confirm__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100px;
+}
+
+.merge-confirm__card-img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+}
+
+.merge-confirm__card-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--cd-text-muted);
   text-align: center;
-  animation: celebPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.merge__celebration-title {
+.merge-confirm__arrow {
+  color: var(--cd-gold);
+  animation: arrowBounce 1.2s ease-in-out infinite;
+
+  svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@keyframes arrowBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(4px); opacity: 1; }
+}
+
+.merge-confirm__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.merge-confirm__result-label {
+  font-size: 0.65rem;
+  color: var(--cd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.merge-confirm__result-rarity {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.75rem;
+  border-radius: 4px;
+  display: inline-block;
+
+  &--common    { background: var(--cd-rarity-common); color: #fff; }
+  &--rare      { background: var(--cd-rarity-rare);   color: #fff; }
+  &--epic      { background: var(--cd-rarity-epic);   color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}
+
+.merge-confirm__error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin: 0;
+  text-align: center;
+}
+
+.merge-confirm__actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.merge-confirm__btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+
+  &--back {
+    background: var(--cd-bg);
+    color: var(--cd-text-muted);
+    border: 1px solid var(--cd-border-strong);
+
+    &:hover { color: var(--cd-text); border-color: var(--cd-text-muted); }
+  }
+
+  &--go {
+    background: linear-gradient(180deg, var(--cd-gold-light) 0%, var(--cd-gold) 40%, var(--cd-gold-deep) 100%);
+    color: var(--cd-text-dark);
+    border: none;
+    box-shadow: 0 4px 16px rgba(240, 178, 50, 0.3);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(240, 178, 50, 0.45);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+
+// ============================================================
+//  CARD REVEAL OVERLAY
+// ============================================================
+.merge-reveal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(12px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: revealFadeIn 0.4s ease;
+}
+
+.merge-reveal__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: revealCardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.merge-reveal__subtitle {
   font-size: 0.85rem;
   color: var(--cd-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin: 0 0 0.5rem;
+  margin: 0;
 }
 
-.merge__celebration-name {
+.merge-reveal__card {
+  width: 240px;
+  animation: revealGlow 2s ease-in-out infinite;
+
+  &--rare     { --glow-color: rgba(33, 150, 243, 0.5); }
+  &--epic     { --glow-color: rgba(156, 39, 176, 0.5); }
+  &--legendary { --glow-color: rgba(240, 178, 50, 0.5); }
+  &--common   { --glow-color: rgba(255, 255, 255, 0.15); }
+}
+
+.merge-reveal__card-img {
+  width: 100%;
+  display: block;
+  filter: drop-shadow(0 0 20px var(--glow-color, rgba(240, 178, 50, 0.4)))
+          drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+}
+
+.merge-reveal__card-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: radial-gradient(circle at 50% 40%, var(--cd-surface-light) 0%, var(--cd-bg-light) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: var(--cd-text-muted);
+  font-weight: 700;
+}
+
+.merge-reveal__name {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--cd-gold);
-  margin: 0 0 0.5rem;
+  margin: 0;
   text-shadow: 0 2px 12px rgba(240, 178, 50, 0.5);
 }
 
-.merge__celebration-rarity {
+.merge-reveal__rarity {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -210,12 +442,55 @@
   }
 }
 
-@keyframes celebFadeIn {
+.merge-reveal__desc {
+  font-size: 0.85rem;
+  color: var(--cd-text);
+  margin: 0;
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.merge-reveal__close-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 2rem;
+  border-radius: 10px;
+  border: 1px solid var(--cd-border-strong);
+  background: var(--cd-surface);
+  color: var(--cd-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--cd-gold-deep);
+    color: var(--cd-text);
+  }
+}
+
+@keyframes revealFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes celebPop {
-  from { transform: scale(0.7); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+@keyframes revealCardPop {
+  0% { transform: scale(0.3) rotateY(90deg); opacity: 0; }
+  50% { transform: scale(1.08) rotateY(0deg); opacity: 1; }
+  100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+}
+
+@keyframes revealGlow {
+  0%, 100% { filter: drop-shadow(0 0 16px var(--glow-color, rgba(240, 178, 50, 0.3))); }
+  50% { filter: drop-shadow(0 0 30px var(--glow-color, rgba(240, 178, 50, 0.6))); }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }

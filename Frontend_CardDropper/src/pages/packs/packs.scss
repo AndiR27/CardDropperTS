@@ -1,18 +1,646 @@
 .packs-page {
-  padding: 2rem 1rem;
-}
-
-.packs-page__title {
-  text-align: center;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--cd-text);
-  margin-bottom: 2rem;
-}
-
-.packs-page__area {
-  max-width: 600px;
+  padding: 2rem 1.5rem 3rem;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// ============================================================
+//  ERROR
+// ============================================================
+.packs-page__error {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  color: #e74c3c;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  background: rgba(231, 76, 60, 0.12);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+
+  p { margin: 0; }
+}
+
+.packs-page__error-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--cd-text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+// ============================================================
+//  IDLE — Pack display
+// ============================================================
+.pack-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  position: relative;
+}
+
+.pack-idle__glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 178, 50, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+  animation: idleGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes idleGlowPulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -55%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -55%) scale(1.12); }
+}
+
+.pack-idle__pack {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s;
+  z-index: 1;
+
+  &:hover {
+    transform: translateY(-10px) scale(1.05);
+    filter: drop-shadow(0 16px 50px rgba(240, 178, 50, 0.5));
+  }
+
+  &:active {
+    transform: translateY(-2px) scale(0.97);
+  }
+}
+
+.pack-idle__img {
+  width: 280px;
+  display: block;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
+  transition: filter 0.3s;
+}
+
+.pack-idle__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.pack-idle__hint {
+  font-size: 0.85rem;
+  color: var(--cd-text-muted);
+  margin: 0;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+// ============================================================
+//  CINEMATIC — Full-screen opening animation
+// ============================================================
+.pack-cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pack-cinematic__bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #1a1005 0%, #000 70%);
+  animation: cinematicBgIn 0.4s ease-out;
+}
+
+@keyframes cinematicBgIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pack-cinematic__glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 178, 50, 0.35) 0%, transparent 70%);
+  animation: cinematicGlow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes cinematicGlow {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+.pack-cinematic__pack {
+  z-index: 2;
+  animation: cinematicShake 0.1s ease-in-out infinite alternate;
+}
+
+@keyframes cinematicShake {
+  0% { transform: rotate(-3deg) scale(1.08); }
+  25% { transform: rotate(2.5deg) scale(1.1); }
+  50% { transform: rotate(-2deg) scale(1.12); }
+  75% { transform: rotate(3deg) scale(1.08); }
+  100% { transform: rotate(-1.5deg) scale(1.1); }
+}
+
+.pack-cinematic__img {
+  width: 300px;
+  display: block;
+  filter: drop-shadow(0 0 40px rgba(240, 178, 50, 0.7)) brightness(1.15);
+}
+
+// Sparks around the pack
+.pack-cinematic__sparks {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  pointer-events: none;
+}
+
+.pack-cinematic__spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--cd-gold);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  box-shadow: 0 0 8px var(--cd-gold), 0 0 16px rgba(240, 178, 50, 0.4);
+  animation: sparkOrbit 1.5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.08s);
+
+  &:nth-child(odd) {
+    width: 3px;
+    height: 3px;
+    animation-duration: 1.8s;
+  }
+}
+
+@keyframes sparkOrbit {
+  0% {
+    transform: translate(-50%, -50%) rotate(calc(var(--i) * 22.5deg)) translateX(60px) scale(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(calc(var(--i) * 22.5deg)) translateX(100px) scale(1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(calc(var(--i) * 22.5deg + 60deg)) translateX(160px) scale(0);
+    opacity: 0;
+  }
+}
+
+// ============================================================
+//  BURST — Full-screen flash
+// ============================================================
+.pack-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pack-burst__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(240, 178, 50, 0.5) 30%, transparent 70%);
+  animation: burstFlash 0.9s ease-out forwards;
+}
+
+@keyframes burstFlash {
+  0% { opacity: 1; }
+  30% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+.pack-burst__ring {
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--cd-gold);
+  border-radius: 50%;
+  animation: burstRing 0.9s ease-out forwards;
+  box-shadow: 0 0 30px var(--cd-gold), inset 0 0 30px var(--cd-gold);
+
+  &--delayed {
+    position: absolute;
+    animation-delay: 0.15s;
+  }
+}
+
+@keyframes burstRing {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(10); opacity: 0; }
+}
+
+// ============================================================
+//  REVEAL — Full-screen dark overlay with cards
+// ============================================================
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: revealOverlayIn 0.5s ease;
+}
+
+@keyframes revealOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.reveal-overlay__bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.reveal-overlay__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.reveal__prompt {
+  font-size: 1rem;
+  color: var(--cd-text-muted);
+  margin: 0;
+  animation: hintPulse 2s ease-in-out infinite;
+  transition: opacity 0.4s ease;
+
+  &--hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.reveal__cards {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  perspective: 1400px;
+}
+
+// ============================================================
+//  CARD SLOT — 3D flip with CardBackClassic
+// ============================================================
+.reveal__slot {
+  width: 240px;
+  height: 336px;
+  position: relative;
+  cursor: pointer;
+  animation: cardDealIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+
+  &:hover:not(.reveal__slot--flipped) {
+    .reveal__slot-inner {
+      transform: rotateY(12deg) scale(1.03);
+    }
+  }
+}
+
+@keyframes cardDealIn {
+  0% {
+    transform: translateY(-80px) scale(0.4) rotateZ(-5deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1) rotateZ(0);
+    opacity: 1;
+  }
+}
+
+.reveal__slot-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+
+  .reveal__slot--flipped & {
+    transform: rotateY(180deg);
+  }
+}
+
+.reveal__back,
+.reveal__front {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+// Card back — uses CardBackClassic.png
+.reveal__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+
+.reveal__back-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+// Card front — revealed card (no background, just the PNG)
+.reveal__front {
+  transform: rotateY(180deg);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reveal__front-img {
+  width: 100%;
+  display: block;
+
+  &--common {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  }
+  &--rare {
+    filter: drop-shadow(0 0 14px rgba(74, 144, 217, 0.55)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  }
+  &--epic {
+    filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.55)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  }
+  &--legendary {
+    filter: drop-shadow(0 0 14px rgba(240, 178, 50, 0.6)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  }
+}
+
+.reveal__front-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cd-surface);
+  color: var(--cd-text-muted);
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+// ============================================================
+//  RARITY GLOW on flip
+// ============================================================
+.reveal__glow {
+  position: absolute;
+  inset: -25px;
+  border-radius: 16px;
+  pointer-events: none;
+  animation: rarityGlow 0.7s ease-out forwards;
+  z-index: -1;
+
+  &--common { background: radial-gradient(circle, rgba(160, 160, 160, 0.3) 0%, transparent 70%); }
+  &--rare { background: radial-gradient(circle, rgba(74, 144, 217, 0.5) 0%, transparent 70%); }
+  &--epic { background: radial-gradient(circle, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
+  &--legendary { background: radial-gradient(circle, rgba(240, 178, 50, 0.6) 0%, transparent 70%); }
+}
+
+@keyframes rarityGlow {
+  0% { transform: scale(0.5); opacity: 1; }
+  60% { opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+// ============================================================
+//  CARD NAME + RARITY under flipped card
+// ============================================================
+.reveal__card-name {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cd-text);
+  text-align: center;
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: fadeUp 0.3s ease;
+}
+
+.reveal__card-rarity {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.12rem 0.5rem;
+  border-radius: 3px;
+  animation: fadeUp 0.3s ease 0.1s backwards;
+
+  &--common { background: var(--cd-rarity-common); color: #fff; }
+  &--rare { background: var(--cd-rarity-rare); color: #fff; }
+  &--epic { background: var(--cd-rarity-epic); color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ============================================================
+//  DONE BUTTON — "Ouvrir un autre pack"
+// ============================================================
+.reveal__done-btn {
+  display: inline-block;
+  background: linear-gradient(180deg, var(--cd-gold-light) 0%, var(--cd-gold) 40%, var(--cd-gold-deep) 100%);
+  color: var(--cd-text-dark);
+  border: none;
+  border-radius: 10px;
+  padding: 1rem 2.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(240, 178, 50, 0.35);
+  margin-top: 1.5rem;
+  animation: fadeUp 0.5s ease 0.2s backwards;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(240, 178, 50, 0.5);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ============================================================
+//  FOCUSED CARD OVERLAY (click on flipped card)
+// ============================================================
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(14px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: focusFadeIn 0.3s ease;
+  cursor: pointer;
+}
+
+@keyframes focusFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.focus-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: focusPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: default;
+}
+
+@keyframes focusPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.focus-overlay__card {
+  width: 300px;
+
+  &--common { filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6)); }
+  &--rare { filter: drop-shadow(0 0 24px rgba(74, 144, 217, 0.5)); }
+  &--epic { filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.5)); }
+  &--legendary {
+    filter: drop-shadow(0 0 30px rgba(240, 178, 50, 0.5));
+    animation: legendaryGlow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes legendaryGlow {
+  0%, 100% { filter: drop-shadow(0 0 24px rgba(240, 178, 50, 0.4)); }
+  50% { filter: drop-shadow(0 0 40px rgba(240, 178, 50, 0.8)); }
+}
+
+.focus-overlay__img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+
+.focus-overlay__name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+  text-shadow: 0 2px 16px rgba(240, 178, 50, 0.5);
+}
+
+.focus-overlay__rarity {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+
+  &--common { background: var(--cd-rarity-common); color: #fff; }
+  &--rare { background: var(--cd-rarity-rare); color: #fff; }
+  &--epic { background: var(--cd-rarity-epic); color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}
+
+.focus-overlay__desc {
+  font-size: 0.9rem;
+  color: var(--cd-text);
+  margin: 0;
+  max-width: 340px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+// ============================================================
+//  RESPONSIVE
+// ============================================================
+@media (max-width: 700px) {
+  .reveal__cards {
+    gap: 0.8rem;
+  }
+
+  .reveal__slot {
+    width: 160px;
+    height: 224px;
+  }
+
+  .pack-idle__img {
+    width: 200px;
+  }
+
+  .pack-cinematic__img {
+    width: 220px;
+  }
+
+  .focus-overlay__card {
+    width: 240px;
+  }
+}
+
+@media (max-width: 400px) {
+  .reveal__slot {
+    width: 130px;
+    height: 182px;
+  }
+
+  .reveal__card-name {
+    font-size: 0.7rem;
+  }
 }

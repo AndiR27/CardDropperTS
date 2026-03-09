@@ -181,8 +181,8 @@ public class ServiceUser {
         }
 
         for (Card card : cards) {
-            if (card.isUniqueCard() && !card.getOwners().isEmpty()) {
-                throw new IllegalStateException("Card id=" + card.getId() + " is unique and already owned");
+            if (card.isUniqueCard()) {
+                throw new IllegalStateException("Card id=" + card.getId() + " is unique");
             }
             user.getCardsOwned().add(card);
         }
@@ -278,12 +278,9 @@ public class ServiceUser {
                             + ", not user id=" + targetUserId);
         }
 
-        // Carte unique → consommée (retirée de la collection)
-        // Carte non-unique → le propriétaire la conserve
-        if (card.isUniqueCard()) {
-            user.getCardsOwned().remove(card);
-            repositoryUser.save(user);
-        }
+        // La carte est retirée de la collection du propriétaire après utilisation
+        user.getCardsOwned().remove(card);
+        repositoryUser.save(user);
 
         log.info("User '{}' used card '{}' ({}) on user '{}' (unique={})",
                 user.getUsername(), card.getName(), card.getRarity(), target.getUsername(), card.isUniqueCard());

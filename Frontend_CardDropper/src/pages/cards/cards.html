@@ -105,20 +105,15 @@
     <div class="card-grid">
       @for (card of filteredCards(); track card.id) {
         <div class="card-item" (click)="openZoom(card)">
-          <div class="card-item__frame">
+          <div class="card-item__visual">
             @if (getImageUrl(card); as imgUrl) {
-              <img [src]="imgUrl" [alt]="card.name" class="card-item__img"/>
+              <img [src]="imgUrl" [alt]="card.name"
+                   class="card-item__img card-item__img--{{ card.rarity | lowercase }}"/>
             } @else {
               <div class="card-item__placeholder">
                 <span>?</span>
               </div>
             }
-            <div class="card-item__overlay">
-              <span class="card-item__creator">{{ getCreatorName(card) }}</span>
-              @if (getTargetName(card); as target) {
-                <span class="card-item__target">→ {{ target }}</span>
-              }
-            </div>
           </div>
           <div class="card-item__info">
             <span class="card-item__name">{{ card.name }}</span>

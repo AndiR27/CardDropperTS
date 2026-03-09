@@ -15,10 +15,15 @@ import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 
+import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.repository.RepositoryUser;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,8 +35,11 @@ public class ServicePack {
     //==============================
     private final RepositoryPackTemplate repositoryPackTemplate;
     private final RepositoryCard repositoryCard;
+    private final RepositoryUser repositoryUser;
     private final MapperCard mapperCard;
     private final ServiceUser serviceUser;
+
+    private static final double OWNED_PENALTY = 0.5;
 
 
     //==============================
@@ -43,6 +51,14 @@ public class ServicePack {
         PackTemplate template = repositoryPackTemplate.findById(templateId)
                 .orElseThrow(() -> new EntityNotFoundException("PackTemplate not found with id: " + templateId));
 
+        User user = repositoryUser.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        // Collect card IDs already owned by this user
+        Set<Long> ownedCardIds = user.getCardsOwned().stream()
+                .map(Card::getId)
+                .collect(Collectors.toSet());
+
         List<Card> selectedCards = new ArrayList<>();
 
         for (PackTemplateSlot templateSlot : template.getSlots()) {
@@ -50,7 +66,7 @@ public class ServicePack {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
 
                 List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
-                Card card = pickCardFromPool(rarity, alreadyPickedIds);
+                Card card = pickCardFromPool(rarity, alreadyPickedIds, ownedCardIds);
 
                 selectedCards.add(card);
             }
@@ -89,7 +105,7 @@ public class ServicePack {
         return weights.keySet().iterator().next();
     }
 
-    private Card pickCardFromPool(Rarity rarity, List<Long> excludedIds) {
+    private Card pickCardFromPool(Rarity rarity, List<Long> excludedIds, Set<Long> ownedCardIds) {
         List<Card> pool = excludedIds.isEmpty()
                 ? repositoryCard.findPoolCardsByRarity(rarity)
                 : repositoryCard.findPoolCardsByRarityExcluding(rarity, excludedIds);
@@ -98,12 +114,12 @@ public class ServicePack {
             throw new IllegalStateException("No " + rarity + " card available in the pool");
         }
 
-        double total = pool.stream().mapToDouble(this::cardWeight).sum();
+        double total = pool.stream().mapToDouble(c -> cardWeight(c, ownedCardIds)).sum();
         double roll  = ThreadLocalRandom.current().nextDouble() * total;
 
         double cumulative = 0;
         for (Card card : pool) {
-            cumulative += cardWeight(card);
+            cumulative += cardWeight(card, ownedCardIds);
             if (roll <= cumulative) {
                 return card;
             }
@@ -111,7 +127,11 @@ public class ServicePack {
         return pool.getLast();
     }
 
-    private double cardWeight(Card card) {
-        return 1.0 / (1 + card.getOwners().size());
+    private double cardWeight(Card card, Set<Long> ownedCardIds) {
+        double weight = 1.0 / (1 + card.getOwners().size());
+        if (ownedCardIds.contains(card.getId())) {
+            weight *= OWNED_PENALTY;
+        }
+        return weight;
     }
 }

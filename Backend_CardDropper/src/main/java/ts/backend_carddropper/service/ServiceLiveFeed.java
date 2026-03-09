@@ -11,6 +11,8 @@ import ts.backend_carddropper.mapping.MapperLiveFeed;
 import ts.backend_carddropper.models.LiveFeedEventDto;
 import ts.backend_carddropper.repository.RepositoryLiveFeed;
 
+import jakarta.annotation.PreDestroy;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +29,15 @@ public class ServiceLiveFeed {
     private final MapperLiveFeed mapperLiveFeed;
 
     private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    @PreDestroy
+    void shutdown() {
+        log.info("Fermeture de {} connexion(s) SSE", emitters.size());
+        for (SseEmitter emitter : emitters) {
+            emitter.complete();
+        }
+        emitters.clear();
+    }
 
     /**
      * Crée un nouveau SseEmitter et l'enregistre pour les mises à jour en temps réel.
@@ -67,7 +78,8 @@ public class ServiceLiveFeed {
                 emitter.send(SseEmitter.event()
                         .name("use-card")
                         .data(dto));
-            } catch (IOException e) {
+            } catch (Exception e) {
+                log.debug("Suppression d'un emitter SSE déconnecté: {}", e.getMessage());
                 emitters.remove(emitter);
             }
         }

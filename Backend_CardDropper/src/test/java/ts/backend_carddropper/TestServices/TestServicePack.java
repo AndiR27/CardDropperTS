@@ -153,6 +153,7 @@ class TestServicePack {
             PackTemplate legendaryTemplate = createSingleSlotTemplate(10L, "Legendary Only", legendarySlot, 1);
 
             when(repositoryPackTemplate.findById(legendaryTemplate.getId())).thenReturn(Optional.of(legendaryTemplate));
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(Collections.emptyList());
 
             assertThrows(IllegalStateException.class,
@@ -312,6 +313,7 @@ class TestServicePack {
             PackTemplate badTemplate = createSingleSlotTemplate(31L, "Bad Slot", emptySlot, 1);
 
             when(repositoryPackTemplate.findById(badTemplate.getId())).thenReturn(Optional.of(badTemplate));
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
             assertThrows(IllegalStateException.class,
                     () -> servicePack.generatePack(alice.getId(), badTemplate.getId()));

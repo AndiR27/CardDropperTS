@@ -42,6 +42,31 @@
 
   <!-- ====== Tab: Mes Cartes ====== -->
   @if (activeTab() === 'cards') {
+
+    <!-- View mode toggle -->
+    <div class="view-toggle">
+      <button class="view-toggle__btn"
+              [class.view-toggle__btn--active]="viewMode() === 'carousel'"
+              (click)="viewMode.set('carousel')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="18" rx="3"/>
+          <path d="M8 21V3M16 21V3"/>
+        </svg>
+      </button>
+      <button class="view-toggle__btn"
+              [class.view-toggle__btn--active]="viewMode() === 'list'"
+              (click)="viewMode.set('list')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
     @if (loading()) {
       <div class="my-cards-page__status">
         <span class="my-cards-page__loader"></span>
@@ -54,6 +79,9 @@
         <p class="cd-text-muted">Ouvre des packs ou forge tes propres cartes !</p>
       </div>
     } @else {
+
+      <!-- ====== Carousel view ====== -->
+      @if (viewMode() === 'carousel') {
       <div class="carousel">
         <button class="carousel__arrow carousel__arrow--left"
                 [class.carousel__arrow--disabled]="!canPrev()"
@@ -130,6 +158,46 @@
       </div>
 
       <p class="carousel__counter">{{ activeIndex() + 1 }} / {{ ownedCards().length }}</p>
+      }
+
+      <!-- ====== List view ====== -->
+      @if (viewMode() === 'list') {
+        <div class="card-list-view">
+          <div class="card-list-view__search-wrap">
+            <svg class="card-list-view__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+            </svg>
+            <input class="card-list-view__search" type="text" placeholder="Rechercher une carte..."
+                   [value]="listSearch()"
+                   (input)="listSearch.set($any($event.target).value)"/>
+          </div>
+
+          <div class="card-list-view__items">
+            @for (card of filteredOwnedCards(); track card.id) {
+              <button class="card-list-view__item" (click)="selectCardFromList(card)">
+                <div class="card-list-view__thumb">
+                  @if (getImageUrl(card); as imgUrl) {
+                    <img [src]="imgUrl" [alt]="card.name" class="card-list-view__thumb-img"/>
+                  } @else {
+                    <div class="card-list-view__thumb-placeholder">?</div>
+                  }
+                </div>
+                <div class="card-list-view__info">
+                  <span class="card-list-view__name">{{ card.name }}</span>
+                  <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+                    {{ card.rarity }}
+                  </span>
+                </div>
+                <svg class="card-list-view__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            } @empty {
+              <p class="card-list-view__empty">Aucune carte trouvée</p>
+            }
+          </div>
+        </div>
+      }
     }
   }
 
@@ -216,18 +284,40 @@
             <p class="use-modal__fixed-note">Cette carte cible spécifiquement ce joueur.</p>
           }
 
+          <p class="use-modal__confirm-text">Confirmer votre choix ?</p>
+
+          @if (useError(); as err) {
+            <p class="use-modal__error">{{ err }}</p>
+          }
+
           <div class="use-modal__actions">
             @if (!card.targetUserId) {
-              <button class="use-modal__btn use-modal__btn--back" (click)="backToChoose()">
+              <button class="use-modal__btn use-modal__btn--back" (click)="backToChoose()" [disabled]="using()">
                 Retour
               </button>
             }
-            <button class="use-modal__btn use-modal__btn--confirm" (click)="confirmUse()">
-              Confirmer
+            <button class="use-modal__btn use-modal__btn--confirm" (click)="confirmUse()" [disabled]="using()">
+              @if (using()) {
+                Utilisation...
+              } @else {
+                Confirmer
+              }
             </button>
           </div>
         </div>
       }
+    </div>
+  </div>
+}
+
+<!-- ====== Use Success Popup ====== -->
+@if (showUseSuccess()) {
+  <div class="use-success">
+    <div class="use-success__inner">
+      <span class="use-success__check">&#x2714;</span>
+      <p class="use-success__text">
+        <strong>{{ usedCardName() }}</strong> utilisée sur <strong>{{ usedTargetName() }}</strong>
+      </p>
     </div>
   </div>
 }

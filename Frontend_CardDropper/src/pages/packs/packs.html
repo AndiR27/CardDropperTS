@@ -1,7 +1,120 @@
 <section class="packs-page">
-  <h1 class="packs-page__title">Ouvrir un pack</h1>
 
-  <div class="packs-page__area cd-panel">
-    <p class="cd-text-muted">Ouverture de packs bientôt disponible...</p>
-  </div>
+  @if (error(); as err) {
+    <div class="packs-page__error">
+      <p>{{ err }}</p>
+      <button class="packs-page__error-close" (click)="error.set(null)">&#x2715;</button>
+    </div>
+  }
+
+  <!-- ====== Idle: Pack display ====== -->
+  @if (phase() === 'idle') {
+    <div class="pack-idle">
+      <div class="pack-idle__glow"></div>
+      <button class="pack-idle__pack" (click)="openPack()">
+        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img"/>
+      </button>
+      <h2 class="pack-idle__title">Pack Classique</h2>
+      <p class="pack-idle__hint">Clique sur le pack pour l'ouvrir</p>
+    </div>
+  }
+
+  <!-- ====== Opening: Full-screen immersive ====== -->
+  @if (phase() === 'opening') {
+    <div class="pack-cinematic">
+      <div class="pack-cinematic__bg"></div>
+      <div class="pack-cinematic__glow"></div>
+      <div class="pack-cinematic__pack">
+        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-cinematic__img"/>
+      </div>
+      <div class="pack-cinematic__sparks">
+        @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+          <span class="pack-cinematic__spark" [style.--i]="i"></span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ====== Burst: Full-screen flash ====== -->
+  @if (phase() === 'burst') {
+    <div class="pack-burst">
+      <div class="pack-burst__flash"></div>
+      <div class="pack-burst__ring"></div>
+      <div class="pack-burst__ring pack-burst__ring--delayed"></div>
+    </div>
+  }
+
+  <!-- ====== Reveal: Full-screen dark overlay with cards ====== -->
+  @if (phase() === 'reveal') {
+    <div class="reveal-overlay">
+      <div class="reveal-overlay__bg"></div>
+
+      <div class="reveal-overlay__content">
+        <p class="reveal__prompt" [class.reveal__prompt--hidden]="allFlipped()">
+          Clique sur chaque carte pour la révéler
+        </p>
+
+        <div class="reveal__cards">
+          @for (card of revealedCards(); track card.id; let i = $index) {
+            <div class="reveal__slot"
+                 [class.reveal__slot--flipped]="isFlipped(i)"
+                 [style.animation-delay]="(i * 120) + 'ms'"
+                 (click)="flipCard(i)">
+              <div class="reveal__slot-inner">
+                <!-- Back face -->
+                <div class="reveal__back">
+                  <img src="assets/images/CardBackClassic.png" alt="Card back" class="reveal__back-img"/>
+                </div>
+                <!-- Front face -->
+                <div class="reveal__front">
+                  @if (getImageUrl(card); as imgUrl) {
+                    <img [src]="imgUrl" [alt]="card.name"
+                         class="reveal__front-img reveal__front-img--{{ card.rarity | lowercase }}"/>
+                  } @else {
+                    <div class="reveal__front-placeholder">?</div>
+                  }
+                </div>
+              </div>
+
+              <!-- Rarity glow on flip -->
+              @if (isFlipped(i)) {
+                <div class="reveal__glow reveal__glow--{{ card.rarity | lowercase }}"></div>
+                <span class="reveal__card-name">{{ card.name }}</span>
+                <span class="reveal__card-rarity reveal__card-rarity--{{ card.rarity | lowercase }}">
+                  {{ card.rarity }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (allFlipped()) {
+          <button class="reveal__done-btn" (click)="backToIdle()">
+            Récupérer les cartes
+          </button>
+        }
+      </div>
+    </div>
+  }
+
 </section>
+
+<!-- ====== Focused card overlay ====== -->
+@if (focusedCard(); as card) {
+  <div class="focus-overlay" (click)="onFocusOverlayClick($event)">
+    <div class="focus-overlay__content">
+      <div class="focus-overlay__card focus-overlay__card--{{ card.rarity | lowercase }}">
+        @if (getImageUrl(card); as imgUrl) {
+          <img [src]="imgUrl" [alt]="card.name" class="focus-overlay__img"/>
+        }
+      </div>
+      <h2 class="focus-overlay__name">{{ card.name }}</h2>
+      <span class="focus-overlay__rarity focus-overlay__rarity--{{ card.rarity | lowercase }}">
+        {{ card.rarity }}
+      </span>
+      @if (card.description) {
+        <p class="focus-overlay__desc">{{ card.description }}</p>
+      }
+    </div>
+  </div>
+}

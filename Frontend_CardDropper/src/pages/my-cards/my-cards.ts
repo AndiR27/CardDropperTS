@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { LowerCasePipe, UpperCasePipe } from '@angular/common';
 import { MeService } from '../../app/services/me.service';
 import { CardService } from '../../app/services/card.service';
+import { AuthService } from '../../app/core/auth/auth.service';
 import { Card } from '../../app/models';
 import type { User } from '../../app/models';
 import { MergeCardsComponent } from './merge-cards/merge-cards';
@@ -17,6 +18,7 @@ import { CardListComponent } from './card-list/card-list';
 export class MyCardsPage implements OnInit {
   private readonly meService = inject(MeService);
   private readonly cardService = inject(CardService);
+  private readonly authService = inject(AuthService);
 
   // ── Tabs ──
   protected readonly activeTab = signal<'cards' | 'merge' | 'creations' | 'targets'>('cards');
@@ -27,6 +29,32 @@ export class MyCardsPage implements OnInit {
   protected readonly targetingCards = signal<Card[]>([]);
   protected readonly users = signal<User[]>([]);
   protected readonly loading = signal(false);
+
+  // ── View mode ──
+  protected readonly viewMode = signal<'carousel' | 'list'>('carousel');
+  protected readonly listSearch = signal('');
+
+  protected readonly filteredOwnedCards = computed(() => {
+    const search = this.listSearch().toLowerCase().trim();
+    const cards = this.ownedCards();
+    if (!search) return cards;
+    return cards.filter(c =>
+      c.name.toLowerCase().includes(search) ||
+      c.rarity.toLowerCase().includes(search)
+    );
+  });
+
+  toggleViewMode(): void {
+    this.viewMode.update(m => m === 'carousel' ? 'list' : 'carousel');
+  }
+
+  selectCardFromList(card: Card): void {
+    const index = this.ownedCards().findIndex(c => c.id === card.id);
+    if (index >= 0) {
+      this.activeIndex.set(index);
+      this.viewMode.set('carousel');
+    }
+  }
 
   // ── Carousel ──
   protected readonly activeIndex = signal(0);
@@ -45,10 +73,14 @@ export class MyCardsPage implements OnInit {
   protected readonly selectedTarget = signal<User | null>(null);
   protected readonly useStep = signal<'choose' | 'confirm'>('choose');
   protected readonly userSearch = signal('');
+  protected readonly showUseSuccess = signal(false);
+  protected readonly usedCardName = signal('');
+  protected readonly usedTargetName = signal('');
 
   protected readonly filteredUsers = computed(() => {
     const search = this.userSearch().toLowerCase().trim();
-    const all = this.users();
+    const currentUsername = this.authService.username;
+    const all = this.users().filter(u => u.username !== currentUsername);
     if (!search) return all;
     return all.filter(u => u.username.toLowerCase().includes(search));
   });
@@ -131,14 +163,39 @@ export class MyCardsPage implements OnInit {
     this.useStep.set('choose');
   }
 
+  protected readonly useError = signal<string | null>(null);
+  protected readonly using = signal(false);
+
   confirmUse(): void {
     const card = this.activeCard();
     const target = this.selectedTarget();
-    if (!card || !target) return;
+    if (!card?.id || !target?.id || this.using()) return;
 
-    console.log(`[USE CARD] Card "${card.name}" (id=${card.id}) used against "${target.username}" (id=${target.id})`);
+    this.using.set(true);
+    this.useError.set(null);
 
-    this.showUseModal.set(false);
+    this.meService.useCard(card.id, target.id).subscribe({
+      next: () => {
+        this.using.set(false);
+        this.showUseModal.set(false);
+
+        // Show success popup
+        this.usedCardName.set(card.name);
+        this.usedTargetName.set(target.username);
+        this.showUseSuccess.set(true);
+        setTimeout(() => this.showUseSuccess.set(false), 2500);
+
+        // Remove the card from owned list and adjust index
+        this.ownedCards.update(cards => cards.filter(c => c.id !== card.id));
+        if (this.activeIndex() >= this.ownedCards().length) {
+          this.activeIndex.set(Math.max(0, this.ownedCards().length - 1));
+        }
+      },
+      error: (err) => {
+        this.using.set(false);
+        this.useError.set(err?.error?.detail ?? 'Erreur lors de l\'utilisation de la carte.');
+      },
+    });
   }
 
   closeUseModal(): void {

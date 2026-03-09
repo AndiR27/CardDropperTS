@@ -34,25 +34,84 @@
   <span class="merge__count">{{ selectionCount() }} / 3 sélectionnées</span>
   <button class="merge__btn"
           [class.merge__btn--ready]="canMerge()"
-          [disabled]="!canMerge() || merging()"
-          (click)="merge()">
-    @if (merging()) {
-      Fusion en cours...
-    } @else {
-      Fusionner
-    }
+          [disabled]="!canMerge()"
+          (click)="openConfirm()">
+    Fusionner
   </button>
 </div>
 
-<!-- Celebration overlay -->
+<!-- ====== Confirm modal ====== -->
+@if (showConfirm()) {
+  <div class="merge-confirm" (click)="onConfirmOverlayClick($event)">
+    <div class="merge-confirm__content">
+      <button class="merge-confirm__close" (click)="closeConfirm()">&#x2715;</button>
+      <h3 class="merge-confirm__title">Confirmer la fusion</h3>
+
+      <div class="merge-confirm__cards">
+        @for (card of selectedCards(); track card.id) {
+          <div class="merge-confirm__card">
+            @if (getImageUrl(card); as imgUrl) {
+              <img [src]="imgUrl" [alt]="card.name" class="merge-confirm__card-img"/>
+            }
+            <span class="merge-confirm__card-name">{{ card.name }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="merge-confirm__arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <polyline points="19 12 12 19 5 12"/>
+        </svg>
+      </div>
+
+      <div class="merge-confirm__result">
+        <span class="merge-confirm__result-label">Résultat</span>
+        <span class="merge-confirm__result-rarity merge-confirm__result-rarity--{{ resultRarity() | lowercase }}">
+          {{ resultRarity() }}
+        </span>
+      </div>
+
+      @if (mergeError(); as err) {
+        <p class="merge-confirm__error">{{ err }}</p>
+      }
+
+      <div class="merge-confirm__actions">
+        <button class="merge-confirm__btn merge-confirm__btn--back" (click)="closeConfirm()" [disabled]="merging()">
+          Annuler
+        </button>
+        <button class="merge-confirm__btn merge-confirm__btn--go" (click)="confirmMerge()" [disabled]="merging()">
+          @if (merging()) {
+            Fusion...
+          } @else {
+            Confirmer
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ====== Card reveal overlay ====== -->
 @if (mergeResult(); as result) {
-  <div class="merge__celebration">
-    <div class="merge__celebration-inner">
-      <p class="merge__celebration-title">Nouvelle carte obtenue !</p>
-      <p class="merge__celebration-name">{{ result.name }}</p>
-      <span class="merge__celebration-rarity merge__celebration-rarity--{{ result.rarity | lowercase }}">
+  <div class="merge-reveal" (click)="onResultOverlayClick($event)">
+    <div class="merge-reveal__content">
+      <p class="merge-reveal__subtitle">Nouvelle carte obtenue !</p>
+      <div class="merge-reveal__card merge-reveal__card--{{ result.rarity | lowercase }}">
+        @if (getImageUrl(result); as imgUrl) {
+          <img [src]="imgUrl" [alt]="result.name" class="merge-reveal__card-img"/>
+        } @else {
+          <div class="merge-reveal__card-placeholder">?</div>
+        }
+      </div>
+      <h2 class="merge-reveal__name">{{ result.name }}</h2>
+      <span class="merge-reveal__rarity merge-reveal__rarity--{{ result.rarity | lowercase }}">
         {{ result.rarity }}
       </span>
+      @if (result.description) {
+        <p class="merge-reveal__desc">{{ result.description }}</p>
+      }
+      <button class="merge-reveal__close-btn" (click)="closeResult()">Fermer</button>
     </div>
   </div>
 }
