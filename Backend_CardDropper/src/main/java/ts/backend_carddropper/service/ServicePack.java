@@ -9,14 +9,16 @@ import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.PackSlot;
 import ts.backend_carddropper.entity.PackTemplate;
 import ts.backend_carddropper.entity.PackTemplateSlot;
+import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.mapping.MapperCard;
 import ts.backend_carddropper.models.CardDto;
+import ts.backend_carddropper.models.UserPackInventoryDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
-
-import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserPackInventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +38,7 @@ public class ServicePack {
     private final RepositoryPackTemplate repositoryPackTemplate;
     private final RepositoryCard repositoryCard;
     private final RepositoryUser repositoryUser;
+    private final RepositoryUserPackInventory repositoryUserPackInventory;
     private final MapperCard mapperCard;
     private final ServiceUser serviceUser;
 
@@ -48,9 +51,16 @@ public class ServicePack {
 
     @Transactional
     public List<CardDto> generatePack(Long userId, Long templateId) {
-        PackTemplate template = repositoryPackTemplate.findById(templateId)
-                .orElseThrow(() -> new EntityNotFoundException("PackTemplate not found with id: " + templateId));
+        // Check inventory — user must own at least one pack of this template
+        UserPackInventory inventory = repositoryUserPackInventory
+                .findByUserIdAndPackTemplateId(userId, templateId)
+                .orElseThrow(() -> new IllegalStateException("You don't own any pack of this template"));
 
+        if (inventory.getQuantity() <= 0) {
+            throw new IllegalStateException("You don't own any pack of this template");
+        }
+
+        PackTemplate template = inventory.getPackTemplate();
         User user = repositoryUser.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
@@ -72,9 +82,72 @@ public class ServicePack {
             }
         }
 
+        // Decrement inventory
+        inventory.setQuantity(inventory.getQuantity() - 1);
+        repositoryUserPackInventory.save(inventory);
+
         List<Long> cardIds = selectedCards.stream().map(Card::getId).toList();
-        log.info("Generated pack '{}' for user id={} : {} card(s)", template.getName(), userId, cardIds.size());
+        log.info("Generated pack '{}' for user id={} : {} card(s) (remaining: {})",
+                template.getName(), userId, cardIds.size(), inventory.getQuantity());
         return serviceUser.openPack(userId, cardIds);
+    }
+
+
+    //==============================
+    //       INVENTORY METHODS
+    //==============================
+
+    /**
+     * Returns all pack templates the user owns (quantity > 0).
+     */
+    public List<UserPackInventoryDto> getUserPackInventory(Long userId) {
+        return repositoryUserPackInventory.findByUserIdAndQuantityGreaterThan(userId, 0)
+                .stream()
+                .map(inv -> new UserPackInventoryDto(
+                        inv.getPackTemplate().getId(),
+                        inv.getPackTemplate().getName(),
+                        inv.getQuantity()))
+                .toList();
+    }
+
+    /**
+     * Grant packs to specific users. Upserts the inventory row.
+     */
+    @Transactional
+    public void grantPacks(List<Long> userIds, Long templateId, int quantity) {
+        PackTemplate template = repositoryPackTemplate.findById(templateId)
+                .orElseThrow(() -> new EntityNotFoundException("PackTemplate not found with id: " + templateId));
+
+        for (Long userId : userIds) {
+            User user = repositoryUser.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+            UserPackInventory inventory = repositoryUserPackInventory
+                    .findByUserIdAndPackTemplateId(userId, templateId)
+                    .orElseGet(() -> {
+                        UserPackInventory inv = new UserPackInventory();
+                        inv.setUser(user);
+                        inv.setPackTemplate(template);
+                        inv.setQuantity(0);
+                        return inv;
+                    });
+
+            inventory.setQuantity(inventory.getQuantity() + quantity);
+            repositoryUserPackInventory.save(inventory);
+        }
+
+        log.info("Granted {} pack(s) '{}' to {} user(s)", quantity, template.getName(), userIds.size());
+    }
+
+    /**
+     * Grant packs to ALL users.
+     */
+    @Transactional
+    public void grantPacksToAll(Long templateId, int quantity) {
+        List<Long> allUserIds = repositoryUser.findAll().stream()
+                .map(User::getId)
+                .toList();
+        grantPacks(allUserIds, templateId, quantity);
     }
 
 

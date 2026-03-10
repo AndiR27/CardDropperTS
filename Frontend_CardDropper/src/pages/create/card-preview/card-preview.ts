@@ -82,11 +82,11 @@ export class CardPreview {
     `assets/cardsCreation/${this.cardType()}/target-${this.cardType()}.png`
   );
 
-  // ── Dynamic name font size (shrinks after 10 chars, min 18) ──
+  // ── Dynamic name font size (shrinks gradually after 15 chars, min 14) ──
   nameFontSize = computed(() => {
     const len = this.name().length;
-    if (len <= 10) return 30;
-    return Math.max(18, 30 - (len - 10) * 1.2);
+    if (len <= 15) return 30;
+    return Math.max(14, 30 - (len - 15) * 0.7);
   });
 
   // ── Dynamic description font size (shrinks after 20 chars, min 7) ──

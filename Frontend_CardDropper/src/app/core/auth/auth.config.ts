@@ -19,4 +19,10 @@ export const authConfig: AuthConfig = {
   responseType: 'code',
   showDebugInformation: !environment.production,
   requireHttps: false,
+
+  // ── Token refresh ──
+  // Use refresh tokens (not iframe-based silent refresh) for Code Flow
+  useSilentRefresh: false,
+  // Refresh when 75% of token lifetime has elapsed (e.g. at 3:45 for a 5min token)
+  timeoutFactor: 0.75,
 };

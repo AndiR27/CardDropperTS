@@ -1,0 +1,92 @@
+<header class="header">
+  <div class="header__inner">
+    <!-- Logo -->
+    <a routerLink="/" class="header__logo" (click)="closeMenu()">
+      <img src="assets/logos/carddropper.jpeg" class="header__logo-img"/>
+      <span class="header__logo-text">CardDropper</span>
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="header__nav">
+      <a routerLink="/" routerLinkActive="header__link--active" [routerLinkActiveOptions]="{exact: true}" class="header__link">
+        <span>Taverne</span>
+      </a>
+      <a routerLink="/cards" routerLinkActive="header__link--active" class="header__link">
+        <span>Collection</span>
+      </a>
+      @if (auth.isAuthenticated) {
+        <a routerLink="/my-cards" routerLinkActive="header__link--active" class="header__link">
+          <span>Mes Cartes</span>
+        </a>
+        <a routerLink="/create" routerLinkActive="header__link--active" class="header__link">
+          <span>Forge</span>
+        </a>
+        <a routerLink="/packs" routerLinkActive="header__link--active" class="header__link">
+          <span>Packs</span>
+        </a>
+        @if (auth.isAdmin) {
+          <a routerLink="/admin" routerLinkActive="header__link--active" class="header__link">
+            <span>Admin</span>
+          </a>
+        }
+      }
+    </nav>
+
+    <!-- Auth + hamburger -->
+    <div class="header__right">
+      <div class="header__auth">
+        @if (auth.isAuthenticated) {
+          <span class="header__avatar">{{ auth.username?.charAt(0)?.toUpperCase() ?? '?' }}</span>
+          <span class="header__user">{{ auth.username }}</span>
+          <button class="header__btn header__btn--outline" (click)="auth.logout()">Deconnexion</button>
+        } @else {
+          <button class="header__btn header__btn--gold" (click)="auth.login()">Entrer dans la taverne</button>
+        }
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button class="header__burger" [class.header__burger--open]="mobileMenuOpen()" (click)="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="header__border"></div>
+
+  <!-- Mobile menu -->
+  @if (mobileMenuOpen()) {
+    <div class="header__mobile-menu">
+      <nav class="header__mobile-nav">
+        <a routerLink="/" routerLinkActive="header__mobile-link--active" [routerLinkActiveOptions]="{exact: true}"
+           class="header__mobile-link" (click)="closeMenu()">Taverne</a>
+        <a routerLink="/cards" routerLinkActive="header__mobile-link--active"
+           class="header__mobile-link" (click)="closeMenu()">Collection</a>
+        @if (auth.isAuthenticated) {
+          <a routerLink="/my-cards" routerLinkActive="header__mobile-link--active"
+             class="header__mobile-link" (click)="closeMenu()">Mes Cartes</a>
+          <a routerLink="/create" routerLinkActive="header__mobile-link--active"
+             class="header__mobile-link" (click)="closeMenu()">Forge</a>
+          <a routerLink="/packs" routerLinkActive="header__mobile-link--active"
+             class="header__mobile-link" (click)="closeMenu()">Packs</a>
+          @if (auth.isAdmin) {
+            <a routerLink="/admin" routerLinkActive="header__mobile-link--active"
+               class="header__mobile-link" (click)="closeMenu()">Admin</a>
+          }
+        }
+      </nav>
+      <div class="header__mobile-auth">
+        @if (auth.isAuthenticated) {
+          <div class="header__mobile-user">
+            <span class="header__avatar">{{ auth.username?.charAt(0)?.toUpperCase() ?? '?' }}</span>
+            <span>{{ auth.username }}</span>
+          </div>
+          <button class="header__btn header__btn--outline" (click)="auth.logout(); closeMenu()">Deconnexion</button>
+        } @else {
+          <button class="header__btn header__btn--gold" (click)="auth.login()">Entrer dans la taverne</button>
+        }
+      </div>
+    </div>
+  }
+</header>

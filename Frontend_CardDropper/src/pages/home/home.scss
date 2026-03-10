@@ -156,16 +156,17 @@
 
 .live-feed__card {
   font-weight: 700;
+  cursor: pointer;
+  transition: text-decoration 0.15s;
+
+  &:hover {
+    text-decoration: underline;
+  }
 
   &--common    { color: #a0a0a0; }
   &--rare      { color: #4a90d9; }
   &--epic      { color: #a855f7; }
   &--legendary { color: var(--cd-gold); }
-
-}
-
-.live-feed__card.cd-panel--hover{
-  text-decoration: underline;
 }
 
 .live-feed__time {
@@ -214,6 +215,129 @@
   margin: 0;
 }
 
+// ====== Zoom overlay ======
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.zoom-card {
+  position: relative;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  max-width: 700px;
+  width: 100%;
+  animation: zoomIn 0.25s ease;
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.zoom-card__img {
+  width: 300px;
+  display: block;
+  filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px var(--cd-gold-glow));
+}
+
+.zoom-card__details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.zoom-card__name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.zoom-card__badge {
+  width: fit-content;
+}
+
+.zoom-card__desc {
+  font-size: 0.9rem;
+  color: var(--cd-text);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.zoom-card__unique {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cd-gold);
+  border: 1px solid var(--cd-gold-deep);
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.zoom-card__close {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--cd-border-strong);
+  background: var(--cd-surface);
+  color: var(--cd-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--cd-surface-light);
+    color: var(--cd-text);
+    border-color: var(--cd-gold-deep);
+  }
+}
+
+// Rarity badge (reused from cards page)
+.card-info__rarity {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  display: inline-block;
+
+  &--common   { background: var(--cd-rarity-common); color: #fff; }
+  &--rare     { background: var(--cd-rarity-rare);   color: #fff; }
+  &--epic     { background: var(--cd-rarity-epic);   color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}
+
 // ====== Responsive ======
 @media (max-width: 600px) {
   .hero__image {
@@ -228,5 +352,19 @@
   .hero__glow {
     width: 350px;
     height: 350px;
+  }
+
+  .zoom-card {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .zoom-card__img {
+    width: 240px;
+  }
+
+  .zoom-card__details {
+    align-items: center;
+    text-align: center;
   }
 }

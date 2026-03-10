@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ts.backend_carddropper.api.AdminApi;
 import ts.backend_carddropper.enums.Rarity;
+import ts.backend_carddropper.models.GrantPacksRequest;
 import ts.backend_carddropper.models.PackSlotDto;
 import ts.backend_carddropper.models.PackTemplateDto;
 import ts.backend_carddropper.models.UserDto;
@@ -79,6 +82,17 @@ public class RestControllerAdmin implements AdminApi {
     @Override
     public ResponseEntity<Integer> updateDropRateByRarity(Rarity rarity, Double dropRate) {
         return ResponseEntity.ok(serviceAdmin.updateDropRateByRarity(rarity, dropRate));
+    }
+
+
+    //==============================
+    //    GRANT PACKS
+    //==============================
+
+    @PostMapping("/admin/grant-packs")
+    public ResponseEntity<Void> grantPacks(@RequestBody GrantPacksRequest request) {
+        serviceAdmin.grantPacks(request);
+        return ResponseEntity.noContent().build();
     }
 
 

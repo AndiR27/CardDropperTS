@@ -134,6 +134,11 @@ export class CreateCardPage {
     }
   }
 
+  onAddCardSaved(cardName: string): void {
+    this.mode.set('choose');
+    this.successMessage.set(`La carte "${cardName}" a été ajoutée avec succès !`);
+  }
+
   onBack(): void {
     this.step.set('edit');
   }

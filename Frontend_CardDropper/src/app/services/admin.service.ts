@@ -40,6 +40,16 @@ export class AdminService {
     return this.api.delete<void>(`/admin/pack-templates/${id}`);
   }
 
+  // ====== Grant Packs ======
+
+  grantPacks(templateId: number, quantity: number, userIds?: number[]): Observable<void> {
+    return this.api.post<void>('/admin/grant-packs', {
+      templateId,
+      quantity,
+      userIds: userIds ?? [],
+    });
+  }
+
   // ====== Drop Rates ======
 
   updateDropRateByRarity(rarity: Rarity, dropRate: number): Observable<number> {

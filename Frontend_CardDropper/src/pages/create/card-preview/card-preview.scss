@@ -54,12 +54,12 @@
 
   // Minion: vertical ellipse
   &--minion {
-    clip-path: ellipse(34% 24% at 50% 30%);
+    clip-path: ellipse(34% 20% at 50% 32%);
   }
 
   // Weapon: circle
   &--weapon {
-    clip-path: circle(25% at 50% 30%);
+    clip-path: circle(25% at 50% 38%);
   }
 }
 
@@ -112,7 +112,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 
-  &--weapon { top: 49.5%; font-size: 1rem; }
+  &--weapon { top: 50.5%; font-size: 2px; }
 }
 
 // ── Name text: arc (spell / minion) ──
@@ -148,7 +148,7 @@
 
   &--minion {
     width: 61%;
-    top: 62.5%;
+    top: 63.5%;
   }
 }
 
@@ -158,7 +158,7 @@
   left: 50%;
   transform: translateX(-50%);
 
-  &--spell  { width: 18%; top: 56.5%; }
+  &--spell  { width: 18%; top: 59.5%; }
   &--minion { width: 21%; top: 57%;   }
   &--weapon { width: 12%; top: 57%;   }
 }
@@ -169,7 +169,7 @@
   left: 50%;
   transform: translateX(-50%);
 
-  &--spell  { width: 5.5%; top: 58%;   }
+  &--spell  { width: 5.5%; top: 61%;   }
   &--minion { width: 5.5%; top: 58.5%; }
   &--weapon { width: 5.5%; top: 58.5%; }
 }
@@ -178,9 +178,9 @@
 .card__dragon {
   z-index: 6;
 
-  &--spell  { width: 64%; top: 7%;  left: 25%; }
-  &--minion { width: 58%; top: 0%;  left: 22%; }
-  &--weapon { width: 56%; top: 5%;  left: 24%; }
+  &--spell  { width: 64%; top: 10%;  left: 31%; }
+  &--minion { width: 58%; top: 5%;  left: 29%; }
+  &--weapon { width: 56%; top: 8%;  left: 30%; }
 }
 
 // ── Description text ──
@@ -210,14 +210,14 @@
 
   &--minion {
     color: #1a1a1a;
-    top: 62.7%;
+    top: 67.7%;
     width: 51.9%;
     height: 21%;
   }
 
   &--weapon {
     color: #ccc;
-    top: 64.2%;
+    top: 65.2%;
     width: 51.5%;
     height: 20.1%;
   }
@@ -258,7 +258,7 @@
   transform: translateX(-50%);
   font-family: 'GBJenLei', 'BlizzardGlobal', serif;
   color: #fff;
-  font-weight: 500;
+  font-weight: 700;
   text-shadow:
     -1.2px -1.2px 0 #000,
      1.2px -1.2px 0 #000,
@@ -269,8 +269,8 @@
   text-align: center;
 
   &--spell  { top: 90%;   font-size: 0.7rem; }
-  &--minion { top: 87.5%; font-size: 0.7rem; }
-  &--weapon { top: 88%;   font-size: 0.55rem; }
+  &--minion { top: 88%; font-size: 0.7rem; }
+  &--weapon { top: 88.5%;   font-size: 0.55rem; }
 }
 
 // ── Zoom / pan controls (centered under preview) ──

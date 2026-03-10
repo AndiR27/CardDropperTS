@@ -40,7 +40,7 @@
   @if (name()) {
     @if (isWeapon()) {
       <div class="card__name-text card__name-text--weapon"
-           [style.font-size.px]="nameFontSize() * 0.55">
+           [style.font-size.px]="nameFontSize() * 0.75">
         {{ name() }}
       </div>
     } @else {
@@ -49,7 +49,7 @@
            [class.card__name-arc--minion]="isMinion()"
            [style.--name-font-size.px]="nameFontSize()">
         <app-arc-text
-          [path]="isSpell() ? 'M 10 120 C 80 -10 420 -10 490 120' : 'M 10 130 C 60 30 440 -20 490 80'"
+          [path]="isSpell() ? 'M 10 120 C 80 -10 420 -10 490 120' : 'M 10 118 C 60 30 440 -20 490 92'"
           [pathId]="isSpell() ? 'spellArc' : 'minionArc'"
           viewBox="0 0 500 150">
           {{ name() }}

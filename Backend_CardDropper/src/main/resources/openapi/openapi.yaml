@@ -188,6 +188,24 @@ paths:
         '500':
           description: Erreur interne.
 
+  /me/packs:
+    get:
+      tags: [ me ]
+      summary: Mon inventaire de packs
+      description: Retourne les packs non ouverts que l'utilisateur possède (quantity > 0).
+      operationId: getMyPackInventory
+      responses:
+        '200':
+          description: Inventaire de packs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserPackInventoryDto'
+        '500':
+          description: Erreur interne.
+
   /me/packs/open:
     post:
       tags: [ me ]
@@ -772,6 +790,31 @@ paths:
           description: Erreur interne.
 
   # ========================================
+  #   ADMIN — GRANT PACKS
+  # ========================================
+  /admin/grant-packs:
+    post:
+      tags: [ admin ]
+      summary: Distribuer des packs aux utilisateurs
+      description: |
+        Accorde des packs d'un template donné à des utilisateurs spécifiques.
+        Si userIds est vide ou null, distribue à tous les utilisateurs.
+      operationId: grantPacks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantPacksRequest'
+      responses:
+        '204':
+          description: Packs distribués avec succès.
+        '404':
+          description: Template ou utilisateur introuvable.
+        '500':
+          description: Erreur interne.
+
+  # ========================================
   #   ADMIN — DROP RATES
   # ========================================
   /admin/drop-rates/by-rarity:
@@ -1066,6 +1109,46 @@ components:
           description: Date/heure ISO-8601.
           example: "2026-03-05T14:30:00"
       required: [ actorUsername, cardName, cardRarity, targetUsername, createdAt ]
+
+    UserPackInventoryDto:
+      type: object
+      description: Entrée d'inventaire de pack pour un utilisateur.
+      properties:
+        templateId:
+          type: integer
+          format: int64
+          example: 1
+        templateName:
+          type: string
+          example: "Pack Classique"
+        quantity:
+          type: integer
+          format: int32
+          example: 3
+      required: [ templateId, templateName, quantity ]
+
+    GrantPacksRequest:
+      type: object
+      description: Requête de distribution de packs.
+      properties:
+        userIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs des utilisateurs ciblés. Si vide ou null, distribue à tous.
+          example: [ 1, 2, 3 ]
+        templateId:
+          type: integer
+          format: int64
+          description: ID du pack template à distribuer.
+          example: 1
+        quantity:
+          type: integer
+          format: int32
+          description: Nombre de packs à donner à chaque utilisateur.
+          example: 1
+      required: [ templateId, quantity ]
 
     PackSlotDto:
       type: object

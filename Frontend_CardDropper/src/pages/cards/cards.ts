@@ -122,6 +122,19 @@ export class CardsPage implements OnInit {
   protected readonly cardCount = computed(() => this.filteredCards().length);
   protected readonly totalCount = computed(() => this.allCards().length);
 
+  // ── Active filters ──
+  protected readonly activeFilterCount = computed(() => {
+    let count = 0;
+    if (this.filterRarity()) count++;
+    if (this.filterUnique()) count++;
+    if (this.hideTargeted()) count++;
+    if (this.filterTarget()) count++;
+    if (this.searchName()) count++;
+    return count;
+  });
+
+  protected readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
+
   ngOnInit(): void {
     this.loadCards();
     if (this.auth.isAuthenticated) {
@@ -175,6 +188,17 @@ export class CardsPage implements OnInit {
   clearTarget(): void {
     this.targetInput.set('');
     this.filterTarget.set('');
+  }
+
+  // ── Reset filters ──
+  resetFilters(): void {
+    this.searchName.set('');
+    this.filterRarity.set('');
+    this.filterUnique.set(false);
+    this.hideTargeted.set(false);
+    this.filterTarget.set('');
+    this.targetInput.set('');
+    this.sortBy.set('');
   }
 
   // ── Zoom ──

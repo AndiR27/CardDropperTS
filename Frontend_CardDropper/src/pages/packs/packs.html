@@ -1,5 +1,41 @@
 <section class="packs-page">
 
+  <!-- ====== Info board (dropdown) ====== -->
+  @if (phase() === 'idle') {
+    <aside class="packs-info-board" [class.packs-info-board--open]="infoBoardOpen()">
+      <button class="packs-info-board__toggle" (click)="infoBoardOpen.set(!infoBoardOpen())">
+        <svg class="packs-info-board__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+        </svg>
+        <span class="packs-info-board__title">Drop System</span>
+        <svg class="packs-info-board__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      @if (infoBoardOpen()) {
+        <ul class="packs-info-board__list">
+          <li>
+            <span class="packs-info-board__li-icon">&#x1F48E;</span>
+            <span>Certains packs garantissent au moins une carte <strong>Rare</strong> ou supérieure.</span>
+          </li>
+          <li>
+            <span class="packs-info-board__li-icon">&#x1F4CA;</span>
+            <span>Plus une carte est possédée, moins elle a de chances d'apparaître.</span>
+          </li>
+          <li>
+            <span class="packs-info-board__li-icon">&#x1F503;</span>
+            <span>Posséder une carte réduit sa chance de drop de <strong>50%</strong>.</span>
+          </li>
+          <li>
+            <span class="packs-info-board__li-icon">&#x2B50;</span>
+            <span>Les cartes uniques ne peuvent drop qu'<strong>une seule fois</strong> pour un seul joueur.</span>
+          </li>
+        </ul>
+      }
+    </aside>
+  }
+
   @if (error(); as err) {
     <div class="packs-page__error">
       <p>{{ err }}</p>
@@ -7,16 +43,43 @@
     </div>
   }
 
-  <!-- ====== Idle: Pack display ====== -->
+  <!-- ====== Idle: Pack inventory ====== -->
   @if (phase() === 'idle') {
-    <div class="pack-idle">
-      <div class="pack-idle__glow"></div>
-      <button class="pack-idle__pack" (click)="openPack()">
-        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img"/>
-      </button>
-      <h2 class="pack-idle__title">Pack Classique</h2>
-      <p class="pack-idle__hint">Clique sur le pack pour l'ouvrir</p>
-    </div>
+    @if (inventory().length === 0) {
+      <div class="pack-idle">
+        <div class="pack-idle__glow"></div>
+        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img pack-idle__img--empty"/>
+        <h2 class="pack-idle__title">Aucun pack disponible</h2>
+        <p class="pack-idle__hint">Tu n'as aucun pack à ouvrir pour le moment.</p>
+      </div>
+    } @else if (!selectedPack()) {
+      <div class="pack-inventory">
+        <h2 class="pack-inventory__title">Mes Packs</h2>
+        <p class="pack-inventory__hint">Choisis un pack à ouvrir</p>
+        <div class="pack-inventory__grid">
+          @for (pack of inventory(); track pack.templateId) {
+            <button class="pack-inventory__item" (click)="selectPack(pack)">
+              <div class="pack-inventory__img-wrap">
+                <div class="pack-inventory__aura"></div>
+                <img src="assets/images/CardPackClassic.png" alt="Pack" class="pack-inventory__img"/>
+                <span class="pack-inventory__qty">x{{ pack.quantity }}</span>
+              </div>
+              <span class="pack-inventory__name">{{ pack.templateName }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="pack-idle">
+        <div class="pack-idle__glow"></div>
+        <button class="pack-idle__pack" (click)="openPack()">
+          <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img"/>
+        </button>
+        <h2 class="pack-idle__title">{{ selectedPack()!.templateName }}</h2>
+        <p class="pack-idle__hint">Clique sur le pack pour l'ouvrir ({{ selectedPack()!.quantity }} restant{{ selectedPack()!.quantity > 1 ? 's' : '' }})</p>
+        <button class="pack-idle__back" (click)="selectedPack.set(null)">Retour</button>
+      </div>
+    }
   }
 
   <!-- ====== Opening: Full-screen immersive ====== -->

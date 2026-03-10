@@ -18,4 +18,4 @@ INSERT INTO pack_slot_rarity_weights (pack_slot_id, rarity, weight) VALUES
   (5, 'LEGENDARY',  1.0);
 
 -- Advance the sequence past seeded IDs
-ALTER SEQUENCE pack_slot_seq RESTART WITH 51;
+ALTER SEQUENCE pack_slot_seq RESTART WITH 101;

@@ -1,13 +1,15 @@
 .packs-page {
   padding: 2rem 1.5rem 3rem;
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   text-align: center;
   min-height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  position: relative;
+  overflow: visible;
 }
 
 // ============================================================
@@ -38,6 +40,110 @@
   color: var(--cd-text-muted);
   cursor: pointer;
   font-size: 1rem;
+}
+
+// ============================================================
+//  INFO BOARD — Collapsible dropdown, top-right
+// ============================================================
+.packs-info-board {
+  position: absolute;
+  top: 0.15rem;
+  right: -8.5rem;
+  z-index: 5;
+  width: 340px;
+  background:
+    linear-gradient(165deg, rgba(30, 24, 14, 0.95) 0%, rgba(18, 14, 8, 0.97) 100%);
+  border: 1px solid rgba(240, 178, 50, 0.15);
+  border-radius: 12px;
+  text-align: left;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(240, 178, 50, 0.06);
+  overflow: hidden;
+}
+
+.packs-info-board__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cd-gold);
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(240, 178, 50, 0.06);
+  }
+}
+
+.packs-info-board__icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.packs-info-board__title {
+  flex: 1;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(240, 178, 50, 0.15);
+}
+
+.packs-info-board__chevron {
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+
+  .packs-info-board--open & {
+    transform: rotate(180deg);
+  }
+}
+
+.packs-info-board__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 1px solid rgba(240, 178, 50, 0.1);
+  padding-top: 0.7rem;
+  animation: infoBoardSlideIn 0.25s ease-out;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.5;
+  }
+
+  strong {
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+@keyframes infoBoardSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.packs-info-board__li-icon {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  width: 1.1rem;
+  text-align: center;
 }
 
 // ============================================================
@@ -113,6 +219,142 @@
 @keyframes hintPulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+
+.pack-idle__img--empty {
+  opacity: 0.3;
+  filter: grayscale(1) drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
+}
+
+.pack-idle__back {
+  background: none;
+  border: 1px solid var(--cd-border-strong);
+  color: var(--cd-text-muted);
+  padding: 0.4rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--cd-text);
+    border-color: var(--cd-gold-deep);
+  }
+}
+
+// ============================================================
+//  INVENTORY — Pack grid
+// ============================================================
+.pack-inventory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.pack-inventory__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--cd-gold);
+  margin: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.pack-inventory__hint {
+  font-size: 0.9rem;
+  color: var(--cd-text-muted);
+  margin: 0;
+}
+
+.pack-inventory__grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: 1rem;
+}
+
+.pack-inventory__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-8px) scale(1.03);
+
+    .pack-inventory__img {
+      filter: drop-shadow(0 12px 36px rgba(240, 178, 50, 0.5));
+    }
+
+    .pack-inventory__aura {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+  }
+}
+
+.pack-inventory__img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pack-inventory__aura {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 110%;
+  height: 110%;
+  transform: translate(-50%, -50%) scale(1);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 178, 50, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  animation: inventoryAuraPulse 3s ease-in-out infinite;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+@keyframes inventoryAuraPulse {
+  0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+.pack-inventory__img {
+  width: 260px;
+  display: block;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.55));
+  transition: filter 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.pack-inventory__qty {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 2;
+  background: linear-gradient(135deg, var(--cd-gold-light, var(--cd-gold)) 0%, var(--cd-gold) 100%);
+  color: var(--cd-text-dark);
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5), 0 0 8px rgba(240, 178, 50, 0.3);
+}
+
+.pack-inventory__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--cd-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
 // ============================================================
@@ -631,6 +873,22 @@
 
   .focus-overlay__card {
     width: 240px;
+  }
+
+  .pack-inventory__img {
+    width: 200px;
+  }
+
+  .pack-inventory__grid {
+    gap: 1.5rem;
+  }
+
+  .packs-info-board {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    margin-bottom: 1rem;
   }
 }
 

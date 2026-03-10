@@ -66,6 +66,10 @@
       <!-- ── SLOTS section ── -->
       <div class="admin-section">
         <div class="admin-section__header">
+          <svg class="admin-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
           <h2 class="admin-section__title">Slots réutilisables</h2>
           <span class="admin-section__count">{{ packSlots().length }}</span>
         </div>
@@ -81,6 +85,11 @@
                   Weighted
                 }
               </span>
+              @if (!slot.fixedRarity && slot.rarityWeights) {
+                <div class="slot-card__weights">
+                  {{ slotWeightsSummary(slot) }}
+                </div>
+              }
             </div>
           } @empty {
             <p class="cd-text-muted">Aucun slot défini.</p>
@@ -117,6 +126,10 @@
       <!-- ── TEMPLATES section ── -->
       <div class="admin-section">
         <div class="admin-section__header">
+          <svg class="admin-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
           <h2 class="admin-section__title">Pack Templates</h2>
           <span class="admin-section__count">{{ packTemplates().length }}</span>
         </div>
@@ -185,6 +198,58 @@
           </div>
         </div>
       </div>
+      <!-- ── GRANT PACKS section ── -->
+      <div class="admin-section">
+        <div class="admin-section__header">
+          <svg class="admin-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6"/>
+            <polyline points="12 3 12 15"/><polyline points="8 7 12 3 16 7"/>
+          </svg>
+          <h2 class="admin-section__title">Distribuer des packs</h2>
+        </div>
+
+        @if (grantSuccess()) {
+          <div class="admin-success">{{ grantSuccess() }}</div>
+        }
+
+        <div class="admin-form">
+          <div class="admin-form__row">
+            <select class="admin-form__input admin-form__input--select" [(ngModel)]="grantTemplateId">
+              <option [ngValue]="null">-- Choisir un template --</option>
+              @for (tpl of packTemplates(); track tpl.id) {
+                <option [ngValue]="tpl.id">{{ tpl.name }}</option>
+              }
+            </select>
+            <input type="number" class="admin-form__input admin-form__input--count" min="1"
+                   [(ngModel)]="grantQuantity" placeholder="Qté"/>
+          </div>
+
+          <label class="admin-form__checkbox">
+            <input type="checkbox" [(ngModel)]="grantToAll"/>
+            <span>Distribuer à tous les utilisateurs</span>
+          </label>
+
+          @if (!grantToAll) {
+            <div class="grant-users">
+              @for (user of users(); track user.id) {
+                <label class="grant-users__item"
+                       [class.grant-users__item--selected]="isGrantUserSelected(user.id!)">
+                  <input type="checkbox" [checked]="isGrantUserSelected(user.id!)"
+                         (change)="toggleGrantUser(user.id!)"/>
+                  <span class="grant-users__avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+                  <span class="grant-users__name">{{ user.username }}</span>
+                </label>
+              }
+            </div>
+          }
+
+          <button class="cd-btn--gold"
+                  [disabled]="!grantTemplateId || grantQuantity < 1 || (!grantToAll && grantSelectedUserIds().size === 0)"
+                  (click)="grantPacks()">
+            Distribuer
+          </button>
+        </div>
+      </div>
     </div>
   }
 
@@ -244,7 +309,7 @@
         <!-- Card list -->
         <div class="card-list">
           @for (card of cards(); track card.id) {
-            <div class="card-row">
+            <div class="card-row" [class.card-row--editing]="editingCardId() === card.id">
               <div class="card-row__img-wrap">
                 @if (getImageUrl(card); as imgUrl) {
                   <img [src]="imgUrl" [alt]="card.name" class="card-row__img"/>
@@ -252,16 +317,46 @@
                   <div class="card-row__img-placeholder">?</div>
                 }
               </div>
-              <div class="card-row__info">
-                <span class="card-row__name">{{ card.name }}</span>
-                <span class="card-row__rarity card-row__rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
-              </div>
-              <div class="card-row__meta">
-                @if (card.uniqueCard) {
-                  <span class="card-row__unique">Unique</span>
-                }
-                <span class="card-row__drop">Drop: {{ card.dropRate }}</span>
-              </div>
+
+              @if (editingCardId() === card.id) {
+                <!-- Edit mode -->
+                <div class="card-edit">
+                  <div class="card-edit__row">
+                    <input type="text" class="card-edit__input" placeholder="Nom" [(ngModel)]="editName"/>
+                    <select class="card-edit__input card-edit__input--select" [(ngModel)]="editRarity">
+                      @for (r of rarities; track r) {
+                        <option [ngValue]="r">{{ r }}</option>
+                      }
+                    </select>
+                  </div>
+                  <textarea class="card-edit__textarea" placeholder="Description (optionnel)" [(ngModel)]="editDescription" rows="2"></textarea>
+                  <div class="card-edit__actions">
+                    <button class="cd-btn--gold card-edit__btn" (click)="saveCardEdit(card)">Sauvegarder</button>
+                    <button class="cd-btn--outline card-edit__btn" (click)="cancelCardEdit()">Annuler</button>
+                  </div>
+                </div>
+              } @else {
+                <!-- Display mode -->
+                <div class="card-row__info">
+                  <span class="card-row__name">{{ card.name }}</span>
+                  <span class="card-row__rarity card-row__rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
+                  @if (card.description) {
+                    <span class="card-row__desc">{{ card.description }}</span>
+                  }
+                </div>
+                <div class="card-row__meta">
+                  @if (card.uniqueCard) {
+                    <span class="card-row__unique">Unique</span>
+                  }
+                  <span class="card-row__drop">Drop: {{ card.dropRate }}</span>
+                  <button class="card-row__edit-btn" (click)="startCardEdit(card)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </div>
+              }
             </div>
           } @empty {
             <p class="cd-text-muted">Aucune carte.</p>

@@ -42,6 +42,19 @@ export class AdminViewPage implements OnInit {
   // ── Expanded template ──
   protected readonly expandedTemplateId = signal<number | null>(null);
 
+  // ── Grant Packs form ──
+  grantTemplateId: number | null = null;
+  grantQuantity = 1;
+  grantToAll = false;
+  grantSelectedUserIds = signal<Set<number>>(new Set());
+  protected readonly grantSuccess = signal<string | null>(null);
+
+  // ── Card editing ──
+  protected readonly editingCardId = signal<number | null>(null);
+  editName = '';
+  editRarity: Rarity = Rarity.COMMON;
+  editDescription = '';
+
   // ── Template total cards ──
   protected templateTotalCards = computed(() => {
     return (tpl: PackTemplate) => tpl.slots.reduce((sum, s) => sum + s.count, 0);
@@ -154,6 +167,74 @@ export class AdminViewPage implements OnInit {
 
   toggleTemplate(id: number): void {
     this.expandedTemplateId.set(this.expandedTemplateId() === id ? null : id);
+  }
+
+  // ====== Grant Packs ======
+
+  toggleGrantUser(userId: number): void {
+    const set = new Set(this.grantSelectedUserIds());
+    if (set.has(userId)) {
+      set.delete(userId);
+    } else {
+      set.add(userId);
+    }
+    this.grantSelectedUserIds.set(set);
+  }
+
+  isGrantUserSelected(userId: number): boolean {
+    return this.grantSelectedUserIds().has(userId);
+  }
+
+  grantPacks(): void {
+    if (!this.grantTemplateId || this.grantQuantity < 1) return;
+
+    const userIds = this.grantToAll ? undefined : [...this.grantSelectedUserIds()];
+    if (!this.grantToAll && (!userIds || userIds.length === 0)) return;
+
+    this.admin.grantPacks(this.grantTemplateId, this.grantQuantity, userIds).subscribe({
+      next: () => {
+        const target = this.grantToAll ? 'tous les utilisateurs' : `${userIds!.length} utilisateur(s)`;
+        this.grantSuccess.set(`${this.grantQuantity} pack(s) distribué(s) à ${target}`);
+        this.grantTemplateId = null;
+        this.grantQuantity = 1;
+        this.grantToAll = false;
+        this.grantSelectedUserIds.set(new Set());
+        setTimeout(() => this.grantSuccess.set(null), 3000);
+      },
+      error: err => this.handleError('Grant Packs', err),
+    });
+  }
+
+  // ====== Card edit ======
+
+  startCardEdit(card: Card): void {
+    this.editingCardId.set(card.id);
+    this.editName = card.name;
+    this.editRarity = card.rarity;
+    this.editDescription = card.description ?? '';
+  }
+
+  cancelCardEdit(): void {
+    this.editingCardId.set(null);
+  }
+
+  saveCardEdit(card: Card): void {
+    if (!card.id || !this.editName.trim()) return;
+
+    const updated: Card = {
+      ...card,
+      name: this.editName.trim(),
+      rarity: this.editRarity,
+      description: this.editDescription.trim() || null,
+    };
+
+    this.cardService.update(card.id, updated).subscribe({
+      next: (saved) => {
+        this.cards.update(cards => cards.map(c => c.id === saved.id ? saved : c));
+        this.editingCardId.set(null);
+      },
+      error: err => this.handleError('Update Card', err),
+    });
   }
 
   // ====== Card helpers ======

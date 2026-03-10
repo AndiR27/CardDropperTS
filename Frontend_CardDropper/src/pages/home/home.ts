@@ -1,8 +1,10 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LowerCasePipe } from '@angular/common';
 import { AuthService } from '../../app/core/auth/auth.service';
 import { LiveFeedService } from '../../app/services/live-feed.service';
+import { CardService } from '../../app/services/card.service';
+import { Card } from '../../app/models';
 
 @Component({
   selector: 'app-home',
@@ -14,11 +16,19 @@ import { LiveFeedService } from '../../app/services/live-feed.service';
 export class HomePage implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly liveFeed = inject(LiveFeedService);
+  private readonly cardService = inject(CardService);
   heroLoaded = false;
+
+  // ── Card zoom overlay ──
+  private allCards = signal<Card[]>([]);
+  protected readonly zoomedCard = signal<Card | null>(null);
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated) {
       this.liveFeed.connect();
+      this.cardService.getAll().subscribe({
+        next: (cards) => this.allCards.set(cards),
+      });
     }
   }
 
@@ -52,5 +62,27 @@ export class HomePage implements OnInit, OnDestroy {
     const year = date.getFullYear();
 
     return `${day}/${month}/${year}, à ${time}`;
+  }
+
+  // ── Card zoom ──
+  openCardZoom(cardName: string): void {
+    const card = this.allCards().find(c => c.name === cardName);
+    if (card) {
+      this.zoomedCard.set(card);
+    }
+  }
+
+  closeZoom(): void {
+    this.zoomedCard.set(null);
+  }
+
+  onOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('zoom-overlay')) {
+      this.closeZoom();
+    }
+  }
+
+  getImageUrl(card: Card): string | null {
+    return this.cardService.imageUrl(card);
   }
 }

@@ -1,15 +1,12 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 /**
- * Interceptor HTTP fonctionnel — attache le token JWT à chaque requête API.
- *
- * Fonctionnement :
- *   - Vérifie que la requête cible bien notre backend (apiUrl)
- *   - Si l'utilisateur est authentifié, ajoute le header Authorization: Bearer <token>
- *   - Les requêtes vers d'autres domaines (Keycloak, CDN, etc.) ne sont pas modifiées
+ * Interceptor HTTP fonctionnel — attache le token JWT à chaque requête API
+ * et redirige vers le login si le backend renvoie un 401.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -17,12 +14,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Ne pas injecter le token sur des requêtes qui ne ciblent pas notre API
   const isApiRequest = req.url.startsWith(environment.apiUrl);
 
-  if (isApiRequest && auth.isAuthenticated && auth.accessToken) {
-    const cloned = req.clone({
-      setHeaders: { Authorization: `Bearer ${auth.accessToken}` }
-    });
-    return next(cloned);
-  }
+  const outgoing =
+    isApiRequest && auth.isAuthenticated && auth.accessToken
+      ? req.clone({
+          setHeaders: { Authorization: `Bearer ${auth.accessToken}` },
+        })
+      : req;
 
-  return next(req);
+  return next(outgoing).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // If backend returns 401, the token is invalid/expired — redirect to login
+      if (isApiRequest && error.status === 401) {
+        auth.login();
+      }
+      return throwError(() => error);
+    }),
+  );
 };

@@ -176,6 +176,14 @@
   margin-bottom: 1.25rem;
 }
 
+.admin-section__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--cd-gold);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
 .admin-section__title {
   font-size: 1.1rem;
   font-weight: 700;
@@ -746,6 +754,229 @@
 .card-row__drop {
   font-size: 0.72rem;
   color: var(--cd-text-muted);
+}
+
+.card-row__desc {
+  font-size: 0.75rem;
+  color: var(--cd-text-muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-row__edit-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--cd-border);
+  background: transparent;
+  color: var(--cd-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    border-color: var(--cd-gold-deep);
+    color: var(--cd-gold);
+    background: rgba(240, 178, 50, 0.08);
+  }
+}
+
+.card-row--editing {
+  border-color: var(--cd-gold-deep);
+  background: rgba(240, 178, 50, 0.03);
+  padding: 0.75rem;
+}
+
+// ── Card inline edit form ──
+.card-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+  animation: fadeUp 0.2s ease;
+}
+
+.card-edit__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.card-edit__input {
+  background: var(--cd-surface-2);
+  border: 1px solid var(--cd-border);
+  color: var(--cd-text);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 0;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cd-gold-deep);
+  }
+
+  option {
+    background: var(--cd-surface);
+    color: var(--cd-text);
+  }
+}
+
+.card-edit__textarea {
+  background: var(--cd-surface-2);
+  border: 1px solid var(--cd-border);
+  color: var(--cd-text);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cd-gold-deep);
+  }
+}
+
+.card-edit__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.card-edit__btn {
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+
+  &--save {
+    background: linear-gradient(135deg, var(--cd-gold-deep) 0%, var(--cd-gold) 100%);
+    color: var(--cd-text-dark);
+    border-color: var(--cd-gold-deep);
+
+    &:hover {
+      filter: brightness(1.1);
+    }
+  }
+
+  &--cancel {
+    background: transparent;
+    color: var(--cd-text-muted);
+    border-color: var(--cd-border);
+
+    &:hover {
+      border-color: var(--cd-border-strong);
+      color: var(--cd-text);
+    }
+  }
+}
+
+// ── Slot card weight summary ──
+.slot-card__weights {
+  font-size: 0.68rem;
+  color: var(--cd-text-muted);
+  margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+// ============================================================
+//  GRANT PACKS
+// ============================================================
+.admin-success {
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.35);
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  color: #66bb6a;
+  font-size: 0.85rem;
+  animation: fadeUp 0.3s ease;
+}
+
+.admin-form__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--cd-text);
+  cursor: pointer;
+  margin: 0.25rem 0;
+
+  input[type="checkbox"] {
+    accent-color: var(--cd-gold);
+  }
+}
+
+.grant-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.grant-users__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--cd-border);
+  background: var(--cd-bg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s;
+
+  input[type="checkbox"] { display: none; }
+
+  &--selected {
+    border-color: var(--cd-gold-deep);
+    background: rgba(240, 178, 50, 0.08);
+  }
+
+  &:hover {
+    border-color: var(--cd-gold-deep);
+  }
+}
+
+.grant-users__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cd-gold-deep) 0%, var(--cd-gold) 100%);
+  color: var(--cd-text-dark);
+  font-weight: 700;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.grant-users__name {
+  color: var(--cd-text);
+  font-weight: 600;
 }
 
 // ============================================================

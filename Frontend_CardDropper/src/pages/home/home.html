@@ -35,7 +35,8 @@
             <div class="live-feed__item">
               <span class="live-feed__actor">{{ event.actorUsername }}</span>
               <span class="live-feed__verb">a utilisé</span>
-              <span class="live-feed__card live-feed__card--{{ event.cardRarity | lowercase }}">{{ event.cardName }}</span>
+              <span class="live-feed__card live-feed__card--{{ event.cardRarity | lowercase }}"
+                    (click)="openCardZoom(event.cardName)">{{ event.cardName }}</span>
               <span class="live-feed__verb">sur</span>
               <span class="live-feed__target">{{ event.targetUsername }}</span>
               @if (event.createdAt) {
@@ -72,3 +73,27 @@
     </div>
   </div>
 </section>
+
+<!-- ====== Card zoom overlay ====== -->
+@if (zoomedCard(); as card) {
+  <div class="zoom-overlay" (click)="onOverlayClick($event)">
+    <div class="zoom-card">
+      @if (getImageUrl(card); as imgUrl) {
+        <img [src]="imgUrl" [alt]="card.name" class="zoom-card__img"/>
+      }
+      <div class="zoom-card__details">
+        <h2 class="zoom-card__name">{{ card.name }}</h2>
+        <span class="zoom-card__badge card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+        @if (card.description) {
+          <p class="zoom-card__desc">{{ card.description }}</p>
+        }
+        @if (card.uniqueCard) {
+          <span class="zoom-card__unique">Carte unique</span>
+        }
+      </div>
+      <button class="zoom-card__close" (click)="closeZoom()">&#x2715;</button>
+    </div>
+  </div>
+}

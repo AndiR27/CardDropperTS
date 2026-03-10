@@ -1,7 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { OAuthService } from 'angular-oauth2-oidc';
-import { firstValueFrom } from 'rxjs';
+import { OAuthService, OAuthErrorEvent } from 'angular-oauth2-oidc';
+import { firstValueFrom, filter } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authConfig } from './auth.config';
 
@@ -19,6 +19,7 @@ export class AuthService {
 
   private readonly oauthService = inject(OAuthService);
   private readonly http = inject(HttpClient);
+  private readonly zone = inject(NgZone);
 
   /**
    * Initialise la connexion OIDC.
@@ -32,8 +33,31 @@ export class AuthService {
     await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
     if (this.isAuthenticated) {
+      // Automatic token refresh — uses refresh_token before access_token expires
+      this.oauthService.setupAutomaticSilentRefresh();
+      this.listenForAuthErrors();
       await this.ensureUserInDb();
     }
+  }
+
+  /**
+   * Listen for token refresh failures.
+   * When the refresh token itself is expired (SSO session ended),
+   * redirect to Keycloak login instead of leaving the UI in a broken state.
+   */
+  private listenForAuthErrors(): void {
+    this.oauthService.events
+      .pipe(filter((e): e is OAuthErrorEvent => e instanceof OAuthErrorEvent))
+      .subscribe((e) => {
+        console.warn('OAuth error event:', e.type, e);
+        if (
+          e.type === 'token_refresh_error' ||
+          e.type === 'silent_refresh_error'
+        ) {
+          // Session is truly dead — redirect to login
+          this.zone.run(() => this.login());
+        }
+      });
   }
 
   /**

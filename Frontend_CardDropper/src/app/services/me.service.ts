@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Card } from '../models';
-import type { User, LiveFeedEvent } from '../models';
+import type { User, LiveFeedEvent, UserPackInventory } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
@@ -64,6 +64,10 @@ export class MeService {
   }
 
   // ====== Packs ======
+
+  getPackInventory(): Observable<UserPackInventory[]> {
+    return this.api.get<UserPackInventory[]>('/me/packs');
+  }
 
   openPack(cardIds: number[]): Observable<Card[]> {
     return this.api.post<Card[]>('/me/packs/open', cardIds);

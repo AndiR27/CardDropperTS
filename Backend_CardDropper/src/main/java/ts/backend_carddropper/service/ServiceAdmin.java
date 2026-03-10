@@ -19,6 +19,8 @@ import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackSlot;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 
+import ts.backend_carddropper.models.GrantPacksRequest;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +35,7 @@ public class ServiceAdmin {
     private final MapperPackTemplate mapperPackTemplate;
     private final MapperPackSlot mapperPackSlot;
     private final ServiceUser serviceUser;
+    private final ServicePack servicePack;
 
 
     //==============================
@@ -136,6 +139,20 @@ public class ServiceAdmin {
 
     public Optional<UserDto> findUserByIdAdmin(Long id) {
         return serviceUser.findById(id);
+    }
+
+
+    //==============================
+    //    GRANT PACKS
+    //==============================
+
+    @Transactional
+    public void grantPacks(GrantPacksRequest request) {
+        if (request.userIds() == null || request.userIds().isEmpty()) {
+            servicePack.grantPacksToAll(request.templateId(), request.quantity());
+        } else {
+            servicePack.grantPacks(request.userIds(), request.templateId(), request.quantity());
+        }
     }
 
 

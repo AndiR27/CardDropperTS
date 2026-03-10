@@ -12,6 +12,7 @@ import ts.backend_carddropper.api.MeApi;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.LiveFeedEventDto;
 import ts.backend_carddropper.models.UserDto;
+import ts.backend_carddropper.models.UserPackInventoryDto;
 import ts.backend_carddropper.security.SecurityUtils;
 import ts.backend_carddropper.service.ServiceAuth;
 import ts.backend_carddropper.service.ServiceCard;
@@ -91,6 +92,12 @@ public class RestControllerMe implements MeApi {
     //==============================
     //    ACTIONS PACKS
     //==============================
+
+    @GetMapping("/me/packs")
+    public ResponseEntity<List<UserPackInventoryDto>> getMyPackInventory() {
+        Long userId = serviceAuth.getCurrentUserId();
+        return ResponseEntity.ok(servicePack.getUserPackInventory(userId));
+    }
 
     @Override
     public ResponseEntity<List<CardDto>> openMyPack(List<Long> requestBody) {

@@ -39,197 +39,345 @@
 }
 
 // ============================================================
-//  FILTERS
+//  FILTERS — Glassmorphism container
 // ============================================================
 .filters {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem 1.15rem;
-  background: var(--cd-surface);
-  border: 1px solid var(--cd-border);
-  border-radius: 12px;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
-// ── Pill inputs stacked ──
+.filters__glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(240, 178, 50, 0.06) 0%, rgba(168, 85, 247, 0.04) 50%, rgba(74, 144, 217, 0.04) 100%);
+  pointer-events: none;
+  border-radius: 16px;
+}
+
+// ── Search inputs side-by-side ──
 .filters__searches {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 360px;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+
+  .filters__input-wrap {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .filters__input-wrap {
   position: relative;
 }
 
-.filters__icon {
+.filters__search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: var(--cd-text-muted);
   pointer-events: none;
   z-index: 1;
+  transition: color 0.2s;
+
+  &--purple {
+    .filters__input-wrap:focus-within & {
+      color: #a855f7;
+    }
+  }
+
+  .filters__input-wrap:focus-within & {
+    color: var(--cd-gold);
+  }
 }
 
 .filters__input {
   width: 100%;
-  background: var(--cd-bg);
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.3);
   color: var(--cd-text);
-  border: 1.5px solid var(--cd-border-strong);
-  border-radius: 50px;
-  padding: 0.55rem 2rem 0.55rem 2.2rem;
-  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.95rem 2.2rem 0.95rem 2.8rem;
+  font-size: 0.85rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &::placeholder { color: var(--cd-text-muted); }
+
   &:focus {
     outline: none;
-    border-color: var(--cd-gold);
-    box-shadow: 0 0 0 2px rgba(240, 178, 50, 0.15);
+    border-color: rgba(240, 178, 50, 0.4);
+    box-shadow: 0 0 0 3px rgba(240, 178, 50, 0.1);
+  }
+
+  &--target:focus {
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
   }
 }
 
 .filters__input-clear {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--cd-text-muted);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
-  padding: 0.15rem 0.3rem;
+  padding: 0.2rem 0.3rem;
   line-height: 1;
+  transition: color 0.2s;
 
   &:hover { color: var(--cd-text); }
 }
 
-// ── Row 2: sort + rarity + checkboxes ──
-.filters__more {
+// ── Filters bar (label + sort) ──
+.filters__bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
 }
 
-.filters__sep {
-  width: 1px;
-  height: 16px;
-  background: var(--cd-border-strong);
-  flex-shrink: 0;
+.filters__bar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cd-text-muted);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
 }
 
 // ── Sort dropdown ──
 .filters__sort-wrap {
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.4rem 0.6rem 0.4rem 0.8rem;
+  transition: border-color 0.2s;
+
+  &:hover { border-color: rgba(255, 255, 255, 0.15); }
+}
+
+.filters__sort-label {
+  font-size: 0.75rem;
+  color: var(--cd-text-muted);
+  white-space: nowrap;
 }
 
 .filters__sort {
-  background: var(--cd-bg);
+  background: transparent;
   color: var(--cd-text);
-  border: 1.5px solid var(--cd-border-strong);
-  border-radius: 50px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.75rem;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s;
   appearance: auto;
+  padding: 0;
 
-  &:focus {
-    outline: none;
-    border-color: var(--cd-gold);
+  &:focus { outline: none; }
+
+  option {
+    background: var(--cd-surface, #1a1a2e);
+    color: var(--cd-text);
   }
 }
 
-// ── Rarity crystals ──
-.rarity-picker {
-  display: flex;
-  gap: 0.2rem;
-}
-
-.rarity-picker__item {
+// ── Badges row (rarity left + toggles right) ──
+.filters__badges-row {
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 5px;
-  border: 1px solid transparent;
-  background: transparent;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.rarity-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rarity-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--cd-text-muted);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
+  overflow: hidden;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.04);
+  &:hover:not(.rarity-badge--active) {
+    border-color: rgba(255, 255, 255, 0.15);
     color: var(--cd-text);
   }
 
   &--active {
-    border-color: var(--cd-gold-deep);
-    background: rgba(240, 178, 50, 0.1);
-    color: var(--cd-gold);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 
-    .rarity-picker__crystal {
-      filter: drop-shadow(0 0 3px var(--cd-gold-glow));
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      z-index: -1;
     }
+
+    // Ring indicator
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+    }
+  }
+
+  &--active[data-rarity="all"]::before {
+    background: linear-gradient(135deg, #4b5563, #374151);
+  }
+
+  &--active[data-rarity="common"]::before {
+    background: linear-gradient(135deg, #64748b, #475569);
+  }
+
+  &--active[data-rarity="rare"]::before {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+  }
+
+  &--active[data-rarity="epic"]::before {
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+  }
+
+  &--active[data-rarity="legendary"]::before {
+    background: linear-gradient(135deg, #eab308, #d97706);
   }
 }
 
-.rarity-picker__crystal {
-  height: 16px;
+.rarity-badge__crystal {
+  height: 18px;
   width: auto;
   transition: filter 0.2s;
+
+  .rarity-badge--active & {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+  }
 }
 
-.rarity-picker__text {
+// ── Toggle filters (Unique, Sans cible) ──
+.filters__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--cd-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(.filter-toggle--active) {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--cd-text);
+  }
+
+  &--active {
+    color: #fff;
+    border-color: transparent;
+    background: linear-gradient(135deg, #ef4444, #e11d48);
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
+  }
+}
+
+.filter-toggle__icon {
+  font-size: 0.85rem;
   line-height: 1;
 }
 
-// ── Checkboxes ──
-.filters__check {
+// ── Active filter count ──
+.filters__active-count {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 600;
+  justify-content: space-between;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
   color: var(--cd-text-muted);
-  white-space: nowrap;
-  user-select: none;
+  position: relative;
+  z-index: 1;
+}
+
+.filters__reset {
+  background: none;
+  border: none;
+  color: var(--cd-gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
   transition: color 0.2s;
 
-  &:hover { color: var(--cd-text); }
-
-  input {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--cd-gold);
-    cursor: pointer;
-    margin: 0;
-  }
+  &:hover { color: var(--cd-gold-light, #f5d78e); }
 }
 
 // ── Target dropdown ──
 .target-dropdown {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   right: 0;
   min-width: 160px;
-  background: var(--cd-surface-light);
-  border: 1px solid var(--cd-border-strong);
+  background: var(--cd-surface, #1a1a2e);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
   z-index: 50;
-  box-shadow: var(--cd-shadow-lg);
-  max-height: 180px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -237,11 +385,11 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.4rem 0.65rem;
+  padding: 0.55rem 0.85rem;
   border: none;
   background: none;
   color: var(--cd-text);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: background 0.15s;
 
@@ -475,15 +623,21 @@
 // ============================================================
 @media (max-width: 767px) {
   .filters__searches {
-    max-width: 100%;
+    flex-direction: column;
   }
 
-  .filters__more {
-    flex-wrap: wrap;
+  .filters__badges-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .rarity-picker {
-    flex-wrap: wrap;
+  .rarity-badges {
+    gap: 0.35rem;
+  }
+
+  .rarity-badge {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
   }
 
   .card-grid {

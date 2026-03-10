@@ -1,7 +1,5 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../app/core/auth/auth.service';
 import { MeService } from '../../../app/services/me.service';
 import { Card, Rarity } from '../../../app/models';
 
@@ -15,10 +13,9 @@ import { Card, Rarity } from '../../../app/models';
 export class AddCard {
 
   back = output<void>();
+  saved = output<string>();
 
-  private readonly auth = inject(AuthService);
   private readonly meService = inject(MeService);
-  private readonly router = inject(Router);
 
   // ── State ──
   imageFile = signal<File | null>(null);
@@ -88,7 +85,7 @@ export class AddCard {
     this.meService.createCardWithImage(card, file).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.router.navigate(['/my-cards']);
+        this.saved.emit(card.name);
       },
       error: (err) => {
         console.error('Failed to create card:', err);
