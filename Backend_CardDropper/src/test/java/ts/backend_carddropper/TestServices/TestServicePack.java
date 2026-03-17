@@ -1,6 +1,5 @@
 package ts.backend_carddropper.TestServices;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +16,7 @@ import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackSlot;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserPackInventory;
 import ts.backend_carddropper.service.ServicePack;
 
 import java.util.*;
@@ -46,6 +46,9 @@ class TestServicePack {
 
     @MockitoBean
     private RepositoryPackSlot repositoryPackSlot;
+
+    @MockitoBean
+    private RepositoryUserPackInventory repositoryUserPackInventory;
 
     private User alice;
     private User bob;
@@ -82,6 +85,19 @@ class TestServicePack {
     }
 
     /**
+     * Mocks the inventory so the user owns packs of the given template.
+     */
+    private void mockInventory(User user, PackTemplate template, int quantity) {
+        UserPackInventory inv = new UserPackInventory();
+        inv.setId(1L);
+        inv.setUser(user);
+        inv.setPackTemplate(template);
+        inv.setQuantity(quantity);
+        when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(user.getId(), template.getId()))
+                .thenReturn(Optional.of(inv));
+    }
+
+    /**
      * Helper to create a single-slot template using PackTemplateSlot.
      */
     private PackTemplate createSingleSlotTemplate(Long templateId, String name, PackSlot slot, int count) {
@@ -111,6 +127,7 @@ class TestServicePack {
         @Test
         @DisplayName("generates pack with correct number of cards (1 per slot)")
         void testGeneratePack_success() {
+            mockInventory(alice, packTemplate, 1);
             when(repositoryPackTemplate.findById(packTemplate.getId())).thenReturn(Optional.of(packTemplate));
             mockAllPools();
             mockPackInfrastructure();
@@ -124,6 +141,7 @@ class TestServicePack {
         @Test
         @DisplayName("generates pack and all cards are assigned to user")
         void testGeneratePack_cardsAssignedToUser() {
+            mockInventory(alice, packTemplate, 1);
             when(repositoryPackTemplate.findById(packTemplate.getId())).thenReturn(Optional.of(packTemplate));
             mockAllPools();
             mockPackInfrastructure();
@@ -134,11 +152,12 @@ class TestServicePack {
         }
 
         @Test
-        @DisplayName("throws when template not found")
-        void testGeneratePack_templateNotFound() {
-            when(repositoryPackTemplate.findById(999L)).thenReturn(Optional.empty());
+        @DisplayName("throws when user has no packs of this template")
+        void testGeneratePack_noPacks() {
+            when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(alice.getId(), 999L))
+                    .thenReturn(Optional.empty());
 
-            assertThrows(EntityNotFoundException.class,
+            assertThrows(IllegalStateException.class,
                     () -> servicePack.generatePack(alice.getId(), 999L));
         }
 
@@ -152,6 +171,7 @@ class TestServicePack {
 
             PackTemplate legendaryTemplate = createSingleSlotTemplate(10L, "Legendary Only", legendarySlot, 1);
 
+            mockInventory(alice, legendaryTemplate, 1);
             when(repositoryPackTemplate.findById(legendaryTemplate.getId())).thenReturn(Optional.of(legendaryTemplate));
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(Collections.emptyList());
@@ -203,6 +223,7 @@ class TestServicePack {
 
             PackTemplate singleSlot = createSingleSlotTemplate(30L, "Weighting Test", commonSlot, 1);
 
+            mockInventory(alice, singleSlot, 10000);
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
             when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(lessOwned, moreOwned));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
@@ -242,6 +263,7 @@ class TestServicePack {
 
             PackTemplate singleSlot = createSingleSlotTemplate(31L, "Equal Test", commonSlot, 1);
 
+            mockInventory(alice, singleSlot, 10000);
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
             when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(card1, card2));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
@@ -288,6 +310,7 @@ class TestServicePack {
 
             List<Card> epicPool = cards.stream().filter(c -> c.getRarity() == Rarity.EPIC).toList();
 
+            mockInventory(alice, fixedTemplate, 1);
             when(repositoryPackTemplate.findById(fixedTemplate.getId())).thenReturn(Optional.of(fixedTemplate));
             when(repositoryCard.findPoolCardsByRarity(Rarity.EPIC)).thenReturn(epicPool);
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
@@ -312,6 +335,7 @@ class TestServicePack {
 
             PackTemplate badTemplate = createSingleSlotTemplate(31L, "Bad Slot", emptySlot, 1);
 
+            mockInventory(alice, badTemplate, 1);
             when(repositoryPackTemplate.findById(badTemplate.getId())).thenReturn(Optional.of(badTemplate));
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
@@ -339,6 +363,7 @@ class TestServicePack {
                         return legendaryPool.stream().filter(c -> !excluded.contains(c.getId())).toList();
                     });
 
+            mockInventory(alice, twoSlot, 1);
             when(repositoryPackTemplate.findById(twoSlot.getId())).thenReturn(Optional.of(twoSlot));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);

@@ -48,7 +48,7 @@
     @if (inventory().length === 0) {
       <div class="pack-idle">
         <div class="pack-idle__glow"></div>
-        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img pack-idle__img--empty"/>
+        <img src="assets/images/deck_base.png" alt="Card Pack" class="pack-idle__img pack-idle__img--empty"/>
         <h2 class="pack-idle__title">Aucun pack disponible</h2>
         <p class="pack-idle__hint">Tu n'as aucun pack à ouvrir pour le moment.</p>
       </div>
@@ -61,7 +61,7 @@
             <button class="pack-inventory__item" (click)="selectPack(pack)">
               <div class="pack-inventory__img-wrap">
                 <div class="pack-inventory__aura"></div>
-                <img src="assets/images/CardPackClassic.png" alt="Pack" class="pack-inventory__img"/>
+                <img src="assets/images/deck_base.png" alt="Pack" class="pack-inventory__img"/>
                 <span class="pack-inventory__qty">x{{ pack.quantity }}</span>
               </div>
               <span class="pack-inventory__name">{{ pack.templateName }}</span>
@@ -73,7 +73,7 @@
       <div class="pack-idle">
         <div class="pack-idle__glow"></div>
         <button class="pack-idle__pack" (click)="openPack()">
-          <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-idle__img"/>
+          <img src="assets/images/deck_base.png" alt="Card Pack" class="pack-idle__img"/>
         </button>
         <h2 class="pack-idle__title">{{ selectedPack()!.templateName }}</h2>
         <p class="pack-idle__hint">Clique sur le pack pour l'ouvrir ({{ selectedPack()!.quantity }} restant{{ selectedPack()!.quantity > 1 ? 's' : '' }})</p>
@@ -88,7 +88,7 @@
       <div class="pack-cinematic__bg"></div>
       <div class="pack-cinematic__glow"></div>
       <div class="pack-cinematic__pack">
-        <img src="assets/images/CardPackClassic.png" alt="Card Pack" class="pack-cinematic__img"/>
+        <img src="assets/images/deck_base.png" alt="Card Pack" class="pack-cinematic__img"/>
       </div>
       <div class="pack-cinematic__sparks">
         @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
@@ -126,7 +126,7 @@
               <div class="reveal__slot-inner">
                 <!-- Back face -->
                 <div class="reveal__back">
-                  <img src="assets/images/CardBackClassic.png" alt="Card back" class="reveal__back-img"/>
+                  <img src="assets/images/card_back.png" alt="Card back" class="reveal__back-img"/>
                 </div>
                 <!-- Front face -->
                 <div class="reveal__front">

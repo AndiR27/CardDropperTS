@@ -1,0 +1,211 @@
+<div class="trade-room">
+
+  @if (error()) {
+    <div class="trade-room__error">{{ error() }}</div>
+  }
+
+  @if (session(); as s) {
+
+    <!-- PENDING: waiting for opponent to join -->
+    @if (s.status === 'PENDING') {
+      <div class="trade-room__waiting">
+        <div class="trade-room__waiting-icon">
+          <span class="trade-room__waiting-spinner"></span>
+        </div>
+        <h2>En attente de {{ opponentName() }}...</h2>
+        <p>L'invitation a ete envoyee. L'echange commencera des que votre adversaire accepte.</p>
+        <button class="btn btn--cancel-trade" (click)="cancelTrade()">Annuler l'invitation</button>
+      </div>
+    }
+
+    <!-- ACTIVE / LOCKED: trade in progress -->
+    @if ((s.status === 'ACTIVE' || s.status === 'LOCKED') && phase() === 'live') {
+
+      <!-- Header row: players + status -->
+      <div class="trade-room__header">
+        <span class="trade-room__player">{{ s.initiatorUsername }}</span>
+        <span class="trade-room__header-status" [class.trade-room__header-status--locked]="s.status === 'LOCKED'">
+          {{ s.status === 'LOCKED' ? 'Verrouille' : 'En cours' }}
+        </span>
+        <span class="trade-room__player">{{ s.receiverUsername }}</span>
+      </div>
+
+      <!-- Trade table: LEFT / RIGHT -->
+      <div class="trade-room__table">
+
+        <!-- My side (LEFT) -->
+        <div class="trade-room__side">
+          <h3 class="trade-room__side-title trade-room__side-title--mine">Vous</h3>
+
+          <div class="trade-room__slot" [class.trade-room__slot--locked]="myLocked()">
+            @if (myCard(); as card) {
+              <div class="trade-room__card trade-room__card--appear">
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+                <span class="trade-room__card-name">{{ card.name }}</span>
+                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                @if (myLocked()) {
+                  <div class="trade-room__lock-overlay">
+                    <span>VERROUILLE</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="trade-room__slot-empty">Selectionnez une carte</div>
+            }
+          </div>
+
+          <button
+            class="btn btn--lock"
+            (click)="lockCard()"
+            [disabled]="!myCard() || myLocked() || rarityMismatch()">
+            {{ myLocked() ? 'Verrouille' : 'Verrouiller' }}
+          </button>
+        </div>
+
+        <!-- Center separator -->
+        <div class="trade-room__separator">
+          <span class="trade-room__arrow trade-room__arrow--right"></span>
+          <span class="trade-room__separator-text">ECHANGE</span>
+          <span class="trade-room__arrow trade-room__arrow--left"></span>
+        </div>
+
+        <!-- Opponent side (RIGHT) -->
+        <div class="trade-room__side">
+          <h3 class="trade-room__side-title">{{ opponentName() }}</h3>
+
+          <div class="trade-room__slot" [class.trade-room__slot--locked]="theirLocked()">
+            @if (theirCard(); as card) {
+              <div class="trade-room__card trade-room__card--appear">
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+                <span class="trade-room__card-name">{{ card.name }}</span>
+                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                @if (theirLocked()) {
+                  <div class="trade-room__lock-overlay">
+                    <span>VERROUILLE</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="trade-room__slot-empty">En attente...</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Rarity mismatch warning -->
+      @if (rarityMismatch()) {
+        <div class="trade-room__warning">
+          Les cartes doivent être de la meme rareté pour pouvoir être échangées !
+        </div>
+      }
+
+      <!-- Card picker -->
+      <section class="trade-room__picker">
+        <h3>Vos Cartes</h3>
+        <div class="trade-room__picker-grid">
+          @for (card of myCards(); track card.id) {
+            <div
+              class="trade-room__picker-card"
+              [class.trade-room__picker-card--selected]="myCard()?.id === card.id"
+              (click)="selectCard(card.id!)">
+              @if (card.imageUrl) {
+                <img [src]="imageUrl(card)" [alt]="card.name">
+              }
+              <span>{{ card.name }}</span>
+              <small>{{ card.rarity }}</small>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Cancel trade -->
+      <div class="trade-room__footer">
+        <button class="btn btn--cancel-trade" (click)="cancelTrade()">Quitter l'echange</button>
+      </div>
+    }
+
+    <!-- TRADING ANIMATION -->
+    @if (phase() === 'trading') {
+      <div class="trade-anim">
+        <div class="trade-anim__bg"></div>
+        <div class="trade-anim__content">
+          <div class="trade-anim__cards">
+            <div class="trade-anim__card trade-anim__card--left">
+              @if (givenCard(); as card) {
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+              }
+            </div>
+            <div class="trade-anim__glow"></div>
+            <div class="trade-anim__card trade-anim__card--right">
+              @if (receivedCard(); as card) {
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+              }
+            </div>
+          </div>
+          <p class="trade-anim__text">Echange en cours...</p>
+        </div>
+      </div>
+    }
+
+    <!-- COMPLETED (after animation) -->
+    @if (s.status === 'COMPLETED' && phase() === 'done') {
+      <div class="trade-room__result trade-room__result--completed">
+        <h2>Echange termine !</h2>
+
+        <div class="trade-room__result-cards">
+          <div class="trade-room__result-side trade-room__result-side--given">
+            <span class="trade-room__result-label">Carte donnee</span>
+            @if (givenCard(); as card) {
+              <div class="trade-room__result-card trade-room__result-card--out">
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+                <span class="trade-room__card-name">{{ card.name }}</span>
+                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="trade-room__result-arrow"></div>
+
+          <div class="trade-room__result-side trade-room__result-side--received">
+            <span class="trade-room__result-label">Carte recue</span>
+            @if (receivedCard(); as card) {
+              <div class="trade-room__result-card trade-room__result-card--in">
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+                <span class="trade-room__card-name">{{ card.name }}</span>
+                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="trade-room__result-actions">
+          <button class="btn btn--back" (click)="goToMyCards()">Mes cartes</button>
+          <button class="btn btn--back btn--back-secondary" (click)="backToLobby()">Retour a la salle</button>
+        </div>
+      </div>
+    }
+
+    <!-- CANCELLED -->
+    @if (s.status === 'CANCELLED') {
+      <div class="trade-room__result trade-room__result--cancelled">
+        <h2>Echange annule</h2>
+        <button class="btn btn--back" (click)="backToLobby()">Retour a la salle</button>
+      </div>
+    }
+
+  } @else {
+    <p class="trade-room__loading">Chargement de la session...</p>
+  }
+</div>

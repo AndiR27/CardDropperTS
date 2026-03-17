@@ -45,6 +45,8 @@ public class SecurityConfig {
                         // Admin & Users — ROLE_ADMIN obligatoire
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/**").hasRole("ADMIN")
+                        // WebSocket — le handshake HTTP passe ici, l'auth réelle se fait au niveau STOMP
+                        .requestMatchers("/ws/**").permitAll()
                         // Tout le reste — authentifié
                         .anyRequest().authenticated()
                 )

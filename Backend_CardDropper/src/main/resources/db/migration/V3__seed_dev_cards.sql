@@ -32,5 +32,7 @@ INSERT INTO user_cards (user_id, card_id) VALUES
   (1, 9),   -- Piou (COMMON)
   (1, 10),  -- Storm (COMMON)
   (1, 8),   -- Arm (EPIC)
-  (1, 12);  -- Admin pack (EPIC, unique to admin)
+  (1, 12),  -- Admin pack (EPIC, unique to admin)
+  (2, 2),
+  (2, 6);
 

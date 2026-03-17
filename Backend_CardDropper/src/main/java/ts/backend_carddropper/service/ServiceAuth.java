@@ -31,6 +31,13 @@ public class ServiceAuth {
                         "Current user not found in database"));
     }
 
+    public UserDto getUserByKeycloakId(String keycloakId) {
+        return repositoryUser.findByKeycloakId(keycloakId)
+                .map(mapperUser::toDto)
+                .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException(
+                        "User with keycloakId=" + keycloakId + " not found in database"));
+    }
+
     /**
      * Récupère ou crée l'utilisateur local à partir du JWT Keycloak
      */

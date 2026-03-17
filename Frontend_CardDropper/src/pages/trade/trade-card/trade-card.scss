@@ -1,0 +1,651 @@
+.trade-room {
+  max-width: 960px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+
+  // ===== ERROR =====
+  &__error {
+    background: rgba(220, 53, 69, 0.12);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    color: #ff6b6b;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    animation: trade-fade 0.3s ease;
+  }
+
+  // ===== HEADER (players + status) =====
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    animation: trade-fade 0.3s ease;
+  }
+
+  &__player {
+    color: var(--cd-text, #eee);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  &__header-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+
+    &--locked {
+      background: rgba(255, 193, 7, 0.15);
+      color: #ffc107;
+      border-color: rgba(255, 193, 7, 0.3);
+    }
+  }
+
+  // ===== WAITING (PENDING) =====
+  &__waiting {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--cd-border, #333);
+    border-radius: 12px;
+    animation: trade-fade 0.4s ease;
+
+    h2 {
+      color: var(--cd-gold, #d4a843);
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    p {
+      color: var(--cd-text-muted, #aaa);
+      margin-bottom: 1.5rem;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+    }
+  }
+
+  &__waiting-icon { margin-bottom: 1.25rem; }
+
+  &__waiting-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--cd-border, #444);
+    border-top-color: var(--cd-gold, #d4a843);
+    border-radius: 50%;
+    animation: trade-spin 1s linear infinite;
+  }
+
+  // ===== TRADE TABLE =====
+  &__table {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    animation: trade-fade 0.4s ease;
+  }
+
+  &__side {
+    flex: 1;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__side-title {
+    margin: 0;
+    color: var(--cd-text-muted, #aaa);
+    font-size: 0.85rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+
+    &--mine {
+      color: var(--cd-gold, #d4a843);
+      font-weight: 600;
+    }
+  }
+
+  // ===== CARD SLOT =====
+  &__slot {
+    width: 180px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--cd-border, #3a3a4e);
+    border-radius: 12px;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+
+    // When a card is inside, hide the dashed border
+    &:has(.trade-room__card) {
+      border-color: transparent;
+    }
+
+    &--locked {
+      border-color: transparent;
+    }
+  }
+
+  &__slot-empty {
+    color: var(--cd-text-muted, #555);
+    font-style: italic;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  // ===== CARD (in slot) =====
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    position: relative;
+
+    img {
+      width: 160px;
+      height: 224px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    &-name {
+      color: var(--cd-text, #eee);
+      font-weight: 600;
+      font-size: 0.9rem;
+      max-width: 160px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-rarity {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cd-text-muted, #aaa);
+
+      &[data-rarity="LEGENDARY"] { color: #ff8c00; }
+      &[data-rarity="EPIC"]      { color: #a855f7; }
+      &[data-rarity="RARE"]      { color: #3b82f6; }
+      &[data-rarity="COMMON"]    { color: #9ca3af; }
+    }
+
+    &--appear {
+      animation: trade-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  }
+
+  // ===== LOCK OVERLAY =====
+  &__lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 10px;
+    animation: trade-fade 0.3s ease;
+
+    span {
+      color: #ffc107;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+    }
+  }
+
+  // ===== SEPARATOR =====
+  &__separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0 1.25rem;
+    align-self: center;
+    margin-top: 2rem;
+  }
+
+  &__separator-text {
+    color: var(--cd-gold, #d4a843);
+    font-weight: 700;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+  }
+
+  &__arrow {
+    display: block;
+    width: 0;
+    height: 0;
+
+    &--right {
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 9px solid var(--cd-gold, #d4a843);
+    }
+
+    &--left {
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-right: 9px solid var(--cd-gold, #d4a843);
+    }
+  }
+
+  // ===== WARNING =====
+  &__warning {
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.35);
+    color: #ffc107;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    animation: trade-fade 0.3s ease;
+  }
+
+  // ===== PICKER =====
+  &__picker {
+    animation: trade-fade 0.3s ease;
+
+    h3 {
+      color: var(--cd-text, #eee);
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+    }
+  }
+
+  &__picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.4rem;
+  }
+
+  &__picker-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem;
+    border: 1px solid var(--cd-border, #333);
+    border-radius: 8px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+
+    &:hover {
+      border-color: var(--cd-gold, #d4a843);
+      background: rgba(212, 168, 67, 0.06);
+      transform: translateY(-2px);
+    }
+
+    &--selected {
+      border-color: var(--cd-gold, #d4a843);
+      background: rgba(212, 168, 67, 0.12);
+    }
+
+    img {
+      width: 56px;
+      height: 78px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    span {
+      color: var(--cd-text, #eee);
+      font-size: 0.65rem;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    small {
+      color: var(--cd-text-muted, #888);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+    }
+  }
+
+  // ===== FOOTER (cancel) =====
+  &__footer {
+    margin-top: 2rem;
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cd-border, #2a2a3e);
+  }
+}
+
+// ===== TRADING ANIMATION (fullscreen) =====
+.trade-anim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tradeFadeIn 0.4s ease;
+
+  &__bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #1a1005 0%, #000 70%);
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  &__cards {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    position: relative;
+  }
+
+  &__card {
+    img {
+      width: 140px;
+      height: 196px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    &--left {
+      animation: tradeCardLeft 1.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    &--right {
+      animation: tradeCardRight 1.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+  }
+
+  &__glow {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212, 168, 67, 0.6) 0%, transparent 70%);
+    animation: tradeGlow 1.8s ease-in-out both;
+  }
+
+  &__text {
+    color: var(--cd-gold, #d4a843);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    animation: tradePulseText 1s ease-in-out infinite;
+  }
+}
+
+@keyframes tradeCardLeft {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  40%  { transform: translateX(60px) scale(0.9); opacity: 1; }
+  60%  { transform: translateX(60px) scale(0.9); opacity: 0.6; }
+  100% { transform: translateX(120px) scale(0.85); opacity: 0; }
+}
+
+@keyframes tradeCardRight {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  40%  { transform: translateX(-60px) scale(0.9); opacity: 1; }
+  60%  { transform: translateX(-60px) scale(0.9); opacity: 0.6; }
+  100% { transform: translateX(-120px) scale(0.85); opacity: 0; }
+}
+
+@keyframes tradeGlow {
+  0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  30%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  70%  { transform: translate(-50%, -50%) scale(1.8); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
+@keyframes tradePulseText {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+@keyframes tradeFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ===== RESULT =====
+.trade-room {
+  &__result {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    animation: trade-fade 0.5s ease;
+
+    h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+    }
+
+    &--completed h2 { color: var(--cd-gold, #d4a843); }
+    &--cancelled h2 { color: #dc3545; }
+  }
+
+  &__result-cards {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  &__result-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__result-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    .trade-room__result-side--given &    { color: var(--cd-text-muted, #888); }
+    .trade-room__result-side--received & { color: var(--cd-gold, #d4a843); }
+  }
+
+  &__result-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+
+    .trade-room__result-side--received & {
+      filter: drop-shadow(0 0 14px rgba(212, 168, 67, 0.3));
+    }
+
+    img {
+      width: 160px;
+      height: 224px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    &--out {
+      animation: trade-slide-out 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+    }
+
+    &--in {
+      animation: trade-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+    }
+  }
+
+  &__result-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  &__result-arrow {
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 14px solid var(--cd-gold, #d4a843);
+    opacity: 0;
+    animation: trade-fade 0.3s ease 0.4s both;
+  }
+
+  // ===== LOADING =====
+  &__loading {
+    text-align: center;
+    color: var(--cd-text-muted, #888);
+    padding: 3rem 0;
+  }
+}
+
+// ===== BUTTONS =====
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: opacity 0.2s, transform 0.15s;
+
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &--lock {
+    background: #ffc107;
+    color: #1a1a2e;
+    width: 160px;
+  }
+
+  &--cancel-trade {
+    background: transparent;
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    color: rgba(220, 53, 69, 0.7);
+    font-size: 0.8rem;
+
+    &:hover { border-color: #dc3545; color: #dc3545; }
+  }
+
+  &--back {
+    background: var(--cd-gold, #d4a843);
+    color: #1a1a2e;
+    padding: 0.75rem 2rem;
+
+    &-secondary {
+      background: transparent;
+      border: 1px solid var(--cd-gold, #d4a843);
+      color: var(--cd-gold, #d4a843);
+    }
+  }
+}
+
+// ===== ANIMATIONS =====
+@keyframes trade-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes trade-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes trade-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes trade-slide-out {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes trade-slide-in {
+  from { opacity: 0; transform: translateX(-30px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+// ===== RESPONSIVE =====
+@media (max-width: 640px) {
+  .trade-room__table {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .trade-room__separator {
+    flex-direction: row;
+    margin-top: 0;
+    padding: 0.5rem 0;
+
+    .trade-room__arrow--right {
+      border: none;
+      border-top: 9px solid var(--cd-gold, #d4a843);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+    }
+
+    .trade-room__arrow--left {
+      border: none;
+      border-bottom: 9px solid var(--cd-gold, #d4a843);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+    }
+  }
+
+  .trade-room__slot {
+    width: 140px;
+    height: 220px;
+  }
+
+  .trade-room__card img,
+  .trade-room__result-card img {
+    width: 120px;
+    height: 168px;
+  }
+
+  .btn--lock { width: 140px; }
+
+  .trade-room__result-cards {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .trade-room__result-arrow {
+    border: none;
+    border-top: 14px solid var(--cd-gold, #d4a843);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+  }
+}

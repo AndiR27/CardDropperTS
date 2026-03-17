@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.PackSlot;
@@ -12,6 +13,7 @@ import ts.backend_carddropper.entity.PackTemplateSlot;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
+import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.mapping.MapperCard;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserPackInventoryDto;
@@ -41,6 +43,8 @@ public class ServicePack {
     private final RepositoryUserPackInventory repositoryUserPackInventory;
     private final MapperCard mapperCard;
     private final ServiceUser serviceUser;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     private static final double OWNED_PENALTY = 0.5;
 
@@ -74,7 +78,15 @@ public class ServicePack {
         for (PackTemplateSlot templateSlot : template.getSlots()) {
             for (int i = 0; i < templateSlot.getCount(); i++) {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
-
+                if(rarity == Rarity.LEGENDARY){
+                    // Publier l'événement pour le live feed
+//                    eventPublisher.publishEvent(new UseCardEvent(
+//                            this,
+//                            user.getUsername(),
+//                            card.getName(),
+//                            card.getRarity().name(),
+//                            target.getUsername()));
+                }
                 List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
                 Card card = pickCardFromPool(rarity, alreadyPickedIds, ownedCardIds);
 

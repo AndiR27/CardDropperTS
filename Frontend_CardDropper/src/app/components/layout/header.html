@@ -24,6 +24,9 @@
         <a routerLink="/packs" routerLinkActive="header__link--active" class="header__link">
           <span>Packs</span>
         </a>
+        <a routerLink="/trade" routerLinkActive="header__link--active" class="header__link">
+          <span>Echange</span>
+        </a>
         @if (auth.isAdmin) {
           <a routerLink="/admin" routerLinkActive="header__link--active" class="header__link">
             <span>Admin</span>
@@ -70,6 +73,8 @@
              class="header__mobile-link" (click)="closeMenu()">Forge</a>
           <a routerLink="/packs" routerLinkActive="header__mobile-link--active"
              class="header__mobile-link" (click)="closeMenu()">Packs</a>
+          <a routerLink="/trade" routerLinkActive="header__mobile-link--active"
+             class="header__mobile-link" (click)="closeMenu()">Trade</a>
           @if (auth.isAdmin) {
             <a routerLink="/admin" routerLinkActive="header__mobile-link--active"
                class="header__mobile-link" (click)="closeMenu()">Admin</a>

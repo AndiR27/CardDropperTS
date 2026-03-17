@@ -5,12 +5,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.format.annotation.DateTimeFormat;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.trade.enums.TradeSessionStatus;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "trade_session")
@@ -19,29 +19,30 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class TradeSession {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
-    private Long id;
+    private UUID id;
 
     @Column(name = "session_status", nullable = false)
     @Enumerated(EnumType.STRING)
     private TradeSessionStatus status;
 
     @ManyToOne
-    @JoinColumn(name = "user1_id", nullable = false)
+    @JoinColumn(name = "initiator_id", nullable = false)
     private User initiator;
 
     @ManyToOne
-    @JoinColumn(name = "user2_id", nullable = false)
+    @JoinColumn(name = "receiver_id")
     private User receiver;
 
     @ManyToOne
-    @JoinColumn(name = "card1_id", nullable = false)
+    @JoinColumn(name = "initiator_card_id")
     private Card initiatorCard;
 
     @ManyToOne
-    @JoinColumn(name = "card2_id", nullable = false)
+    @JoinColumn(name = "receiver_card_id")
     private Card receiverCard;
 
     @Column(name = "initiator_locked", nullable = false)
@@ -51,13 +52,8 @@ public class TradeSession {
     private boolean receiverLocked;
 
     @Column(name = "created_at", nullable = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
-    @Column(name = "completed_at", nullable = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate completedAt;
-
-
-
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 }
