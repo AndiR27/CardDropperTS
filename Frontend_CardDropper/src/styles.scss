@@ -2,6 +2,11 @@
 @use './styles/variables';
 @use './styles/utilities';
 
+* {
+  cursor: url('assets/images/cursor.png'), auto !important;
+}
+
+
 @font-face {
   font-family: 'BlizzardGlobal';
   src: url('assets/fonts/BlizzardGlobal.ttf') format('truetype');
