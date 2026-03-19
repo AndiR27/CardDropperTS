@@ -24,6 +24,9 @@ public class LiveFeedEvent {
     @Column(name = "actor_username", nullable = false)
     private String actorUsername;
 
+    @Column(name = "event_type", nullable = false)
+    private String eventType;
+
     @Column(name = "card_name", nullable = false)
     private String cardName;
 

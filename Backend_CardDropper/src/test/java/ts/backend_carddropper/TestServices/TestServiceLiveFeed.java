@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ts.backend_carddropper.entity.LiveFeedEvent;
+import ts.backend_carddropper.event.LegendaryDropEvent;
 import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.models.LiveFeedEventDto;
 import ts.backend_carddropper.repository.RepositoryLiveFeed;
@@ -39,6 +40,7 @@ class TestServiceLiveFeed {
     void setUp() {
         sampleEvent = new LiveFeedEvent();
         sampleEvent.setId(1L);
+        sampleEvent.setEventType("USE_CARD");
         sampleEvent.setActorUsername("alice");
         sampleEvent.setCardName("Dragon");
         sampleEvent.setCardRarity("EPIC");
@@ -166,6 +168,7 @@ class TestServiceLiveFeed {
             verify(repositoryLiveFeed).save(captor.capture());
 
             LiveFeedEvent saved = captor.getValue();
+            assertEquals("USE_CARD", saved.getEventType());
             assertEquals("alice", saved.getActorUsername());
             assertEquals("Fireball", saved.getCardName());
             assertEquals("RARE", saved.getCardRarity());
@@ -186,6 +189,30 @@ class TestServiceLiveFeed {
 
             // L'événement ne doit pas lever d'exception même avec des abonnés
             assertDoesNotThrow(() -> serviceLiveFeed.onUseCardEvent(event));
+        }
+
+        @Test
+        @DisplayName("persiste un LegendaryDropEvent avec le bon type")
+        void testOnLegendaryDropEvent_persistsCorrectly() {
+            when(repositoryLiveFeed.save(any(LiveFeedEvent.class))).thenAnswer(inv -> {
+                LiveFeedEvent entity = inv.getArgument(0);
+                entity.setId(2L);
+                entity.setCreatedAt(LocalDateTime.now());
+                return entity;
+            });
+
+            LegendaryDropEvent event = new LegendaryDropEvent(this, "alice");
+            serviceLiveFeed.onLegendaryDropEvent(event);
+
+            var captor = org.mockito.ArgumentCaptor.forClass(LiveFeedEvent.class);
+            verify(repositoryLiveFeed).save(captor.capture());
+
+            LiveFeedEvent saved = captor.getValue();
+            assertEquals("LEGENDARY_DROP", saved.getEventType());
+            assertEquals("alice", saved.getActorUsername());
+            assertEquals("", saved.getCardName());
+            assertEquals("LEGENDARY", saved.getCardRarity());
+            assertEquals("", saved.getTargetUsername());
         }
     }
 }

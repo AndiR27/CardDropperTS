@@ -280,12 +280,20 @@ public class ServiceTradeSession {
     }
 
     private TradeSessionDto executeTrade(TradeSession session) {
-        User initiator = session.getInitiator();
-        User receiver = session.getReceiver();
         Card initiatorCard = session.getInitiatorCard();
         Card receiverCard = session.getReceiverCard();
 
-        // Verify ownership still valid
+        // Lock both users (consistent ordering by ID to prevent deadlocks)
+        Long id1 = session.getInitiator().getId();
+        Long id2 = session.getReceiver().getId();
+        User first  = repositoryUser.findByIdForUpdate(Math.min(id1, id2))
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User second = repositoryUser.findByIdForUpdate(Math.max(id1, id2))
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User initiator = id1 < id2 ? first : second;
+        User receiver  = id1 < id2 ? second : first;
+
+        // Verify ownership still valid (under lock)
         boolean initiatorOwns = initiator.getCardsOwned().stream()
                 .anyMatch(c -> c.getId().equals(initiatorCard.getId()));
         boolean receiverOwns = receiver.getCardsOwned().stream()

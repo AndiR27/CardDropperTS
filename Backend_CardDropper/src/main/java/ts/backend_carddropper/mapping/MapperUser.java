@@ -10,6 +10,8 @@ import ts.backend_carddropper.models.UserDto;
 public interface MapperUser {
 
     // cardsOwned et cardsCreated sont mappés automatiquement via MapperCard.toDto
+    // admin is set manually in ServiceAuth, default false here
+    @Mapping(target = "admin", constant = "false")
     UserDto toDto(User entity);
 
     @Mapping(target = "cardsOwned", ignore = true)

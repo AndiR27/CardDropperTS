@@ -28,6 +28,7 @@ export class CardPreview {
   rarity       = input<Rarity>(Rarity.COMMON);
   cardImageUrl = input<string | null>(null);
   targetName   = input<string>('');
+  locked       = input<boolean>(false);
 
   // ── Element ref for capture ──
   cardEl = viewChild<ElementRef<HTMLDivElement>>('cardEl');
@@ -96,15 +97,52 @@ export class CardPreview {
     return Math.max(7, 16 - (len - 20) * 0.15);
   });
 
+  // ── Font embedding cache (fetched once, reused across captures) ──
+  private fontStyleCache: string | null = null;
+
+  private async buildFontStyles(): Promise<string> {
+    if (this.fontStyleCache) return this.fontStyleCache;
+
+    const fonts = [
+      { family: 'BlizzardGlobal', url: 'assets/fonts/BlizzardGlobal.ttf', format: 'truetype', weight: 'normal' },
+      { family: 'GBJenLei', url: 'assets/fonts/GBJenLei/GBJenLei-Medium.woff2', format: 'woff2', weight: '500' },
+    ];
+
+    const rules: string[] = [];
+    for (const f of fonts) {
+      const resp = await fetch(f.url);
+      const buf = await resp.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+      rules.push(`@font-face { font-family: '${f.family}'; src: url('data:font/${f.format};base64,${base64}') format('${f.format}'); font-weight: ${f.weight}; font-style: normal; }`);
+    }
+
+    this.fontStyleCache = rules.join('\n');
+    return this.fontStyleCache;
+  }
+
   // ── Capture card as image ──
   async captureImage(): Promise<Blob> {
     const el = this.cardEl();
     if (!el) throw new Error('Card element not available');
 
+    await document.fonts.ready;
+    const fontStyles = await this.buildFontStyles();
+
     const canvas = await html2canvas(el.nativeElement, {
       useCORS: true,
-      scale: 2,
+      scale: 3,
       backgroundColor: null,
+      onclone: async (clonedDoc: Document) => {
+        const style = clonedDoc.createElement('style');
+        style.textContent = fontStyles;
+        clonedDoc.head.appendChild(style);
+        await clonedDoc.fonts.ready;
+      },
     });
 
     return new Promise<Blob>((resolve, reject) => {
@@ -117,17 +155,20 @@ export class CardPreview {
 
   // ── Zoom ──
   onWheel(event: WheelEvent): void {
+    if (this.locked()) return;
     event.preventDefault();
     const delta = event.deltaY > 0 ? -0.05 : 0.05;
     this.zoom.set(Math.max(0.5, Math.min(3, this.zoom() + delta)));
   }
 
   setZoom(value: number): void {
+    if (this.locked()) return;
     this.zoom.set(Math.max(0.5, Math.min(3, value)));
   }
 
   // ── Pan (drag) ──
   onMouseDown(event: MouseEvent): void {
+    if (this.locked()) return;
     this.dragging = true;
     this.lastX = event.clientX;
     this.lastY = event.clientY;

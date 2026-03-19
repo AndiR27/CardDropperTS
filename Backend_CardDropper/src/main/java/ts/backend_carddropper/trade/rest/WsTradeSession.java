@@ -11,6 +11,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Controller;
 import ts.backend_carddropper.trade.service.ServiceTradeSession;
 
+import ts.backend_carddropper.trade.models.CardSelectionRequest;
+
 import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
@@ -28,10 +30,12 @@ public class WsTradeSession {
     private final ServiceTradeSession serviceTradeSession;
 
     @MessageMapping("/trade/{id}/select")
-    public void selectCard(@DestinationVariable UUID id, Map<String, Long> body, Principal principal) {
+    public void selectCard(@DestinationVariable UUID id, CardSelectionRequest body, Principal principal) {
+        if (body == null || body.cardId() == null) {
+            throw new IllegalArgumentException("cardId is required");
+        }
         String keycloakId = extractKeycloakId(principal);
-        Long cardId = body.get("cardId");
-        serviceTradeSession.selectCard(id, keycloakId, cardId);
+        serviceTradeSession.selectCard(id, keycloakId, body.cardId());
     }
 
     @MessageMapping("/trade/{id}/lock")
@@ -50,7 +54,12 @@ public class WsTradeSession {
     @SendToUser("/queue/errors")
     public Map<String, String> handleException(Exception ex) {
         log.warn("WebSocket error: {}", ex.getMessage());
-        return Map.of("error", ex.getMessage());
+        String clientMessage = switch (ex) {
+            case IllegalArgumentException e -> "Invalid request";
+            case IllegalStateException e -> "Operation not allowed";
+            default -> "An error occurred";
+        };
+        return Map.of("error", clientMessage);
     }
 
     private String extractKeycloakId(Principal principal) {

@@ -117,7 +117,7 @@
 
   <!-- Count -->
   <p class="cards-page__count">
-    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }}@if (cardCount() !== totalCount()) { <span> / {{ totalCount() }}</span> }
+    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }} / {{ totalElements() }} au total
   </p>
 
   <!-- ====== Card grid ====== -->
@@ -153,6 +153,21 @@
     </div>
   } @else if (!loading()) {
     <p class="cards-page__status">Aucune carte ne correspond à ta recherche.</p>
+  }
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <div class="pagination">
+      <button class="pagination__btn" (click)="prevPage()" [disabled]="currentPage() === 0">
+        &#x2190; Precedent
+      </button>
+      <span class="pagination__info">
+        Page {{ currentPage() + 1 }} / {{ totalPages() }}
+      </span>
+      <button class="pagination__btn" (click)="nextPage()" [disabled]="currentPage() + 1 >= totalPages()">
+        Suivant &#x2192;
+      </button>
+    </div>
   }
 </section>
 

@@ -21,11 +21,14 @@ import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServiceCard;
 import ts.backend_carddropper.utils.ImageUtils;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import javax.imageio.ImageIO;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -284,7 +287,7 @@ class TestServiceCard {
 
         @Test
         @DisplayName("createCardWithImage stores image and sets imageUrl")
-        void testCreateCardWithImage_valid() {
+        void testCreateCardWithImage_valid() throws Exception {
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
             Card savedCard = new Card();
@@ -306,8 +309,13 @@ class TestServiceCard {
                     .thenReturn(savedCard)     // first save (create)
                     .thenReturn(updatedCard);   // second save (with imageUrl)
 
+            // Create a valid 2x2 PNG image so ImageUtils.resizeToCardSize() can decode it
+            BufferedImage img = new BufferedImage(2, 2, BufferedImage.TYPE_INT_ARGB);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(img, "png", baos);
+
             MockMultipartFile image = new MockMultipartFile(
-                    "image", "dragon.png", "image/png", new byte[]{1, 2, 3, 4});
+                    "image", "dragon.png", "image/png", baos.toByteArray());
 
             CardDto dto = new CardDto(null, "Dragon", null, Rarity.EPIC, null, 0.2, false, alice.getId(), null);
             CardDto result = serviceCard.createCardWithImage(dto, image, alice.getId(), "alice");

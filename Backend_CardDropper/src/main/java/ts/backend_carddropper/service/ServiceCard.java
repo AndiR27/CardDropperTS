@@ -6,6 +6,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ts.backend_carddropper.entity.Card;
@@ -18,6 +21,7 @@ import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.utils.ImageUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -71,6 +75,15 @@ public class ServiceCard {
                 .stream()
                 .map(mapperCard::toDto)
                 .toList();
+    }
+
+    /**
+     * Trouver toutes les cartes (paginé)
+     */
+    public Page<CardDto> findAllPaged(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("name").ascending());
+        return repositoryCard.findAll(pageRequest)
+                .map(mapperCard::toDto);
     }
 
     /**
@@ -166,7 +179,11 @@ public class ServiceCard {
             Path userDir = Paths.get(cardImagesDir, username);
             Files.createDirectories(userDir);
             Path target = userDir.resolve(filename);
-            Files.copy(image.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+            // Resize to standard card dimensions (785x1100) for consistency
+            InputStream resizedStream = ImageUtils.resizeToCardSize(image.getInputStream());
+            Files.copy(resizedStream, target, StandardCopyOption.REPLACE_EXISTING);
+
             log.info("Stored card image: {}/{}", username, filename);
         } catch (IOException e) {
             throw new RuntimeException("Failed to store card image", e);

@@ -137,6 +137,11 @@
   border: 1px solid var(--cd-border);
   font-size: 0.85rem;
   animation: feed-in 0.3s ease;
+
+  &--legendary {
+    border-color: rgba(255, 140, 0, 0.4);
+    background: rgba(255, 140, 0, 0.06);
+  }
 }
 
 @keyframes feed-in {

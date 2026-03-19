@@ -26,6 +26,12 @@ export class CardsPage implements OnInit {
   protected readonly users = signal<User[]>([]);
   private readonly userMap = signal<Map<number, string>>(new Map());
 
+  // ── Pagination ──
+  protected readonly currentPage = signal(0);
+  protected readonly totalPages = signal(0);
+  protected readonly totalElements = signal(0);
+  protected readonly pageSize = 20;
+
   // ── Filters ──
   protected readonly searchName = signal('');
   protected readonly filterRarity = signal<Rarity | ''>('');
@@ -216,11 +222,26 @@ export class CardsPage implements OnInit {
     }
   }
 
+  // ── Pagination navigation ──
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages()) return;
+    this.currentPage.set(page);
+    this.loadCards();
+  }
+
+  nextPage(): void { this.goToPage(this.currentPage() + 1); }
+  prevPage(): void { this.goToPage(this.currentPage() - 1); }
+
   // ── Data loading ──
   private loadCards(): void {
     this.loading.set(true);
-    this.cardService.getAll().subscribe({
-      next: (data) => { this.allCards.set(data); this.loading.set(false); },
+    this.cardService.getPaged(this.currentPage(), this.pageSize).subscribe({
+      next: (res) => {
+        this.allCards.set(res.content);
+        this.totalPages.set(res.page.totalPages);
+        this.totalElements.set(res.page.totalElements);
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
   }

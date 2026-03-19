@@ -17,7 +17,7 @@ services:
       # ==========================
       # JPA / Hibernate
       # ==========================
-      SPRING_JPA_DDL_AUTO: update
+      SPRING_JPA_DDL_AUTO: validate
 
       # ==========================
       # Keycloak / OAuth2

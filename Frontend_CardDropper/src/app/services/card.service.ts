@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Card, Rarity } from '../models';
+import { Card, PageResponse, Rarity } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class CardService {
@@ -10,6 +10,10 @@ export class CardService {
 
   getAll(): Observable<Card[]> {
     return this.api.get<Card[]>('/cards');
+  }
+
+  getPaged(page: number, size: number): Observable<PageResponse<Card>> {
+    return this.api.get<PageResponse<Card>>('/cards/paged', { page, size });
   }
 
   getById(id: number): Observable<Card> {

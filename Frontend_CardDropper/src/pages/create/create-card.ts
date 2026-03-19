@@ -35,8 +35,6 @@ export class CreateCardPage {
   step = signal<'edit' | 'confirm'>('edit');
   creating = signal(false);
   submitting = signal(false);
-  renderedImageBlob = signal<Blob | null>(null);
-  renderedImageUrl = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
   // ── Form state (signals for live preview) ──
@@ -94,9 +92,6 @@ export class CreateCardPage {
 
   // ── Réinitialise le formulaire après création réussie ──
   private resetForm(): void {
-    const prevUrl = this.renderedImageUrl();
-    if (prevUrl) URL.revokeObjectURL(prevUrl);
-
     this.mode.set('choose');
     this.step.set('edit');
     this.name.set('');
@@ -107,31 +102,11 @@ export class CreateCardPage {
     this.cardImageUrl.set(null);
     this.targeting.set(false);
     this.uploadedFile = null;
-    this.renderedImageBlob.set(null);
-    this.renderedImageUrl.set(null);
   }
 
   // ── Create flow ──
-  async onCreateClick(): Promise<void> {
-    const preview = this.cardPreview();
-    if (!preview) return;
-
-    this.creating.set(true);
-    try {
-      const blob = await preview.captureImage();
-      this.renderedImageBlob.set(blob);
-
-      // Revoke previous URL if any
-      const prevUrl = this.renderedImageUrl();
-      if (prevUrl) URL.revokeObjectURL(prevUrl);
-
-      this.renderedImageUrl.set(URL.createObjectURL(blob));
-      this.step.set('confirm');
-    } catch (err) {
-      console.error('Failed to capture card image:', err);
-    } finally {
-      this.creating.set(false);
-    }
+  onCreateClick(): void {
+    this.step.set('confirm');
   }
 
   onAddCardSaved(cardName: string): void {
@@ -143,33 +118,40 @@ export class CreateCardPage {
     this.step.set('edit');
   }
 
-  onConfirm(): void {
-    const blob = this.renderedImageBlob();
-    if (!blob) return;
+  async onConfirm(): Promise<void> {
+    const preview = this.cardPreview();
+    if (!preview) return;
 
     this.submitting.set(true);
 
-    const card: Partial<Card> = {
-      name: this.name(),
-      description: this.description() || null,
-      rarity: this.rarity(),
-      dropRate: 0,
-      uniqueCard: false,
-      imageUrl: null,
-    };
+    try {
+      const blob = await preview.captureImage();
 
-    const filename = `${this.name() || 'card'}.png`;
+      const card: Partial<Card> = {
+        name: this.name(),
+        description: this.description() || null,
+        rarity: this.rarity(),
+        dropRate: 0,
+        uniqueCard: false,
+        imageUrl: null,
+      };
 
-    this.cardService.createWithImage(card, blob, filename).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.resetForm();
-        this.successMessage.set(`La carte "${card.name}" a été forgée avec succès !`);
-      },
-      error: (err) => {
-        console.error('Failed to create card:', err);
-        this.submitting.set(false);
-      },
-    });
+      const filename = `${this.name() || 'card'}.png`;
+
+      this.cardService.createWithImage(card, blob, filename).subscribe({
+        next: () => {
+          this.submitting.set(false);
+          this.resetForm();
+          this.successMessage.set(`La carte "${card.name}" a été forgée avec succès !`);
+        },
+        error: (err) => {
+          console.error('Failed to create card:', err);
+          this.submitting.set(false);
+        },
+      });
+    } catch (err) {
+      console.error('Failed to capture card image:', err);
+      this.submitting.set(false);
+    }
   }
 }

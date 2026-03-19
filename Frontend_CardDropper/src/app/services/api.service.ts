@@ -22,8 +22,8 @@ export class ApiService {
   private readonly baseUrl = environment.apiUrl;
 
   /** GET — récupérer des données */
-  get<T>(path: string): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}${path}`);
+  get<T>(path: string, params?: Record<string, string | number>): Observable<T> {
+    return this.http.get<T>(`${this.baseUrl}${path}`, { params });
   }
 
   /** POST — créer une ressource */

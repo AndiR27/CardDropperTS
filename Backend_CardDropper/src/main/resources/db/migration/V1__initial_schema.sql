@@ -65,6 +65,7 @@ CREATE TABLE pack_template_slot (
 CREATE TABLE live_feed_event (
     id              BIGINT PRIMARY KEY,
     actor_username  VARCHAR(255) NOT NULL,
+    event_type      VARCHAR(255) NOT NULL,
     card_name       VARCHAR(255) NOT NULL,
     card_rarity     VARCHAR(255) NOT NULL,
     target_username VARCHAR(255) NOT NULL,

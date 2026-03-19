@@ -143,10 +143,18 @@
         <h2 class="create-page__section-title">Confirmer la forge</h2>
 
         <div class="confirm-page__content">
-          <!-- Rendered card image -->
-          @if (renderedImageUrl()) {
-            <img [src]="renderedImageUrl()" alt="Carte rendue" class="confirm-page__image"/>
-          }
+          <!-- Live card preview (same component as edit step) -->
+          <app-card-preview
+            class="confirm-page__preview"
+            [cardType]="cardType()"
+            [cardClass]="cardClass()"
+            [name]="name()"
+            [description]="description()"
+            [rarity]="rarity()"
+            [cardImageUrl]="cardImageUrl()"
+            [targetName]="targetName()"
+            [locked]="true"
+          />
 
           <!-- Card details summary -->
           <div class="confirm-page__details cd-panel">

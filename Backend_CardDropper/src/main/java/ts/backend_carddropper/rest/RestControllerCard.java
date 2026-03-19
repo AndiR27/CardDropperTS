@@ -1,9 +1,12 @@
 package ts.backend_carddropper.rest;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ts.backend_carddropper.api.CardApi;
 import ts.backend_carddropper.enums.Rarity;
@@ -26,6 +29,14 @@ public class RestControllerCard implements CardApi {
     @Override
     public ResponseEntity<List<CardDto>> getCards() {
         return ResponseEntity.ok(serviceCard.findAll());
+    }
+
+    @GetMapping("/cards/paged")
+    public ResponseEntity<Page<CardDto>> getCardsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        size = Math.min(size, 100); // cap max page size
+        return ResponseEntity.ok(serviceCard.findAllPaged(page, size));
     }
 
     @Override

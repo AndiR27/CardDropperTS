@@ -112,8 +112,8 @@
 </div>
 </div>
 
-<!-- Zoom controls (only when image is loaded) -->
-@if (cardImageUrl()) {
+<!-- Zoom controls (only when image is loaded and not locked) -->
+@if (cardImageUrl() && !locked()) {
   <div class="card-controls">
     <label class="card-controls__label">Zoom</label>
     <input type="range" class="card-controls__slider"

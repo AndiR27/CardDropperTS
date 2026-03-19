@@ -7,3 +7,4 @@ export type { LiveFeedEvent } from './live-feed-event.model';
 export type { UserPackInventory } from './user-pack-inventory.model';
 export { Rarity } from './rarity.enum';
 export type { TradeSession, OnlineUser, TradeSessionStatus } from './trade-session.model';
+export type { PageResponse } from './page-response.model';

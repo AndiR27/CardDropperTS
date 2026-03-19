@@ -3,6 +3,9 @@ package ts.backend_carddropper.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.mapping.MapperUser;
@@ -59,6 +62,17 @@ public class ServiceAuth {
                     return saved;
                 });
 
-        return mapperUser.toDto(user);
+        UserDto dto = mapperUser.toDto(user);
+        boolean admin = isCurrentUserAdmin();
+        return new UserDto(dto.id(), dto.keycloakId(), dto.username(), dto.email(), admin,
+                dto.cardsOwned(), dto.cardsCreated(), dto.cardsTargeting());
+    }
+
+    private boolean isCurrentUserAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> a.equals("ROLE_ADMIN"));
     }
 }

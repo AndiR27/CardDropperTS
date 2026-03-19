@@ -15,8 +15,8 @@
 // ── Container (captured element — no background) ──
 .card {
   position: relative;
-  width: 270px;
-  aspect-ratio: 540 / 670;
+  width: 290px;
+  aspect-ratio: 575 / 778;
   overflow: hidden;
   border-radius: 12px;
 
@@ -49,7 +49,7 @@
 
   // Spell: rounded rectangle window
   &--spell {
-    clip-path: inset(9% 12% 45% 12% round 8px);
+    clip-path: inset(16% 15% 45% 15% round 8px);
   }
 
   // Minion: vertical ellipse
@@ -99,7 +99,7 @@
   transform: translateX(-50%);
   font-family: 'GBJenLei', 'BlizzardGlobal', serif;
   color: #fff;
-  font-weight: 500;
+  font-weight: 700;
   text-shadow:
     -1.2px -1.2px 0 #000,
      1.2px -1.2px 0 #000,
@@ -112,7 +112,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 
-  &--weapon { top: 50.5%; font-size: 2px; }
+  &--weapon { top: 50%; font-size: 4px; }
 }
 
 // ── Name text: arc (spell / minion) ──
@@ -178,7 +178,7 @@
 .card__dragon {
   z-index: 6;
 
-  &--spell  { width: 64%; top: 10%;  left: 31%; }
+  &--spell  { width: 64%; top: 9%;  left: 32%; }
   &--minion { width: 58%; top: 5%;  left: 29%; }
   &--weapon { width: 56%; top: 8%;  left: 30%; }
 }
@@ -258,7 +258,7 @@
   transform: translateX(-50%);
   font-family: 'GBJenLei', 'BlizzardGlobal', serif;
   color: #fff;
-  font-weight: 700;
+  font-weight: 800;
   text-shadow:
     -1.2px -1.2px 0 #000,
      1.2px -1.2px 0 #000,
@@ -268,9 +268,9 @@
   pointer-events: none;
   text-align: center;
 
-  &--spell  { top: 90%;   font-size: 0.7rem; }
-  &--minion { top: 88%; font-size: 0.7rem; }
-  &--weapon { top: 88.5%;   font-size: 0.55rem; }
+  &--spell  { top: 90.5%;   font-size: 1rem; }
+  &--minion { top: 88%; font-size: 0.8rem; }
+  &--weapon { top: 88.5%;   font-size: 0.9rem; }
 }
 
 // ── Zoom / pan controls (centered under preview) ──
@@ -321,7 +321,7 @@
 
   .card__name-text--weapon { font-size: 1.3rem; }
   .card__desc-text         { font-size: 0.75rem; }
-  .card__target-text       { font-size: 0.7rem;  }
+  .card__target-text       { font-size: 0.8rem;  }
 }
 
 @media (min-width: 1200px) {
@@ -329,5 +329,5 @@
 
   .card__name-text--weapon { font-size: 1.55rem; }
   .card__desc-text         { font-size: 0.9rem;  }
-  .card__target-text       { font-size: 0.85rem; }
+  .card__target-text       { font-size: 0.95rem; }
 }

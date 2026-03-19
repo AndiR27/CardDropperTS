@@ -88,6 +88,8 @@ class TestServiceTradeSession {
         when(repositoryUser.findByKeycloakId(BOB_KEYCLOAK_ID)).thenReturn(Optional.of(bob));
         when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
         when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+        when(repositoryUser.findByIdForUpdate(alice.getId())).thenReturn(Optional.of(alice));
+        when(repositoryUser.findByIdForUpdate(bob.getId())).thenReturn(Optional.of(bob));
     }
 
     private void giveCardToUser(User user, Card card) {

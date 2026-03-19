@@ -32,13 +32,19 @@
       } @else {
         <div class="live-feed__list">
           @for (event of liveFeed.events(); track event.id) {
-            <div class="live-feed__item">
-              <span class="live-feed__actor">{{ event.actorUsername }}</span>
-              <span class="live-feed__verb">a utilisé</span>
-              <span class="live-feed__card live-feed__card--{{ event.cardRarity | lowercase }}"
-                    (click)="openCardZoom(event.cardName)">{{ event.cardName }}</span>
-              <span class="live-feed__verb">sur</span>
-              <span class="live-feed__target">{{ event.targetUsername }}</span>
+            <div class="live-feed__item" [class.live-feed__item--legendary]="event.eventType === 'LEGENDARY_DROP'">
+              @if (event.eventType === 'LEGENDARY_DROP') {
+                <span class="live-feed__actor">{{ event.actorUsername }}</span>
+                <span class="live-feed__verb">a obtenu une</span>
+                <span class="live-feed__card live-feed__card--legendary">légendaire !</span>
+              } @else {
+                <span class="live-feed__actor">{{ event.actorUsername }}</span>
+                <span class="live-feed__verb">a utilisé</span>
+                <span class="live-feed__card live-feed__card--{{ event.cardRarity | lowercase }}"
+                      (click)="openCardZoom(event.cardName)">{{ event.cardName }}</span>
+                <span class="live-feed__verb">sur</span>
+                <span class="live-feed__target">{{ event.targetUsername }}</span>
+              }
               @if (event.createdAt) {
                 <span class="live-feed__time">{{ formatEventDate(event.createdAt) }}</span>
               }

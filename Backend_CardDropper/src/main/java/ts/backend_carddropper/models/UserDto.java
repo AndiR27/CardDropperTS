@@ -7,6 +7,7 @@ public record UserDto(
         String keycloakId,
         String username,
         String email,
+        boolean admin,
         List<CardDto> cardsOwned,
         List<CardDto> cardsCreated,
         List<CardDto> cardsTargeting

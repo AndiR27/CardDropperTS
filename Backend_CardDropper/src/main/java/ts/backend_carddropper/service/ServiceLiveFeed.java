@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ts.backend_carddropper.entity.LiveFeedEvent;
+import ts.backend_carddropper.event.LegendaryDropEvent;
 import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.mapping.MapperLiveFeed;
 import ts.backend_carddropper.models.LiveFeedEventDto;
@@ -59,8 +60,8 @@ public class ServiceLiveFeed {
      */
     @EventListener
     public void onUseCardEvent(UseCardEvent event) {
-        // Persister l'événement
         LiveFeedEvent entity = new LiveFeedEvent();
+        entity.setEventType("USE_CARD");
         entity.setActorUsername(event.getActorUsername());
         entity.setCardName(event.getCardName());
         entity.setCardRarity(event.getCardRarity());
@@ -72,11 +73,31 @@ public class ServiceLiveFeed {
         log.info("LiveFeed: {} a utilisé '{}' ({}) sur {}",
                 dto.actorUsername(), dto.cardName(), dto.cardRarity(), dto.targetUsername());
 
-        // Envoyer à tous les clients SSE connectés
+        broadcast("use-card", dto);
+    }
+
+    @EventListener
+    public void onLegendaryDropEvent(LegendaryDropEvent event) {
+        LiveFeedEvent entity = new LiveFeedEvent();
+        entity.setEventType("LEGENDARY_DROP");
+        entity.setActorUsername(event.getActorUsername());
+        entity.setCardName("");
+        entity.setCardRarity("LEGENDARY");
+        entity.setTargetUsername("");
+
+        LiveFeedEvent saved = repositoryLiveFeed.save(entity);
+        LiveFeedEventDto dto = mapperLiveFeed.toDto(saved);
+
+        log.info("LiveFeed: {} a obtenu une légendaire !", dto.actorUsername());
+
+        broadcast("legendary-drop", dto);
+    }
+
+    private void broadcast(String eventName, LiveFeedEventDto dto) {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("use-card")
+                        .name(eventName)
                         .data(dto));
             } catch (Exception e) {
                 log.debug("Suppression d'un emitter SSE déconnecté: {}", e.getMessage());

@@ -45,8 +45,13 @@ export class WebSocketService {
     if (!this.client?.connected) return null;
 
     const sub = this.client.subscribe(destination, (message: IMessage) => {
-      const parsed = JSON.parse(message.body) as T;
-      this.zone.run(() => callback(parsed));
+      try {
+        const parsed = JSON.parse(message.body) as T;
+        if (parsed == null || typeof parsed !== 'object') return;
+        this.zone.run(() => callback(parsed));
+      } catch {
+        // Ignore malformed messages from server
+      }
     });
 
     this.subscriptions.push(sub);

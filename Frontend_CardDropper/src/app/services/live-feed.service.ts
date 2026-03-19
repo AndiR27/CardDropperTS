@@ -63,11 +63,17 @@ export class LiveFeedService implements OnDestroy {
             dataLines.push(line.slice(5).trim());
           } else if (line === '') {
             // End of SSE message
-            if (eventName === 'use-card' && dataLines.length > 0) {
+            if ((eventName === 'use-card' || eventName === 'legendary-drop') && dataLines.length > 0) {
               try {
-                const event: LiveFeedEvent = JSON.parse(dataLines.join('\n'));
-                this.events.update(list => [event, ...list]);
-              } catch { /* ignore parse errors */ }
+                const raw = JSON.parse(dataLines.join('\n'));
+                if (raw != null && typeof raw === 'object'
+                    && typeof raw.id === 'number'
+                    && typeof raw.eventType === 'string'
+                    && typeof raw.actorUsername === 'string') {
+                  const event = raw as LiveFeedEvent;
+                  this.events.update(list => [event, ...list]);
+                }
+              } catch { /* ignore malformed messages */ }
             }
             eventName = '';
             dataLines = [];

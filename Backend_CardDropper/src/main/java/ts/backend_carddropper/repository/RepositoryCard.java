@@ -1,5 +1,7 @@
 package ts.backend_carddropper.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,6 +37,12 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     // Trouver toutes les cartes ciblant un utilisateur
     @Query("SELECT c FROM Card c WHERE c.targetUser.id = :userId")
     List<Card> findAllByTargetUserId(@Param("userId") Long userId);
+
+    // Paginated — all cards
+    Page<Card> findAll(Pageable pageable);
+
+    // Paginated — by rarity
+    Page<Card> findByRarity(Rarity rarity, Pageable pageable);
 
     boolean existsByName(String name);
 

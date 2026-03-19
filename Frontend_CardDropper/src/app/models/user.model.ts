@@ -5,6 +5,7 @@ export interface User {
   username: string;
   email: string;
   passwordHash: string | null;
+  admin: boolean;
   cardsOwned: Card[];
   cardsCreated: Card[];
   cardsTargeting: Card[];

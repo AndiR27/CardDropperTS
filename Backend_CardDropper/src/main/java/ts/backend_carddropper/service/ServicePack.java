@@ -13,8 +13,7 @@ import ts.backend_carddropper.entity.PackTemplateSlot;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
-import ts.backend_carddropper.event.UseCardEvent;
-import ts.backend_carddropper.mapping.MapperCard;
+import ts.backend_carddropper.event.LegendaryDropEvent;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserPackInventoryDto;
 import ts.backend_carddropper.repository.RepositoryCard;
@@ -41,7 +40,6 @@ public class ServicePack {
     private final RepositoryCard repositoryCard;
     private final RepositoryUser repositoryUser;
     private final RepositoryUserPackInventory repositoryUserPackInventory;
-    private final MapperCard mapperCard;
     private final ServiceUser serviceUser;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -78,17 +76,12 @@ public class ServicePack {
         for (PackTemplateSlot templateSlot : template.getSlots()) {
             for (int i = 0; i < templateSlot.getCount(); i++) {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
-                if(rarity == Rarity.LEGENDARY){
-                    // Publier l'événement pour le live feed
-//                    eventPublisher.publishEvent(new UseCardEvent(
-//                            this,
-//                            user.getUsername(),
-//                            card.getName(),
-//                            card.getRarity().name(),
-//                            target.getUsername()));
-                }
                 List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
                 Card card = pickCardFromPool(rarity, alreadyPickedIds, ownedCardIds);
+
+                if (rarity == Rarity.LEGENDARY) {
+                    eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
+                }
 
                 selectedCards.add(card);
             }

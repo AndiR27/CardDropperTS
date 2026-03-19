@@ -4,6 +4,7 @@ import { OAuthService, OAuthErrorEvent } from 'angular-oauth2-oidc';
 import { firstValueFrom, filter } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authConfig } from './auth.config';
+import type { User } from '../../models';
 
 /**
  * Service d'authentification — encapsule angular-oauth2-oidc.
@@ -20,6 +21,9 @@ export class AuthService {
   private readonly oauthService = inject(OAuthService);
   private readonly http = inject(HttpClient);
   private readonly zone = inject(NgZone);
+
+  /** Server-validated admin flag, set during init() */
+  private _isAdmin = false;
 
   /**
    * Initialise la connexion OIDC.
@@ -66,9 +70,11 @@ export class AuthService {
    */
   private async ensureUserInDb(): Promise<void> {
     try {
-      await firstValueFrom(this.http.get(`${environment.apiUrl}/auth/me`));
+      const user = await firstValueFrom(this.http.get<User>(`${environment.apiUrl}/auth/me`));
+      this._isAdmin = user?.admin === true;
     } catch (err) {
       console.error('Failed to sync user with backend', err);
+      this._isAdmin = false;
     }
   }
 
@@ -103,16 +109,8 @@ export class AuthService {
     return (claims?.['preferred_username'] as string) ?? null;
   }
 
-  /** Vérifie si l'utilisateur connecté possède le rôle admin (realm_access.roles) */
+  /** Returns whether the current user has admin role (set by backend during init) */
   get isAdmin(): boolean {
-    const token = this.accessToken;
-    if (!token) return false;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const roles: string[] = payload?.realm_access?.roles ?? [];
-      return roles.some(r => r.toLowerCase() === 'admin');
-    } catch {
-      return false;
-    }
+    return this._isAdmin;
   }
 }

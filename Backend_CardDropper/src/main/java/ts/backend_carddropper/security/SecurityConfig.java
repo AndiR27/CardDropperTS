@@ -39,7 +39,7 @@ public class SecurityConfig {
                         // Documentation
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // Cards — lecture publique uniquement
-                        .requestMatchers(HttpMethod.GET, "/cards", "/cards/{cardId}", "/cards/by-rarity").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cards", "/cards/paged", "/cards/{cardId}", "/cards/by-rarity").permitAll()
                         // Images — toujours publiques
                         .requestMatchers("/cards/images/**").permitAll()
                         // Admin & Users — ROLE_ADMIN obligatoire
@@ -60,7 +60,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept", "X-Requested-With"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
