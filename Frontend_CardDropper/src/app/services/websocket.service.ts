@@ -20,7 +20,8 @@ export class WebSocketService {
     const token = this.auth.accessToken;
     if (!token) return;
 
-    const wsUrl = environment.apiUrl.replace(/^http/, 'ws') + '/ws';
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}${environment.apiUrl}/ws`;
 
     this.client = new Client({
       brokerURL: wsUrl,

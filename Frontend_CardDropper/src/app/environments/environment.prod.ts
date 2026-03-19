@@ -1,11 +1,11 @@
 export const environment = {
   production: true,
-  // En prod, l'API est sur un sous-domaine dédié (via NPM)
-  apiUrl: 'https://api.carddropperts.local',
+  // Same-origin proxy: nginx forwards /api/ to backend
+  apiUrl: '/api',
   keycloak: {
     issuer: 'https://keycloak.andi27.synology.me/auth/realms/carddropperts',
     clientId: 'carddropper-frontend',
-    // Résolu dynamiquement au runtime (window.location.origin)
+    // Resolved at runtime via window.location.origin
     redirectUri: '',
     scope: 'openid profile email'
   }
