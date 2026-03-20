@@ -8,8 +8,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.trade.entity.TradeSession;
 import ts.backend_carddropper.trade.enums.TradeSessionStatus;
 import ts.backend_carddropper.trade.mapping.MapperTradeSession;
@@ -27,6 +29,7 @@ public class ServiceTradeSession {
     private final RepositoryTradeSession repositoryTradeSession;
     private final RepositoryUser repositoryUser;
     private final RepositoryCard repositoryCard;
+    private final RepositoryUserCard repositoryUserCard;
     private final MapperTradeSession mapperTradeSession;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -109,8 +112,7 @@ public class ServiceTradeSession {
                 .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + cardId));
 
         // Verify user owns the card
-        boolean owns = user.getCardsOwned().stream().anyMatch(c -> c.getId().equals(cardId));
-        if (!owns) {
+        if (!repositoryUserCard.existsByUserIdAndCardId(user.getId(), cardId)) {
             throw new IllegalArgumentException("User does not own card id=" + cardId);
         }
 
@@ -279,6 +281,26 @@ public class ServiceTradeSession {
         messagingTemplate.convertAndSend("/topic/trade/" + sessionId, dto);
     }
 
+    private void decrementOrDelete(UserCard uc) {
+        if (uc.getQuantity() > 1) {
+            uc.setQuantity(uc.getQuantity() - 1);
+            repositoryUserCard.save(uc);
+        } else {
+            repositoryUserCard.delete(uc);
+        }
+    }
+
+    private void addOrIncrement(User user, Card card) {
+        repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId())
+                .ifPresentOrElse(
+                        uc -> {
+                            uc.setQuantity(uc.getQuantity() + 1);
+                            repositoryUserCard.save(uc);
+                        },
+                        () -> repositoryUserCard.save(new UserCard(user, card, 1))
+                );
+    }
+
     private TradeSessionDto executeTrade(TradeSession session) {
         Card initiatorCard = session.getInitiatorCard();
         Card receiverCard = session.getReceiverCard();
@@ -294,24 +316,17 @@ public class ServiceTradeSession {
         User receiver  = id1 < id2 ? second : first;
 
         // Verify ownership still valid (under lock)
-        boolean initiatorOwns = initiator.getCardsOwned().stream()
-                .anyMatch(c -> c.getId().equals(initiatorCard.getId()));
-        boolean receiverOwns = receiver.getCardsOwned().stream()
-                .anyMatch(c -> c.getId().equals(receiverCard.getId()));
-
-        if (!initiatorOwns || !receiverOwns) {
-            throw new IllegalStateException("One or both users no longer own their selected cards");
-        }
+        UserCard initiatorUc = repositoryUserCard.findByUserIdAndCardId(initiator.getId(), initiatorCard.getId())
+                .orElseThrow(() -> new IllegalStateException("Initiator no longer owns card id=" + initiatorCard.getId()));
+        UserCard receiverUc = repositoryUserCard.findByUserIdAndCardId(receiver.getId(), receiverCard.getId())
+                .orElseThrow(() -> new IllegalStateException("Receiver no longer owns card id=" + receiverCard.getId()));
 
         // Swap cards
-        initiator.getCardsOwned().remove(initiatorCard);
-        receiver.getCardsOwned().add(initiatorCard);
+        decrementOrDelete(initiatorUc);
+        addOrIncrement(receiver, initiatorCard);
 
-        receiver.getCardsOwned().remove(receiverCard);
-        initiator.getCardsOwned().add(receiverCard);
-
-        repositoryUser.save(initiator);
-        repositoryUser.save(receiver);
+        decrementOrDelete(receiverUc);
+        addOrIncrement(initiator, receiverCard);
 
         session.setStatus(TradeSessionStatus.COMPLETED);
         session.setCompletedAt(LocalDateTime.now());

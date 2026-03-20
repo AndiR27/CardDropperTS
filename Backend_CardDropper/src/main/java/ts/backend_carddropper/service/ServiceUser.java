@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.mapping.MapperCard;
@@ -16,8 +17,12 @@ import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
@@ -33,27 +38,28 @@ public class ServiceUser {
     private final MapperCard mapperCard;
     private final RepositoryUser repositoryUser;
     private final RepositoryCard repositoryCard;
+    private final RepositoryUserCard repositoryUserCard;
     private final ApplicationEventPublisher eventPublisher;
 
-    // Nombre de cartes requises pour une fusion
-    private static final int MERGE_REQUIRED_COUNT = 3;
+    private static int mergeRequiredCount(Rarity rarity) {
+        return switch (rarity) {
+            case COMMON -> 3;
+            case RARE   -> 4;
+            case EPIC   -> 5;
+            case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
+        };
+    }
 
 
     //==============================
     //    CRUD UTILISATEUR
     //==============================
 
-    /**
-     * Trouver un utilisateur par son id
-     */
     public Optional<UserDto> findById(Long id) {
         return repositoryUser.findById(id)
                 .map(mapperUser::toDto);
     }
 
-    /**
-     * Trouver tous les utilisateurs
-     */
     public List<UserDto> findAll() {
         return repositoryUser.findAll()
                 .stream()
@@ -61,25 +67,16 @@ public class ServiceUser {
                 .toList();
     }
 
-    /**
-     * Trouver un utilisateur par son username
-     */
     public Optional<UserDto> findByUsername(String username) {
         return repositoryUser.findByUsername(username)
                 .map(mapperUser::toDto);
     }
 
-    /**
-     * Trouver un utilisateur par son email
-     */
     public Optional<UserDto> findByEmail(String email) {
         return repositoryUser.findByEmail(email)
                 .map(mapperUser::toDto);
     }
 
-    /**
-     * Créer un utilisateur
-     */
     @Transactional
     public UserDto create(UserDto userDto) {
         if (repositoryUser.existsByUsername(userDto.username())) {
@@ -93,9 +90,6 @@ public class ServiceUser {
         return mapperUser.toDto(saved);
     }
 
-    /**
-     * Mettre à jour un utilisateur
-     */
     @Transactional
     public Optional<UserDto> update(Long id, UserDto userDto) {
         Optional<User> userOpt = repositoryUser.findById(id);
@@ -110,9 +104,7 @@ public class ServiceUser {
     }
 
     /**
-     * Supprimer un utilisateur.
-     * Avant la suppression : détache les cartes liées (owner, creator, target)
-     * pour éviter les violations de contraintes FK.
+     * Supprime un utilisateur après avoir détaché ses cartes.
      */
     @Transactional
     public void delete(Long id) {
@@ -130,36 +122,35 @@ public class ServiceUser {
 
     /**
      * Retourne la liste des cartes possédées par un utilisateur.
+     * Chaque copie est représentée comme une entrée distincte (compatible avec l'API existante).
      */
     public List<CardDto> getCardsOwned(Long userId) {
-        User user = findUserOrThrow(userId);
-        return user.getCardsOwned()
-                .stream()
+        findUserOrThrow(userId);
+        return repositoryUserCard.findByUserId(userId).stream()
+                .flatMap(uc -> Collections.nCopies(uc.getQuantity(), uc.getCard()).stream())
                 .map(mapperCard::toDto)
                 .toList();
     }
 
     /**
      * Échange deux cartes entre deux utilisateurs.
-     * Chaque utilisateur doit posséder sa carte respective.
      */
     @Transactional
     public void tradeCard(Long userId, Long myCardId, Long targetUserId, Long theirCardId) {
         User user       = findUserOrThrow(userId);
         User targetUser = findUserOrThrow(targetUserId);
 
-        Card myCard    = findOwnedCardOrThrow(myCardId, user);
-        Card theirCard = findOwnedCardOrThrow(theirCardId, targetUser);
+        UserCard myUc    = findOwnedUserCardOrThrow(userId, myCardId);
+        UserCard theirUc = findOwnedUserCardOrThrow(targetUserId, theirCardId);
 
-        // Swap ownership via join table
-        user.getCardsOwned().remove(myCard);
-        targetUser.getCardsOwned().add(myCard);
+        Card myCard    = myUc.getCard();
+        Card theirCard = theirUc.getCard();
 
-        targetUser.getCardsOwned().remove(theirCard);
-        user.getCardsOwned().add(theirCard);
+        removeUserCard(myUc);
+        addCardToUser(targetUser, myCard);
 
-        repositoryUser.save(user);
-        repositoryUser.save(targetUser);
+        removeUserCard(theirUc);
+        addCardToUser(user, theirCard);
 
         log.info("Trade: user '{}' gave card id={} and received card id={} from user '{}'",
                 user.getUsername(), myCardId, theirCardId, targetUser.getUsername());
@@ -167,8 +158,7 @@ public class ServiceUser {
 
     /**
      * Assigne une liste de cartes du pool à l'utilisateur lors de l'ouverture d'un paquet.
-     * Les cartes uniques doivent ne pas encore être possédées.
-     * Les cartes sont ajoutées à la collection de l'utilisateur.
+     * Les cartes uniques ne peuvent pas être dans le pool (vérification de sécurité).
      */
     @Transactional
     public List<CardDto> openPack(Long userId, List<Long> cardIds) {
@@ -181,54 +171,60 @@ public class ServiceUser {
         }
 
         for (Card card : cards) {
-            if (card.isUniqueCard()) {
-                throw new IllegalStateException("Card id=" + card.getId() + " is unique");
-            }
-            user.getCardsOwned().add(card);
+            addCardToUser(user, card);
         }
 
-        repositoryUser.save(user);
         log.info("User '{}' opened a pack and received {} card(s)", user.getUsername(), cards.size());
         return cards.stream().map(mapperCard::toDto).toList();
     }
 
     /**
-     * Fusionne plusieurs cartes de même rareté pour en créer une de rareté supérieure.
+     * Fusionne MERGE_REQUIRED_COUNT cartes de même rareté pour en créer une de rareté supérieure.
+     * Supporte les IDs dupliqués (fusion de plusieurs copies de la même carte).
+     *
      * Règles :
      *   - COMMON  x3 → RARE
      *   - RARE    x3 → EPIC
      *   - EPIC    x3 → LEGENDARY
      *   - LEGENDARY : fusion impossible
-     *
-     * Les cartes consommées sont retirées de la collection de l'utilisateur.
-     * La carte résultante est tirée aléatoirement dans le pool de la rareté supérieure.
      */
     @Transactional
     public CardDto mergeCards(Long userId, List<Long> cardIds) {
         User user = findUserOrThrow(userId);
 
-        if (cardIds.size() != MERGE_REQUIRED_COUNT) {
-            throw new IllegalArgumentException("Exactly " + MERGE_REQUIRED_COUNT + " cards are required to merge");
+        // Compte les occurrences de chaque ID (supporte la fusion de copies identiques)
+        Map<Long, Integer> idCounts = new LinkedHashMap<>();
+        for (Long id : cardIds) {
+            idCounts.merge(id, 1, Integer::sum);
         }
 
-        List<Card> cards = repositoryCard.findAllById(cardIds);
-
-        if (cards.size() != MERGE_REQUIRED_COUNT) {
+        List<Card> distinctCards = repositoryCard.findAllById(idCounts.keySet().stream().toList());
+        if (distinctCards.size() != idCounts.size()) {
             throw new EntityNotFoundException("One or more cards not found");
         }
 
-        // Validation : l'utilisateur possède toutes les cartes
-        for (Card card : cards) {
-            if (!user.getCardsOwned().contains(card)) {
-                throw new IllegalArgumentException("User does not own card id=" + card.getId());
-            }
-        }
-
         // Validation : toutes les cartes ont la même rareté
-        Rarity rarity = cards.getFirst().getRarity();
-        boolean allSameRarity = cards.stream().allMatch(c -> c.getRarity() == rarity);
+        Rarity rarity = distinctCards.getFirst().getRarity();
+        boolean allSameRarity = distinctCards.stream().allMatch(c -> c.getRarity() == rarity);
         if (!allSameRarity) {
             throw new IllegalArgumentException("All cards must have the same rarity to merge");
+        }
+
+        int required = mergeRequiredCount(rarity);
+        if (cardIds.size() != required) {
+            throw new IllegalArgumentException("Exactly " + required + " " + rarity + " cards are required to merge");
+        }
+
+        // Validation : l'utilisateur possède toutes les cartes en quantité suffisante
+        for (Card card : distinctCards) {
+            int needed = idCounts.get(card.getId());
+            UserCard uc = repositoryUserCard.findByUserIdAndCardId(userId, card.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("User does not own card id=" + card.getId()));
+            if (uc.getQuantity() < needed) {
+                throw new IllegalArgumentException(
+                        "User does not have enough copies of card id=" + card.getId()
+                        + " (has " + uc.getQuantity() + ", needs " + needed + ")");
+            }
         }
 
         Rarity nextRarity = getNextRarity(rarity);
@@ -240,17 +236,24 @@ public class ServiceUser {
         }
         Card result = pool.get(new Random().nextInt(pool.size()));
 
-        // Retirer les cartes consommées de la collection de l'utilisateur
-        cards.forEach(c -> user.getCardsOwned().remove(c));
+        // Déduire les cartes consommées
+        for (Card card : distinctCards) {
+            int needed = idCounts.get(card.getId());
+            UserCard uc = repositoryUserCard.findByUserIdAndCardId(userId, card.getId()).orElseThrow();
+            int newQty = uc.getQuantity() - needed;
+            if (newQty == 0) {
+                repositoryUserCard.delete(uc);
+            } else {
+                uc.setQuantity(newQty);
+                repositoryUserCard.save(uc);
+            }
+        }
 
-        // Attribuer la carte résultante à l'utilisateur et mettre à jour les relations
-        //ser.getCardsOwned().add(result);
-        result.addOwner(user);
-
-        repositoryUser.save(user);
+        // Attribuer la carte résultante
+        addCardToUser(user, result);
 
         log.info("User '{}' merged {} {} card(s) → received '{}' ({})",
-                user.getUsername(), MERGE_REQUIRED_COUNT, rarity, result.getName(), nextRarity);
+                user.getUsername(), required, rarity, result.getName(), nextRarity);
         return mapperCard.toDto(result);
     }
 
@@ -261,15 +264,15 @@ public class ServiceUser {
 
     /**
      * Utilise une carte sur un autre utilisateur.
-     * - Carte unique : retirée de la collection du propriétaire.
-     * - Carte non-unique : le propriétaire la conserve.
+     * La carte est toujours retirée de la collection du propriétaire après utilisation.
      * Publie un UseCardEvent pour le live feed.
      */
     @Transactional
     public void useCard(Long userId, Long cardId, Long targetUserId) {
         User user = findUserOrThrow(userId);
-        Card card = findOwnedCardOrThrow(cardId, user);
-        User target = findUserOrThrow(targetUserId);
+
+        UserCard uc = findOwnedUserCardOrThrow(userId, cardId);
+        Card card = uc.getCard();
 
         // Si la carte a une cible définie, vérifier qu'elle correspond
         if (card.getTargetUser() != null && !card.getTargetUser().getId().equals(targetUserId)) {
@@ -278,14 +281,13 @@ public class ServiceUser {
                             + ", not user id=" + targetUserId);
         }
 
-        // La carte est retirée de la collection du propriétaire après utilisation
-        user.getCardsOwned().remove(card);
-        repositoryUser.save(user);
+        User target = findUserOrThrow(targetUserId);
+
+        removeUserCard(uc);
 
         log.info("User '{}' used card '{}' ({}) on user '{}' (unique={})",
                 user.getUsername(), card.getName(), card.getRarity(), target.getUsername(), card.isUniqueCard());
 
-        // Publier l'événement pour le live feed
         eventPublisher.publishEvent(new UseCardEvent(
                 this,
                 user.getUsername(),
@@ -299,45 +301,64 @@ public class ServiceUser {
     //       MÉTHODES PRIVÉES
     //==============================
 
-    /**
-     * Retourne l'utilisateur ou lève une EntityNotFoundException.
-     */
     private User findUserOrThrow(Long id) {
         return repositoryUser.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
     }
 
     /**
-     * Vérifie qu'une carte existe et est bien possédée par l'utilisateur donné.
+     * Cherche le UserCard pour (userId, cardId) ou lève une exception.
      */
-    private Card findOwnedCardOrThrow(Long cardId, User user) {
-        return user.getCardsOwned().stream()
-                .filter(c -> c.getId().equals(cardId))
-                .findFirst()
+    private UserCard findOwnedUserCardOrThrow(Long userId, Long cardId) {
+        return repositoryUserCard.findByUserIdAndCardId(userId, cardId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "User id=" + user.getId() + " does not own card id=" + cardId));
+                        "User id=" + userId + " does not own card id=" + cardId));
     }
 
     /**
-     * Retourne la rareté supérieure à celle passée en paramètre.
+     * Ajoute une copie d'une carte à l'utilisateur :
+     * - Si déjà présente : incrémente la quantité.
+     * - Sinon : crée un nouveau UserCard avec quantity=1.
      */
+    private void addCardToUser(User user, Card card) {
+        repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId())
+                .ifPresentOrElse(
+                        uc -> {
+                            uc.setQuantity(uc.getQuantity() + 1);
+                            repositoryUserCard.save(uc);
+                        },
+                        () -> repositoryUserCard.save(new UserCard(user, card, 1))
+                );
+    }
+
+    /**
+     * Retire une copie de la carte représentée par le UserCard :
+     * - Si quantity > 1 : décrémente.
+     * - Si quantity == 1 : supprime le UserCard.
+     */
+    private void removeUserCard(UserCard uc) {
+        if (uc.getQuantity() > 1) {
+            uc.setQuantity(uc.getQuantity() - 1);
+            repositoryUserCard.save(uc);
+        } else {
+            repositoryUserCard.delete(uc);
+        }
+    }
+
     private Rarity getNextRarity(Rarity rarity) {
         return switch (rarity) {
-            case COMMON     -> Rarity.RARE;
-            case RARE       -> Rarity.EPIC;
-            case EPIC       -> Rarity.LEGENDARY;
+            case COMMON    -> Rarity.RARE;
+            case RARE      -> Rarity.EPIC;
+            case EPIC      -> Rarity.LEGENDARY;
             case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
         };
     }
 
     /**
-     * Retire l'utilisateur de toutes les relations dans les tables de jointure
-     * avant de le supprimer, pour éviter les violations de contraintes.
+     * Détache l'utilisateur de toutes les tables de jointure avant suppression.
      */
     private void detachUserFromCards(User user) {
-        // Clear ManyToMany ownership
-        user.getCardsOwned().clear();
-        // Detach creator and target FK references
+        repositoryUserCard.deleteByUserId(user.getId());
         for (Card card : repositoryCard.findAllByCreatedById(user.getId())) {
             card.setCreatedBy(null);
         }

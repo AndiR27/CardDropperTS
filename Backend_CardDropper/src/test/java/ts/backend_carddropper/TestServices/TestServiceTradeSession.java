@@ -12,10 +12,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.helper.TestDataHelper;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.trade.entity.TradeSession;
 import ts.backend_carddropper.trade.enums.TradeSessionStatus;
 import ts.backend_carddropper.trade.models.TradeSessionDto;
@@ -52,6 +54,9 @@ class TestServiceTradeSession {
     private RepositoryCard repositoryCard;
 
     @MockitoBean
+    private RepositoryUserCard repositoryUserCard;
+
+    @MockitoBean
     private SimpMessagingTemplate messagingTemplate;
 
     private User alice;
@@ -69,6 +74,9 @@ class TestServiceTradeSession {
         bob = users.get(1);
         bob.setKeycloakId(BOB_KEYCLOAK_ID);
         cards = testDataHelper.createCards(alice);
+
+        // Default: save returns its argument
+        when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private TradeSession buildSession(TradeSessionStatus status) {
@@ -92,10 +100,16 @@ class TestServiceTradeSession {
         when(repositoryUser.findByIdForUpdate(bob.getId())).thenReturn(Optional.of(bob));
     }
 
-    private void giveCardToUser(User user, Card card) {
-        if (!user.getCardsOwned().contains(card)) {
-            user.getCardsOwned().add(card);
-        }
+    private UserCard giveCardToUser(User user, Card card) {
+        UserCard uc = new UserCard(user, card, 1);
+        when(repositoryUserCard.existsByUserIdAndCardId(user.getId(), card.getId())).thenReturn(true);
+        when(repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId())).thenReturn(Optional.of(uc));
+        return uc;
+    }
+
+    private void noCard(User user, Card card) {
+        when(repositoryUserCard.existsByUserIdAndCardId(user.getId(), card.getId())).thenReturn(false);
+        when(repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId())).thenReturn(Optional.empty());
     }
 
 
@@ -305,7 +319,7 @@ class TestServiceTradeSession {
             mockUserLookups();
             TradeSession session = buildSession(TradeSessionStatus.ACTIVE);
             Card card = cards.getFirst();
-            alice.setCardsOwned(new ArrayList<>());
+            noCard(alice, card); // alice does not own this card
 
             when(repositoryTradeSession.findById(session.getId())).thenReturn(Optional.of(session));
             when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
@@ -336,7 +350,7 @@ class TestServiceTradeSession {
             charlie.setId(3L);
             charlie.setKeycloakId("kc-charlie-003");
             charlie.setUsername("charlie");
-            charlie.setCardsOwned(new ArrayList<>());
+            charlie.setUserCards(new ArrayList<>());
             when(repositoryUser.findByKeycloakId("kc-charlie-003")).thenReturn(Optional.of(charlie));
             when(repositoryTradeSession.findById(session.getId())).thenReturn(Optional.of(session));
 
@@ -395,6 +409,9 @@ class TestServiceTradeSession {
 
             giveCardToUser(alice, aliceCard);
             giveCardToUser(bob, bobCard);
+            // Neither user owns the other's card yet
+            noCard(alice, bobCard);
+            noCard(bob, aliceCard);
 
             session.setInitiatorCard(aliceCard);
             session.setReceiverCard(bobCard);
@@ -402,13 +419,13 @@ class TestServiceTradeSession {
 
             when(repositoryTradeSession.findById(session.getId())).thenReturn(Optional.of(session));
             when(repositoryTradeSession.save(any())).thenAnswer(inv -> inv.getArgument(0));
-            when(repositoryUser.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             TradeSessionDto result = serviceTradeSession.lockCard(session.getId(), BOB_KEYCLOAK_ID);
 
             assertEquals(TradeSessionStatus.COMPLETED, result.status());
-            assertTrue(alice.getCardsOwned().contains(bobCard));
-            assertTrue(bob.getCardsOwned().contains(aliceCard));
+            // Each card was removed from its owner (delete x2) and added to the other (save x2)
+            verify(repositoryUserCard, times(2)).delete(any(UserCard.class));
+            verify(repositoryUserCard, times(2)).save(any(UserCard.class));
         }
 
         @Test
@@ -422,6 +439,8 @@ class TestServiceTradeSession {
 
             giveCardToUser(alice, aliceCard);
             giveCardToUser(bob, bobCard);
+            noCard(alice, bobCard);
+            noCard(bob, aliceCard);
 
             session.setInitiatorCard(aliceCard);
             session.setReceiverCard(bobCard);
@@ -429,7 +448,6 @@ class TestServiceTradeSession {
 
             when(repositoryTradeSession.findById(session.getId())).thenReturn(Optional.of(session));
             when(repositoryTradeSession.save(any())).thenAnswer(inv -> inv.getArgument(0));
-            when(repositoryUser.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             TradeSessionDto result = serviceTradeSession.lockCard(session.getId(), BOB_KEYCLOAK_ID);
 

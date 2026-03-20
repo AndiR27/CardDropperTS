@@ -54,7 +54,6 @@ public class ServiceAuth {
                     newUser.setKeycloakId(keycloakId);
                     newUser.setUsername(SecurityUtils.getCurrentUsername());
                     newUser.setEmail(SecurityUtils.getCurrentEmail());
-                    newUser.setCardsOwned(new ArrayList<>());
                     newUser.setCardsCreated(new ArrayList<>());
                     newUser.setCardsTargeting(new ArrayList<>());
                     User saved = repositoryUser.save(newUser);

@@ -46,10 +46,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Native WebSocket (used by @stomp/stompjs in the frontend)
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins.split(","));
+                .setAllowedOriginPatterns(allowedOrigins.split(","));
         // SockJS fallback (for older browsers)
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins.split(","))
+                .setAllowedOriginPatterns(allowedOrigins.split(","))
                 .withSockJS();
     }
 

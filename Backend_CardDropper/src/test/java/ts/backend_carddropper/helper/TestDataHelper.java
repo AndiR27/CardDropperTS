@@ -1,7 +1,11 @@
 package ts.backend_carddropper.helper;
 
 import org.springframework.stereotype.Component;
-import ts.backend_carddropper.entity.*;
+import ts.backend_carddropper.entity.Card;
+import ts.backend_carddropper.entity.PackSlot;
+import ts.backend_carddropper.entity.PackTemplate;
+import ts.backend_carddropper.entity.PackTemplateSlot;
+import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.enums.Rarity;
 
 import java.util.ArrayList;
@@ -19,7 +23,6 @@ public class TestDataHelper {
         alice.setId(1L);
         alice.setUsername("alice");
         alice.setEmail("alice@test.com");
-        alice.setCardsOwned(new ArrayList<>());
         alice.setCardsCreated(new ArrayList<>());
         alice.setCardsTargeting(new ArrayList<>());
 
@@ -27,7 +30,6 @@ public class TestDataHelper {
         bob.setId(2L);
         bob.setUsername("bob");
         bob.setEmail("bob@test.com");
-        bob.setCardsOwned(new ArrayList<>());
         bob.setCardsCreated(new ArrayList<>());
         bob.setCardsTargeting(new ArrayList<>());
 

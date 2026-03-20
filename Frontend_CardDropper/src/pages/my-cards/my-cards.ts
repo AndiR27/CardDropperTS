@@ -34,9 +34,30 @@ export class MyCardsPage implements OnInit {
   protected readonly viewMode = signal<'carousel' | 'list'>('carousel');
   protected readonly listSearch = signal('');
 
+  protected readonly countMap = computed(() => {
+    const map = new Map<number, number>();
+    for (const c of this.ownedCards()) {
+      if (c.id !== null) map.set(c.id, (map.get(c.id) ?? 0) + 1);
+    }
+    return map;
+  });
+
+  protected readonly uniqueOwnedCards = computed(() => {
+    const seen = new Set<number>();
+    return this.ownedCards().filter(c => {
+      if (c.id === null || seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+  });
+
+  getCount(card: Card): number {
+    return card.id !== null ? (this.countMap().get(card.id) ?? 1) : 1;
+  }
+
   protected readonly filteredOwnedCards = computed(() => {
     const search = this.listSearch().toLowerCase().trim();
-    const cards = this.ownedCards();
+    const cards = this.uniqueOwnedCards();
     if (!search) return cards;
     return cards.filter(c =>
       c.name.toLowerCase().includes(search) ||
@@ -49,7 +70,7 @@ export class MyCardsPage implements OnInit {
   }
 
   selectCardFromList(card: Card): void {
-    const index = this.ownedCards().findIndex(c => c.id === card.id);
+    const index = this.uniqueOwnedCards().findIndex(c => c.id === card.id);
     if (index >= 0) {
       this.activeIndex.set(index);
       this.viewMode.set('carousel');
@@ -60,13 +81,13 @@ export class MyCardsPage implements OnInit {
   protected readonly activeIndex = signal(0);
 
   protected readonly activeCard = computed(() => {
-    const cards = this.ownedCards();
+    const cards = this.uniqueOwnedCards();
     if (cards.length === 0) return null;
     return cards[this.activeIndex()];
   });
 
   protected readonly canPrev = computed(() => this.activeIndex() > 0);
-  protected readonly canNext = computed(() => this.activeIndex() < this.ownedCards().length - 1);
+  protected readonly canNext = computed(() => this.activeIndex() < this.uniqueOwnedCards().length - 1);
 
   // ── Use card modal ──
   protected readonly showUseModal = signal(false);
@@ -185,10 +206,13 @@ export class MyCardsPage implements OnInit {
         this.showUseSuccess.set(true);
         setTimeout(() => this.showUseSuccess.set(false), 2500);
 
-        // Remove the card from owned list and adjust index
-        this.ownedCards.update(cards => cards.filter(c => c.id !== card.id));
-        if (this.activeIndex() >= this.ownedCards().length) {
-          this.activeIndex.set(Math.max(0, this.ownedCards().length - 1));
+        // Remove one copy of the card; if more copies remain the badge just decrements
+        this.ownedCards.update(cards => {
+          const idx = cards.findIndex(c => c.id === card.id);
+          return idx >= 0 ? [...cards.slice(0, idx), ...cards.slice(idx + 1)] : cards;
+        });
+        if (this.activeIndex() >= this.uniqueOwnedCards().length) {
+          this.activeIndex.set(Math.max(0, this.uniqueOwnedCards().length - 1));
         }
       },
       error: (err) => {

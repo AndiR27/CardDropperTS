@@ -11,6 +11,7 @@ import ts.backend_carddropper.entity.PackSlot;
 import ts.backend_carddropper.entity.PackTemplate;
 import ts.backend_carddropper.entity.PackTemplateSlot;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.event.LegendaryDropEvent;
@@ -19,6 +20,7 @@ import ts.backend_carddropper.models.UserPackInventoryDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.repository.RepositoryUserPackInventory;
 
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ public class ServicePack {
     private final RepositoryPackTemplate repositoryPackTemplate;
     private final RepositoryCard repositoryCard;
     private final RepositoryUser repositoryUser;
+    private final RepositoryUserCard repositoryUserCard;
     private final RepositoryUserPackInventory repositoryUserPackInventory;
     private final ServiceUser serviceUser;
     private final ApplicationEventPublisher eventPublisher;
@@ -67,8 +70,15 @@ public class ServicePack {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
         // Collect card IDs already owned by this user
-        Set<Long> ownedCardIds = user.getCardsOwned().stream()
-                .map(Card::getId)
+        List<UserCard> ownedUserCards = repositoryUserCard.findByUserId(userId);
+        Set<Long> ownedCardIds = ownedUserCards.stream()
+                .map(uc -> uc.getCard().getId())
+                .collect(Collectors.toSet());
+
+        // Unique cards already owned must never be picked again
+        Set<Long> ownedUniqueCardIds = ownedUserCards.stream()
+                .filter(uc -> uc.getCard().isUniqueCard())
+                .map(uc -> uc.getCard().getId())
                 .collect(Collectors.toSet());
 
         List<Card> selectedCards = new ArrayList<>();
@@ -77,7 +87,9 @@ public class ServicePack {
             for (int i = 0; i < templateSlot.getCount(); i++) {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
                 List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
-                Card card = pickCardFromPool(rarity, alreadyPickedIds, ownedCardIds);
+                List<Long> excludedIds = new ArrayList<>(alreadyPickedIds);
+                excludedIds.addAll(ownedUniqueCardIds);
+                Card card = pickCardFromPool(rarity, excludedIds, ownedCardIds);
 
                 if (rarity == Rarity.LEGENDARY) {
                     eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
@@ -206,7 +218,7 @@ public class ServicePack {
     }
 
     private double cardWeight(Card card, Set<Long> ownedCardIds) {
-        double weight = 1.0 / (1 + card.getOwners().size());
+        double weight = 1.0 / (1 + card.getUserCards().size());
         if (ownedCardIds.contains(card.getId())) {
             weight *= OWNED_PENALTY;
         }

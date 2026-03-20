@@ -92,7 +92,7 @@
         </button>
 
         <div class="carousel__stage">
-          @for (card of ownedCards(); track card.id; let i = $index) {
+          @for (card of uniqueOwnedCards(); track card.id; let i = $index) {
             <div class="carousel__card carousel__card--rarity-{{ card.rarity | lowercase }}"
                  [class.carousel__card--active]="i === activeIndex()"
                  [class.carousel__card--prev]="i === activeIndex() - 1"
@@ -107,6 +107,9 @@
                   <div class="carousel__card-placeholder">
                     <span>?</span>
                   </div>
+                }
+                @if (getCount(card) > 1) {
+                  <span class="carousel__qty">×{{ getCount(card) }}</span>
                 }
               </div>
             </div>
@@ -150,14 +153,14 @@
       }
 
       <div class="carousel__dots">
-        @for (card of ownedCards(); track card.id; let i = $index) {
+        @for (card of uniqueOwnedCards(); track card.id; let i = $index) {
           <button class="carousel__dot"
                   [class.carousel__dot--active]="i === activeIndex()"
                   (click)="goTo(i)"></button>
         }
       </div>
 
-      <p class="carousel__counter">{{ activeIndex() + 1 }} / {{ ownedCards().length }}</p>
+      <p class="carousel__counter">{{ activeIndex() + 1 }} / {{ uniqueOwnedCards().length }}</p>
       }
 
       <!-- ====== List view ====== -->
@@ -180,6 +183,9 @@
                     <img [src]="imgUrl" [alt]="card.name" class="card-list-view__thumb-img"/>
                   } @else {
                     <div class="card-list-view__thumb-placeholder">?</div>
+                  }
+                  @if (getCount(card) > 1) {
+                    <span class="card-list-view__qty">×{{ getCount(card) }}</span>
                   }
                 </div>
                 <div class="card-list-view__info">

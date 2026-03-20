@@ -30,14 +30,9 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    //Liste des cartes possédées par l'utilisateur (ManyToMany — join table user_cards)
-    @ManyToMany
-    @JoinTable(
-            name = "user_cards",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "card_id")
-    )
-    private List<Card> cardsOwned = new ArrayList<>();
+    //Liste des cartes possédées par l'utilisateur (via UserCard — une ligne par (user, carte) avec quantité)
+    @OneToMany(mappedBy = "user")
+    private List<UserCard> userCards = new ArrayList<>();
 
     //Liste des cartes créées par l'utilisateur
     @OneToMany(mappedBy = "createdBy")

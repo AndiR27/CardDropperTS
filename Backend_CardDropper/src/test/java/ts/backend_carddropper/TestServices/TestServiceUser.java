@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ts.backend_carddropper.entity.Card;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.helper.TestDataHelper;
 import ts.backend_carddropper.mapping.MapperUser;
@@ -19,6 +20,7 @@ import ts.backend_carddropper.models.UserDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryLiveFeed;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.service.ServiceUser;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -50,6 +52,9 @@ class TestServiceUser {
     private RepositoryCard repositoryCard;
 
     @MockitoBean
+    private RepositoryUserCard repositoryUserCard;
+
+    @MockitoBean
     private RepositoryLiveFeed repositoryLiveFeed;
 
     private List<User> users;
@@ -64,6 +69,9 @@ class TestServiceUser {
         bob = users.get(1);
         cards = testDataHelper.createCards(alice);
 
+        // Default: repositoryUserCard.save returns the saved entity
+        when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
+
         // Mock par défaut pour le live feed (déclenché lors de useCard)
         when(repositoryLiveFeed.save(any(ts.backend_carddropper.entity.LiveFeedEvent.class)))
                 .thenAnswer(inv -> {
@@ -72,6 +80,28 @@ class TestServiceUser {
                     e.setCreatedAt(java.time.LocalDateTime.now());
                     return e;
                 });
+    }
+
+    /** Helper: simule qu'un user possède une carte (quantity=1) */
+    private UserCard giveCard(User user, Card card) {
+        UserCard uc = new UserCard(user, card, 1);
+        when(repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId()))
+                .thenReturn(Optional.of(uc));
+        return uc;
+    }
+
+    /** Helper: simule qu'un user possède plusieurs copies d'une carte */
+    private UserCard giveCards(User user, Card card, int quantity) {
+        UserCard uc = new UserCard(user, card, quantity);
+        when(repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId()))
+                .thenReturn(Optional.of(uc));
+        return uc;
+    }
+
+    /** Helper: simule qu'un user ne possède PAS une carte */
+    private void noCard(User user, Card card) {
+        when(repositoryUserCard.findByUserIdAndCardId(user.getId(), card.getId()))
+                .thenReturn(Optional.empty());
     }
 
 
@@ -212,22 +242,13 @@ class TestServiceUser {
         @Test
         @DisplayName("delete user detaches cards then deletes")
         void testDelete_success() {
-            // Give alice an owned card via ManyToMany
-            Card ownedCard = cards.getFirst();
-            alice.getCardsOwned().add(ownedCard);
-
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            // Cards created by alice
-            when(repositoryCard.findAllByCreatedById(alice.getId())).thenReturn(List.of(ownedCard));
-            // Cards targeting alice
+            when(repositoryCard.findAllByCreatedById(alice.getId())).thenReturn(Collections.emptyList());
             when(repositoryCard.findAllByTargetUserId(alice.getId())).thenReturn(Collections.emptyList());
 
             serviceUser.delete(alice.getId());
 
-            // ManyToMany ownership should be cleared
-            assertTrue(alice.getCardsOwned().isEmpty());
-            // Creator FK should be detached
-            assertNull(ownedCard.getCreatedBy());
+            verify(repositoryUserCard).deleteByUserId(alice.getId());
             verify(repositoryCard).flush();
             verify(repositoryUser).delete(alice);
         }
@@ -256,16 +277,31 @@ class TestServiceUser {
         void testGetCardsOwned_success() {
             Card card1 = cards.get(0);
             Card card2 = cards.get(1);
-            alice.getCardsOwned().add(card1);
-            alice.getCardsOwned().add(card2);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserId(alice.getId()))
+                    .thenReturn(List.of(new UserCard(alice, card1, 1), new UserCard(alice, card2, 1)));
 
             List<CardDto> result = serviceUser.getCardsOwned(alice.getId());
 
             assertEquals(2, result.size());
             assertEquals(card1.getName(), result.getFirst().name());
             assertEquals(card2.getName(), result.get(1).name());
+        }
+
+        @Test
+        @DisplayName("getCardsOwned expands quantity — 2x same card returns 2 entries")
+        void testGetCardsOwned_expandsQuantity() {
+            Card card1 = cards.get(0);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserId(alice.getId()))
+                    .thenReturn(List.of(new UserCard(alice, card1, 2)));
+
+            List<CardDto> result = serviceUser.getCardsOwned(alice.getId());
+
+            assertEquals(2, result.size());
+            assertEquals(card1.getName(), result.getFirst().name());
         }
 
         @Test
@@ -281,31 +317,29 @@ class TestServiceUser {
         void testTradeCard_success() {
             Card aliceCard = cards.get(0);
             Card bobCard = cards.get(12); // first RARE card
-            // Set up ownership via collections
-            alice.getCardsOwned().add(aliceCard);
-            bob.getCardsOwned().add(bobCard);
+
+            UserCard aliceUc = giveCard(alice, aliceCard);
+            UserCard bobUc = giveCard(bob, bobCard);
+            // alice doesn't have bobCard yet, bob doesn't have aliceCard yet
+            noCard(alice, bobCard);
+            noCard(bob, aliceCard);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.tradeCard(alice.getId(), aliceCard.getId(), bob.getId(), bobCard.getId());
 
-            // After trade: alice no longer owns aliceCard, bob does
-            assertFalse(alice.getCardsOwned().contains(aliceCard));
-            assertTrue(bob.getCardsOwned().contains(aliceCard));
-            // And vice versa
-            assertFalse(bob.getCardsOwned().contains(bobCard));
-            assertTrue(alice.getCardsOwned().contains(bobCard));
-            verify(repositoryUser, times(2)).save(any(User.class));
+            // Both cards were removed from their owners (quantity=1 → delete)
+            verify(repositoryUserCard, times(2)).delete(any(UserCard.class));
+            // Each card added to the new owner (save new UserCard)
+            verify(repositoryUserCard, times(2)).save(any(UserCard.class));
         }
 
         @Test
         @DisplayName("tradeCard fails when user doesn't own the card")
         void testTradeCard_notOwned() {
             Card card = cards.get(0);
-            // card is NOT in alice's collection — owned by nobody or bob
-            bob.getCardsOwned().add(card);
+            noCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
@@ -319,38 +353,37 @@ class TestServiceUser {
         void testOpenPack_success() {
             Card poolCard1 = cards.get(0);
             Card poolCard2 = cards.get(1);
-            // Both are pool cards (owners is empty)
-            assertTrue(poolCard1.getOwners().isEmpty());
-            assertTrue(poolCard2.getOwners().isEmpty());
-
             List<Long> cardIds = List.of(poolCard1.getId(), poolCard2.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(poolCard1, poolCard2));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            // alice doesn't own either card yet
+            noCard(alice, poolCard1);
+            noCard(alice, poolCard2);
 
             List<CardDto> result = serviceUser.openPack(alice.getId(), cardIds);
 
             assertEquals(2, result.size());
-            // Cards should now be in alice's collection
-            assertTrue(alice.getCardsOwned().contains(poolCard1));
-            assertTrue(alice.getCardsOwned().contains(poolCard2));
+            // Two new UserCards should be saved (one per card)
+            verify(repositoryUserCard, times(2)).save(any(UserCard.class));
         }
 
         @Test
-        @DisplayName("openPack fails when unique card is already owned")
-        void testOpenPack_cardAlreadyOwned() {
-            Card ownedCard = cards.get(0);
-            ownedCard.setUniqueCard(true);
-            ownedCard.addOwner(bob); // already owned — unique card with owner
+        @DisplayName("openPack succeeds with a unique card that is not yet owned")
+        void testOpenPack_uniqueCardNotOwned() {
+            Card uniqueCard = cards.get(0);
+            uniqueCard.setUniqueCard(true);
 
-            List<Long> cardIds = List.of(ownedCard.getId());
+            List<Long> cardIds = List.of(uniqueCard.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(ownedCard));
+            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(uniqueCard));
+            noCard(alice, uniqueCard);
 
-            assertThrows(IllegalStateException.class,
-                    () -> serviceUser.openPack(alice.getId(), cardIds));
+            List<CardDto> result = serviceUser.openPack(alice.getId(), cardIds);
+
+            assertEquals(1, result.size());
+            verify(repositoryUserCard).save(any(UserCard.class));
         }
 
         @Test
@@ -379,73 +412,104 @@ class TestServiceUser {
         @Test
         @DisplayName("merge 3 COMMON cards returns a RARE card")
         void testMergeCards_commonToRare() {
-            // Give alice 3 common cards
             Card c1 = cards.get(0);
             Card c2 = cards.get(1);
             Card c3 = cards.get(2);
-            alice.getCardsOwned().add(c1);
-            alice.getCardsOwned().add(c2);
-            alice.getCardsOwned().add(c3);
+            giveCard(alice, c1);
+            giveCard(alice, c2);
+            giveCard(alice, c3);
 
             List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3));
 
-            // Pool of RARE cards available for the result
-            Card rarePoolCard = cards.get(12); // first RARE card, still in pool
+            Card rarePoolCard = cards.get(12); // first RARE card
             when(repositoryCard.findPoolCardsByRarity(Rarity.RARE)).thenReturn(List.of(rarePoolCard));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            // alice doesn't have the result card yet
+            noCard(alice, rarePoolCard);
 
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
 
             assertNotNull(result);
             assertEquals(Rarity.RARE, result.rarity());
-            // Consumed cards should be removed from alice's collection
-            assertFalse(alice.getCardsOwned().contains(c1));
-            assertFalse(alice.getCardsOwned().contains(c2));
-            assertFalse(alice.getCardsOwned().contains(c3));
-            // Result card should be owned by alice
-            assertTrue(alice.getCardsOwned().contains(rarePoolCard));
+            // All 3 consumed cards should be deleted (each has quantity=1)
+            verify(repositoryUserCard, times(3)).delete(any(UserCard.class));
+            // Result card should be saved as new UserCard
+            verify(repositoryUserCard).save(argThat(uc -> uc.getCard().getId().equals(rarePoolCard.getId())));
         }
 
         @Test
-        @DisplayName("merge 3 RARE cards returns an EPIC card")
+        @DisplayName("merge 4 RARE cards returns an EPIC card")
         void testMergeCards_rareToEpic() {
             Card r1 = cards.get(12);
             Card r2 = cards.get(13);
             Card r3 = cards.get(14);
-            alice.getCardsOwned().add(r1);
-            alice.getCardsOwned().add(r2);
-            alice.getCardsOwned().add(r3);
+            Card r4 = cards.get(15);
+            giveCard(alice, r1);
+            giveCard(alice, r2);
+            giveCard(alice, r3);
+            giveCard(alice, r4);
 
-            List<Long> cardIds = List.of(r1.getId(), r2.getId(), r3.getId());
+            List<Long> cardIds = List.of(r1.getId(), r2.getId(), r3.getId(), r4.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(r1, r2, r3));
+            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(r1, r2, r3, r4));
 
             Card epicPoolCard = cards.get(18); // first EPIC card
             when(repositoryCard.findPoolCardsByRarity(Rarity.EPIC)).thenReturn(List.of(epicPoolCard));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            noCard(alice, epicPoolCard);
 
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
 
             assertEquals(Rarity.EPIC, result.rarity());
-            assertTrue(alice.getCardsOwned().contains(epicPoolCard));
+            verify(repositoryUserCard, times(4)).delete(any(UserCard.class));
+            verify(repositoryUserCard).save(argThat(uc -> uc.getCard().getId().equals(epicPoolCard.getId())));
         }
 
         @Test
-        @DisplayName("merge fails when not exactly 3 cards provided")
-        void testMergeCards_wrongCount() {
-            List<Long> twoCards = List.of(1L, 2L);
+        @DisplayName("merge 3 copies of same card (duplicate IDs) reduces quantity correctly")
+        void testMergeCards_triplicateCard() {
+            Card c1 = cards.get(0);
+            // alice has 3 copies of c1
+            giveCards(alice, c1, 3);
+
+            // All 3 IDs are the same
+            List<Long> cardIds = List.of(c1.getId(), c1.getId(), c1.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            // findAllById returns distinct
+            when(repositoryCard.findAllById(List.of(c1.getId()))).thenReturn(List.of(c1));
+
+            Card rarePoolCard = cards.get(12);
+            when(repositoryCard.findPoolCardsByRarity(Rarity.RARE)).thenReturn(List.of(rarePoolCard));
+            noCard(alice, rarePoolCard);
+
+            CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
+
+            assertNotNull(result);
+            assertEquals(Rarity.RARE, result.rarity());
+            // c1 had quantity=3, all 3 consumed → deleted
+            verify(repositoryUserCard).delete(any(UserCard.class));
+        }
+
+        @Test
+        @DisplayName("merge fails when wrong number of cards provided for the rarity")
+        void testMergeCards_wrongCount() {
+            Card c1 = cards.get(0); // COMMON
+            Card c2 = cards.get(1); // COMMON
+            List<Long> twoCards = List.of(c1.getId(), c2.getId());
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findAllById(twoCards)).thenReturn(List.of(c1, c2));
+            giveCard(alice, c1);
+            giveCard(alice, c2);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
                     () -> serviceUser.mergeCards(alice.getId(), twoCards)
             );
-            assertTrue(ex.getMessage().contains("Exactly 3 cards are required"));
+            assertTrue(ex.getMessage().contains("cards are required to merge"));
         }
 
         @Test
@@ -454,9 +518,9 @@ class TestServiceUser {
             Card common = cards.get(0);
             Card rare = cards.get(12);
             Card epic = cards.get(18);
-            alice.getCardsOwned().add(common);
-            alice.getCardsOwned().add(rare);
-            alice.getCardsOwned().add(epic);
+            giveCard(alice, common);
+            giveCard(alice, rare);
+            giveCard(alice, epic);
 
             List<Long> cardIds = List.of(common.getId(), rare.getId(), epic.getId());
 
@@ -473,9 +537,9 @@ class TestServiceUser {
             Card c1 = cards.get(0);
             Card c2 = cards.get(1);
             Card c3 = cards.get(2);
-            alice.getCardsOwned().add(c1);
-            alice.getCardsOwned().add(c2);
-            // c3 NOT in alice's collection
+            giveCard(alice, c1);
+            giveCard(alice, c2);
+            noCard(alice, c3); // c3 NOT owned
 
             List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId());
 
@@ -495,9 +559,9 @@ class TestServiceUser {
             l3.setId(99L);
             l3.setRarity(Rarity.LEGENDARY);
 
-            alice.getCardsOwned().add(l1);
-            alice.getCardsOwned().add(l2);
-            alice.getCardsOwned().add(l3);
+            giveCard(alice, l1);
+            giveCard(alice, l2);
+            giveCard(alice, l3);
 
             List<Long> cardIds = List.of(l1.getId(), l2.getId(), l3.getId());
 
@@ -514,9 +578,9 @@ class TestServiceUser {
             Card c1 = cards.get(0);
             Card c2 = cards.get(1);
             Card c3 = cards.get(2);
-            alice.getCardsOwned().add(c1);
-            alice.getCardsOwned().add(c2);
-            alice.getCardsOwned().add(c3);
+            giveCard(alice, c1);
+            giveCard(alice, c2);
+            giveCard(alice, c3);
 
             List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId());
 
@@ -539,21 +603,19 @@ class TestServiceUser {
     class UseCardTests {
 
         @Test
-        @DisplayName("carte unique — consommée (retirée de la collection) et événement persisté")
+        @DisplayName("carte consommée et événement persisté")
         void testUseCard_uniqueCard_consumed() {
             Card card = cards.get(0);
             card.setUniqueCard(true);
-            alice.getCardsOwned().add(card);
+            UserCard uc = giveCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
 
-            // Carte unique → retirée de la collection
-            assertFalse(alice.getCardsOwned().contains(card));
-            verify(repositoryUser).save(alice);
+            // Carte retirée (quantity=1 → delete)
+            verify(repositoryUserCard).delete(uc);
 
             // Vérifier que l'événement a été persisté via ServiceLiveFeed
             var captor = org.mockito.ArgumentCaptor.forClass(ts.backend_carddropper.entity.LiveFeedEvent.class);
@@ -567,23 +629,18 @@ class TestServiceUser {
         }
 
         @Test
-        @DisplayName("carte non-unique — retirée de la collection après utilisation et événement persisté")
+        @DisplayName("carte non-unique — retirée de la collection après utilisation")
         void testUseCard_nonUniqueCard_consumed() {
             Card card = cards.get(0);
             card.setUniqueCard(false);
-            alice.getCardsOwned().add(card);
+            UserCard uc = giveCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
 
-            // Carte non-unique → également retirée après utilisation
-            assertFalse(alice.getCardsOwned().contains(card));
-            verify(repositoryUser).save(alice);
-
-            // L'événement est persisté
+            verify(repositoryUserCard).delete(uc);
             verify(repositoryLiveFeed).save(any(ts.backend_carddropper.entity.LiveFeedEvent.class));
         }
 
@@ -600,7 +657,7 @@ class TestServiceUser {
         @DisplayName("échoue quand la carte n'appartient pas à l'utilisateur")
         void testUseCard_cardNotOwned() {
             Card card = cards.get(0);
-            // card NOT in alice's collection (owned by bob or nobody)
+            noCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
 
@@ -612,9 +669,8 @@ class TestServiceUser {
         @DisplayName("échoue quand la carte cible un autre utilisateur que celui spécifié")
         void testUseCard_wrongTarget() {
             Card card = cards.get(0);
-            alice.getCardsOwned().add(card);
-            // La carte cible alice, pas bob
-            card.setTargetUser(alice);
+            card.setTargetUser(alice); // la carte cible alice, pas bob
+            giveCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
@@ -632,24 +688,21 @@ class TestServiceUser {
             Card card = cards.get(0);
             card.setUniqueCard(true);
             card.setTargetUser(bob);
-            alice.getCardsOwned().add(card);
+            UserCard uc = giveCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
-            when(repositoryUser.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
 
-            // Carte unique → retirée de la collection
-            assertFalse(alice.getCardsOwned().contains(card));
-            verify(repositoryUser).save(alice);
+            verify(repositoryUserCard).delete(uc);
         }
 
         @Test
         @DisplayName("échoue quand la cible n'existe pas")
         void testUseCard_targetNotFound() {
             Card card = cards.get(0);
-            alice.getCardsOwned().add(card);
+            giveCard(alice, card);
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(999L)).thenReturn(Optional.empty());
@@ -661,8 +714,9 @@ class TestServiceUser {
         @Test
         @DisplayName("échoue quand la carte n'est pas dans la collection de l'utilisateur")
         void testUseCard_cardNotInCollection() {
-            // Card exists but alice doesn't own it
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong()))
+                    .thenReturn(Optional.empty());
 
             assertThrows(IllegalArgumentException.class,
                     () -> serviceUser.useCard(alice.getId(), 999L, bob.getId()));

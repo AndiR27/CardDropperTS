@@ -13,6 +13,12 @@ const NEXT_RARITY: Record<MergeRarity, Rarity> = {
   [Rarity.EPIC]: Rarity.LEGENDARY,
 };
 
+const MERGE_REQUIRED: Record<MergeRarity, number> = {
+  [Rarity.COMMON]: 3,
+  [Rarity.RARE]: 4,
+  [Rarity.EPIC]: 5,
+};
+
 @Component({
   selector: 'app-merge-cards',
   standalone: true,
@@ -29,7 +35,7 @@ export class MergeCardsComponent {
   readonly merged = output<Card>();
 
   protected readonly rarityFilter = signal<MergeRarity>(Rarity.COMMON);
-  protected readonly selectedIds = signal<Set<number>>(new Set());
+  protected readonly selectedIndices = signal<Set<number>>(new Set());
   protected readonly merging = signal(false);
   protected readonly mergeResult = signal<Card | null>(null);
   protected readonly showConfirm = signal(false);
@@ -45,12 +51,14 @@ export class MergeCardsComponent {
     return this.cards().filter(c => c.rarity === this.rarityFilter());
   });
 
-  protected readonly selectionCount = computed(() => this.selectedIds().size);
-  protected readonly canMerge = computed(() => this.selectedIds().size === 3);
+  protected readonly requiredCount = computed(() => MERGE_REQUIRED[this.rarityFilter()]);
+  protected readonly selectionCount = computed(() => this.selectedIndices().size);
+  protected readonly canMerge = computed(() => this.selectedIndices().size === this.requiredCount());
 
   protected readonly selectedCards = computed(() => {
-    const ids = this.selectedIds();
-    return this.cards().filter(c => c.id !== null && ids.has(c.id));
+    const indices = this.selectedIndices();
+    const cards = this.filteredCards();
+    return Array.from(indices).map(i => cards[i]).filter(Boolean);
   });
 
   protected readonly resultRarity = computed(() => {
@@ -59,22 +67,21 @@ export class MergeCardsComponent {
 
   setRarity(r: MergeRarity): void {
     this.rarityFilter.set(r);
-    this.selectedIds.set(new Set());
+    this.selectedIndices.set(new Set());
   }
 
-  toggleCard(card: Card): void {
-    const ids = new Set(this.selectedIds());
-    if (card.id === null) return;
-    if (ids.has(card.id)) {
-      ids.delete(card.id);
-    } else if (ids.size < 3) {
-      ids.add(card.id);
+  toggleCard(index: number): void {
+    const indices = new Set(this.selectedIndices());
+    if (indices.has(index)) {
+      indices.delete(index);
+    } else if (indices.size < this.requiredCount()) {
+      indices.add(index);
     }
-    this.selectedIds.set(ids);
+    this.selectedIndices.set(indices);
   }
 
-  isSelected(card: Card): boolean {
-    return card.id !== null && this.selectedIds().has(card.id);
+  isSelected(index: number): boolean {
+    return this.selectedIndices().has(index);
   }
 
   getImageUrl(card: Card): string | null {
@@ -101,12 +108,15 @@ export class MergeCardsComponent {
     if (!this.canMerge() || this.merging()) return;
     this.merging.set(true);
     this.mergeError.set(null);
-    const ids = Array.from(this.selectedIds());
+    const cards = this.filteredCards();
+    const ids = Array.from(this.selectedIndices())
+      .map(i => cards[i].id)
+      .filter((id): id is number => id !== null);
     this.meService.mergeCards(ids).subscribe({
       next: (result) => {
         this.merging.set(false);
         this.showConfirm.set(false);
-        this.selectedIds.set(new Set());
+        this.selectedIndices.set(new Set());
         this.mergeResult.set(result);
         this.merged.emit(result);
       },

@@ -200,6 +200,14 @@
   box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7), 0 0 30px var(--cd-gold-glow);
 }
 
+.merge-confirm__content--wide-md {
+  max-width: 620px;
+}
+
+.merge-confirm__content--wide-lg {
+  max-width: 760px;
+}
+
 .merge-confirm__close {
   position: absolute;
   top: 0.75rem;
@@ -233,6 +241,7 @@
 
 .merge-confirm__cards {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   justify-content: center;
 }

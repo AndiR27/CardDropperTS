@@ -66,11 +66,27 @@
 }
 
 .cl__card-visual {
+  position: relative;
   transition: transform 0.25s;
 
   .cl__card:hover & {
     transform: translateY(-6px);
   }
+}
+
+.cl__qty {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--cd-gold, #f0b232);
+  color: var(--cd-text-dark, #1a1209);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .cl__card-img {

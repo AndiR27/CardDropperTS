@@ -19,6 +19,9 @@
         } @else {
           <div class="cl__card-placeholder">?</div>
         }
+        @if (getCount(card) > 1) {
+          <span class="cl__qty">×{{ getCount(card) }}</span>
+        }
       </div>
       <span class="cl__card-name">{{ card.name }}</span>
       <span class="cl__badge cl__badge--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>

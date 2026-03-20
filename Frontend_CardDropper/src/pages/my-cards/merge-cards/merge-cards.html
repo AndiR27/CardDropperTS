@@ -11,10 +11,10 @@
 
 <!-- Compact grid -->
 <div class="merge__grid">
-  @for (card of filteredCards(); track card.id) {
+  @for (card of filteredCards(); track $index) {
     <button class="merge__thumb"
-            [class.merge__thumb--selected]="isSelected(card)"
-            (click)="toggleCard(card)">
+            [class.merge__thumb--selected]="isSelected($index)"
+            (click)="toggleCard($index)">
       <div class="merge__thumb-img-wrap">
         @if (getImageUrl(card); as imgUrl) {
           <img [src]="imgUrl" [alt]="card.name" class="merge__thumb-img"/>
@@ -31,7 +31,7 @@
 
 <!-- Selection count + merge button -->
 <div class="merge__actions">
-  <span class="merge__count">{{ selectionCount() }} / 3 sélectionnées</span>
+  <span class="merge__count">{{ selectionCount() }} / {{ requiredCount() }} sélectionnées</span>
   <button class="merge__btn"
           [class.merge__btn--ready]="canMerge()"
           [disabled]="!canMerge()"
@@ -43,12 +43,14 @@
 <!-- ====== Confirm modal ====== -->
 @if (showConfirm()) {
   <div class="merge-confirm" (click)="onConfirmOverlayClick($event)">
-    <div class="merge-confirm__content">
+    <div class="merge-confirm__content"
+         [class.merge-confirm__content--wide-md]="selectedCards().length === 4"
+         [class.merge-confirm__content--wide-lg]="selectedCards().length >= 5">
       <button class="merge-confirm__close" (click)="closeConfirm()">&#x2715;</button>
       <h3 class="merge-confirm__title">Confirmer la fusion</h3>
 
       <div class="merge-confirm__cards">
-        @for (card of selectedCards(); track card.id) {
+        @for (card of selectedCards(); track $index) {
           <div class="merge-confirm__card">
             @if (getImageUrl(card); as imgUrl) {
               <img [src]="imgUrl" [alt]="card.name" class="merge-confirm__card-img"/>

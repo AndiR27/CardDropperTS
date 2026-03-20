@@ -25,7 +25,11 @@ replay_pid*
 
 # env files
 .env
+.env.example
+.env.*
+
+# Card images (runtime data, not source)
+card-images/
 
 target/
-./card-images/
 

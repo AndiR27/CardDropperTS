@@ -237,12 +237,29 @@
 }
 
 .card-list-view__thumb {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
   background: var(--cd-surface);
+}
+
+.card-list-view__qty {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--cd-gold, #f0b232);
+  color: var(--cd-text-dark, #1a1209);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 5px;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .card-list-view__thumb-img {
@@ -250,6 +267,8 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .card-list-view__thumb-placeholder {
@@ -367,6 +386,22 @@
 .carousel__card-inner {
   position: relative;
   transition: filter 0.3s;
+}
+
+.carousel__qty {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--cd-gold, #f0b232);
+  color: var(--cd-text-dark, #1a1209);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 20;
 }
 
 .carousel__card-img {

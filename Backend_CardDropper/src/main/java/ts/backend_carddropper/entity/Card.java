@@ -44,9 +44,9 @@ public class Card {
     @Column(name = "is_unique", nullable = false)
     private boolean uniqueCard;
 
-    // Propriétaires de la carte (relation ManyToMany gérée côté User)
-    @ManyToMany(mappedBy = "cardsOwned")
-    private List<User> owners = new ArrayList<>();
+    // Propriétaires de la carte (via UserCard)
+    @OneToMany(mappedBy = "card")
+    private List<UserCard> userCards = new ArrayList<>();
 
     // Créateur de la carte
     @ManyToOne
@@ -58,8 +58,5 @@ public class Card {
     @JoinColumn(name = "target_user_id")
     private User targetUser;
 
-    public void addOwner(User user) {
-        owners.add(user);
-        user.getCardsOwned().add(this);
-    }
 }
+

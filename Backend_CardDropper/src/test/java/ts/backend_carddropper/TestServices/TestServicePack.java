@@ -8,7 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import ts.backend_carddropper.entity.*;
+import ts.backend_carddropper.entity.Card;
+import ts.backend_carddropper.entity.PackSlot;
+import ts.backend_carddropper.entity.PackTemplate;
+import ts.backend_carddropper.entity.PackTemplateSlot;
+import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
+import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.helper.TestDataHelper;
 import ts.backend_carddropper.models.CardDto;
@@ -16,6 +22,7 @@ import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryPackSlot;
 import ts.backend_carddropper.repository.RepositoryPackTemplate;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.repository.RepositoryUserPackInventory;
 import ts.backend_carddropper.service.ServicePack;
 
@@ -50,6 +57,12 @@ class TestServicePack {
     @MockitoBean
     private RepositoryUserPackInventory repositoryUserPackInventory;
 
+    @MockitoBean
+    private RepositoryUserCard repositoryUserCard;
+
+    @MockitoBean
+    private ts.backend_carddropper.repository.RepositoryLiveFeed repositoryLiveFeed;
+
     private User alice;
     private User bob;
     private List<Card> cards;
@@ -62,6 +75,15 @@ class TestServicePack {
         bob = users.get(1);
         cards = testDataHelper.createCards(alice);
         packTemplate = testDataHelper.createPackTemplate();
+
+        // Default: repositoryLiveFeed.save returns a saved entity (needed for LegendaryDropEvent)
+        when(repositoryLiveFeed.save(any(ts.backend_carddropper.entity.LiveFeedEvent.class)))
+                .thenAnswer(inv -> {
+                    ts.backend_carddropper.entity.LiveFeedEvent e = inv.getArgument(0);
+                    e.setId(1L);
+                    e.setCreatedAt(java.time.LocalDateTime.now());
+                    return e;
+                });
     }
 
     private void mockAllPools() {
@@ -82,6 +104,11 @@ class TestServicePack {
             return cards.stream().filter(c -> ids.contains(c.getId())).toList();
         });
         when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+        // alice owns no cards by default; addCardToUser will save new UserCards
+        when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+        when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong()))
+                .thenReturn(Optional.empty());
+        when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     /**
@@ -148,7 +175,8 @@ class TestServicePack {
 
             List<CardDto> result = servicePack.generatePack(alice.getId(), packTemplate.getId());
 
-            assertEquals(3, alice.getCardsOwned().size());
+            // 3 cards should have been saved as new UserCard entries
+            verify(repositoryUserCard, times(3)).save(any(UserCard.class));
         }
 
         @Test
@@ -212,8 +240,7 @@ class TestServicePack {
                 User owner = new User();
                 owner.setId(100L + i);
                 owner.setUsername("user" + i);
-                owner.setCardsOwned(new ArrayList<>());
-                moreOwned.addOwner(owner);
+                moreOwned.getUserCards().add(new UserCard(owner, moreOwned, 1));
             }
 
             PackSlot commonSlot = new PackSlot();
@@ -236,7 +263,11 @@ class TestServicePack {
             int lessOwnedCount = 0;
             int iterations = 1000;
             for (int i = 0; i < iterations; i++) {
-                alice.setCardsOwned(new ArrayList<>());
+                // reset mocks for next iteration (alice owns nothing yet)
+                reset(repositoryUserCard);
+                when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+                when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong())).thenReturn(Optional.empty());
+                when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
                 List<CardDto> result = servicePack.generatePack(alice.getId(), singleSlot.getId());
                 if (result.getFirst().id().equals(lessOwned.getId())) {
                     lessOwnedCount++;
@@ -276,7 +307,11 @@ class TestServicePack {
             int card1Count = 0;
             int iterations = 1000;
             for (int i = 0; i < iterations; i++) {
-                alice.setCardsOwned(new ArrayList<>());
+                // reset mocks for next iteration (alice owns nothing yet)
+                reset(repositoryUserCard);
+                when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+                when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong())).thenReturn(Optional.empty());
+                when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
                 List<CardDto> result = servicePack.generatePack(alice.getId(), singleSlot.getId());
                 if (result.getFirst().id().equals(card1.getId())) {
                     card1Count++;
