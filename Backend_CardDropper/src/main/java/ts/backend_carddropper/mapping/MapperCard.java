@@ -16,10 +16,12 @@ public interface MapperCard {
     @Mapping(target = "userCards", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "targetUser", ignore = true)
+    @Mapping(target = "active", ignore = true)
     Card toEntity(CardDto dto);
 
     @Mapping(target = "userCards", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "targetUser", ignore = true)
+    @Mapping(target = "active", ignore = true)
     void updateEntity(CardDto dto, @MappingTarget Card entity);
 }

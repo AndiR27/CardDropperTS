@@ -18,5 +18,7 @@ public interface RepositoryUserCard extends JpaRepository<UserCard, Long> {
 
     void deleteByUserId(Long userId);
 
+    void deleteByCardId(Long cardId);
+
     boolean existsByCardId(Long cardId);
 }

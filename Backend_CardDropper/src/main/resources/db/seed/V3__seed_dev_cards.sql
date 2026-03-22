@@ -11,7 +11,7 @@ ALTER SEQUENCE ts_user_seq RESTART WITH 101;
 
 -- ====== CARDS ======
 INSERT INTO card (id, name, image_url, rarity, description, drop_rate, is_unique, creator_id, target_user_id) VALUES
-  (1,  'Stofonde',       'dev/Stofonde_card.png', 'LEGENDARY', 'Le fond des abysses, incarné.',               0.5,  false, 1, NULL),
+  (1,  'Stofonde',       'dev/Stofonde_card.png', 'LEGENDARY', 'Le fond des abysses, incarné.',               0.5,  true, 1, NULL),
   (2,  'Duo Queue',      'dev/duoQ.png',          'RARE',      'Deux âmes liées par la ranked.',               5.0,  false, 1, NULL),
   (3,  'Rundown',        'dev/2_rundown.png',      'RARE',     'Un sprint vers la victoire.',                  15.0, false, 1, NULL),
   (4,  'CardDropper',    'dev/3_CardDropper.png',  'LEGENDARY', 'La carte originelle.',                         2.0,  true,  1, NULL),
@@ -21,7 +21,7 @@ INSERT INTO card (id, name, image_url, rarity, description, drop_rate, is_unique
   (8,  'Arm',            'dev/arm.png',            'EPIC',      'La force brute au service du style.',          2.0,  false, 1, NULL),
   (9,  'Piou',           'dev/piou.png',           'COMMON',    'Petit mais redoutable.',                      15.0, false, 1, NULL),
   (10, 'Storm',          'dev/storm.png',          'COMMON',    'La tempête ne prévient jamais.',               2.0,  false, 1, NULL),
-  (11, 'Prism',          'dev/prism.png',          'EPIC',      'Réfracte la lumière et la réalité.',           5.0,  false, 1, NULL),
+  (11, 'Prism',          'dev/prism.png',          'EPIC',      'Réfracte la lumière et la réalité.',           5.0,  true, 1, NULL),
   (12, 'Pack à Gogo',    'dev/pack_a_gogo.png',    'EPIC',      'Je donne un pack gratuit',                    10.0, true, 2, 2);
 
 ALTER SEQUENCE card_seq RESTART WITH 101;
@@ -34,5 +34,6 @@ INSERT INTO user_cards (user_id, card_id) VALUES
   (1, 8),   -- Arm (EPIC)
   (1, 12),  -- Admin pack (EPIC, unique to admin)
   (2, 2),
-  (2, 6);
+  (2, 6),
+  (1, 1);
 

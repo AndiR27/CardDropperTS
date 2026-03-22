@@ -5,18 +5,18 @@ import { Card, Rarity } from '../../../app/models';
 import { CardService } from '../../../app/services/card.service';
 import { MeService } from '../../../app/services/me.service';
 
-type MergeRarity = Rarity.COMMON | Rarity.RARE | Rarity.EPIC;
+type MergeRarity = Rarity.COMMON | Rarity.RARE /* | Rarity.EPIC — LEGENDARY craft disabled */;
 
 const NEXT_RARITY: Record<MergeRarity, Rarity> = {
   [Rarity.COMMON]: Rarity.RARE,
-  [Rarity.RARE]: Rarity.EPIC,
-  [Rarity.EPIC]: Rarity.LEGENDARY,
+  [Rarity.RARE]:   Rarity.EPIC,
+  // [Rarity.EPIC]: Rarity.LEGENDARY, // disabled — re-add to re-enable legendary crafting
 };
 
 const MERGE_REQUIRED: Record<MergeRarity, number> = {
   [Rarity.COMMON]: 3,
-  [Rarity.RARE]: 4,
-  [Rarity.EPIC]: 5,
+  [Rarity.RARE]:   4,
+  // [Rarity.EPIC]: 5, // disabled — re-add to re-enable legendary crafting
 };
 
 @Component({
@@ -43,8 +43,8 @@ export class MergeCardsComponent {
 
   protected readonly rarities: { value: MergeRarity; label: string }[] = [
     { value: Rarity.COMMON, label: 'Commune' },
-    { value: Rarity.RARE, label: 'Rare' },
-    { value: Rarity.EPIC, label: 'Épique' },
+    { value: Rarity.RARE,   label: 'Rare' },
+    // { value: Rarity.EPIC, label: 'Épique' }, // disabled — re-add to re-enable legendary crafting
   ];
 
   protected readonly filteredCards = computed(() => {

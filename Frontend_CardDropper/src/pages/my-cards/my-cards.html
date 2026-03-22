@@ -214,7 +214,8 @@
 
   <!-- ====== Tab: Créations ====== -->
   @if (activeTab() === 'creations') {
-    <app-card-list [cards]="createdCards()" [title]="'Mes Créations'"/>
+    <app-card-list [cards]="createdCards()" [title]="'Mes Créations'"
+                   [clickable]="true" (cardClick)="openDeactivateModal($event)"/>
   }
 
   <!-- ====== Tab: Cibles ====== -->
@@ -324,6 +325,74 @@
       <p class="use-success__text">
         <strong>{{ usedCardName() }}</strong> utilisée sur <strong>{{ usedTargetName() }}</strong>
       </p>
+    </div>
+  </div>
+}
+
+<!-- ====== Deactivate Card Modal ====== -->
+@if (showDeactivateModal() && deactivateCard(); as card) {
+  <div class="deactivate-modal" (click)="onDeactivateOverlayClick($event)">
+    <div class="deactivate-modal__content">
+      <button class="use-modal__close" (click)="closeDeactivateModal()">✕</button>
+
+      <!-- Card preview -->
+      <div class="use-modal__card">
+        @if (getImageUrl(card); as imgUrl) {
+          <img [src]="imgUrl" [alt]="card.name"
+               class="use-modal__card-img use-modal__card-img--{{ card.rarity | lowercase }}"/>
+        }
+        <h3 class="use-modal__card-name">{{ card.name }}</h3>
+        <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+      </div>
+
+      <!-- Step: info -->
+      @if (deactivateStep() === 'info') {
+        <div class="deactivate-modal__info">
+          @if (!card.active) {
+            <p class="deactivate-modal__already">Cette carte est déjà désactivée.</p>
+          } @else {
+            <p class="deactivate-modal__desc">
+              Une fois désactivée, cette carte ne pourra plus être jouée ni apparaître dans les packs.
+            </p>
+            <button class="deactivate-modal__btn-deactivate" (click)="deactivateStep.set('confirm')">
+              Désactiver la carte
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Step: confirm -->
+      @if (deactivateStep() === 'confirm') {
+        <div class="deactivate-modal__confirm">
+          <div class="deactivate-modal__warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <p>Cette action est <strong>irréversible</strong>. La carte sera définitivement désactivée et ne pourra plus être jouée ni droppée.</p>
+          </div>
+
+          @if (deactivateError(); as err) {
+            <p class="use-modal__error">{{ err }}</p>
+          }
+
+          <div class="use-modal__actions">
+            <button class="use-modal__btn use-modal__btn--back" (click)="deactivateStep.set('info')" [disabled]="deactivating()">
+              Annuler
+            </button>
+            <button class="deactivate-modal__btn-confirm" (click)="confirmDeactivate()" [disabled]="deactivating()">
+              @if (deactivating()) {
+                Désactivation...
+              } @else {
+                Confirmer la désactivation
+              }
+            </button>
+          </div>
+        </div>
+      }
     </div>
   </div>
 }

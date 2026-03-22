@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -130,6 +132,13 @@ public class RestControllerMe implements MeApi {
     public ResponseEntity<Void> useMyCard(Long cardId, Long targetUserId) {
         Long userId = serviceAuth.getCurrentUserId();
         serviceUser.useCard(userId, cardId, targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/cards/{cardId}/deactivate")
+    public ResponseEntity<Void> deactivateMyCard(@PathVariable Long cardId) {
+        Long userId = serviceAuth.getCurrentUserId();
+        serviceUser.deactivateCard(userId, cardId);
         return ResponseEntity.noContent().build();
     }
 

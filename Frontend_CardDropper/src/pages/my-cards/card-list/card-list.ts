@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { LowerCasePipe } from '@angular/common';
 import { Card } from '../../../app/models';
 import { CardService } from '../../../app/services/card.service';
@@ -15,6 +15,9 @@ export class CardListComponent {
 
   readonly cards = input.required<Card[]>();
   readonly title = input.required<string>();
+  readonly clickable = input(false);
+
+  readonly cardClick = output<Card>();
 
   protected readonly search = signal('');
   protected readonly hoveredCard = signal<Card | null>(null);

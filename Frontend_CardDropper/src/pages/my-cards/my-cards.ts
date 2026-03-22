@@ -231,4 +231,51 @@ export class MyCardsPage implements OnInit {
       this.closeUseModal();
     }
   }
+
+  // ── Deactivate card modal (creations tab) ──
+  protected readonly showDeactivateModal = signal(false);
+  protected readonly deactivateCard = signal<Card | null>(null);
+  protected readonly deactivateStep = signal<'info' | 'confirm'>('info');
+  protected readonly deactivating = signal(false);
+  protected readonly deactivateError = signal<string | null>(null);
+
+  openDeactivateModal(card: Card): void {
+    this.deactivateCard.set(card);
+    this.deactivateStep.set('info');
+    this.deactivateError.set(null);
+    this.showDeactivateModal.set(true);
+  }
+
+  closeDeactivateModal(): void {
+    this.showDeactivateModal.set(false);
+  }
+
+  onDeactivateOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('deactivate-modal')) {
+      this.closeDeactivateModal();
+    }
+  }
+
+  confirmDeactivate(): void {
+    const card = this.deactivateCard();
+    if (!card?.id || this.deactivating()) return;
+
+    this.deactivating.set(true);
+    this.deactivateError.set(null);
+
+    this.meService.deactivateCard(card.id).subscribe({
+      next: () => {
+        this.deactivating.set(false);
+        this.showDeactivateModal.set(false);
+        // Update the card in createdCards to reflect inactive state
+        this.createdCards.update(cards =>
+          cards.map(c => c.id === card.id ? { ...c, active: false } : c)
+        );
+      },
+      error: (err) => {
+        this.deactivating.set(false);
+        this.deactivateError.set(err?.error?.detail ?? 'Erreur lors de la désactivation.');
+      },
+    });
+  }
 }

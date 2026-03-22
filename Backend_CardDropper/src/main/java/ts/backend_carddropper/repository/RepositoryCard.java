@@ -19,11 +19,11 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     List<Card> findByRarity(Rarity rarity);
 
     // Cartes disponibles dans le pool : non-uniques (toujours disponibles) + uniques sans propriétaire
-    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.userCards IS EMPTY)")
+    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY)")
     List<Card> findPoolCardsByRarity(@Param("rarity") Rarity rarity);
 
     // Cartes du pool en excluant celles déjà sélectionnées — utilisé pour la génération de pack
-    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND c.id NOT IN :excludedIds")
+    @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND c.id NOT IN :excludedIds")
     List<Card> findPoolCardsByRarityExcluding(@Param("rarity") Rarity rarity, @Param("excludedIds") List<Long> excludedIds);
 
     //Trouver toutes les cartes possédées par un utilisateur

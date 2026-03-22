@@ -11,7 +11,7 @@
 <!-- Card grid -->
 <div class="cl__grid">
   @for (card of filteredCards(); track card.id) {
-    <div class="cl__card">
+    <div class="cl__card" [class.cl__card--clickable]="clickable()" (click)="clickable() && cardClick.emit(card)">
       <div class="cl__card-visual">
         @if (getImageUrl(card); as imgUrl) {
           <img [src]="imgUrl" [alt]="card.name"
@@ -21,6 +21,9 @@
         }
         @if (getCount(card) > 1) {
           <span class="cl__qty">×{{ getCount(card) }}</span>
+        }
+        @if (!card.active) {
+          <span class="cl__inactive-badge">Inactive</span>
         }
       </div>
       <span class="cl__card-name">{{ card.name }}</span>

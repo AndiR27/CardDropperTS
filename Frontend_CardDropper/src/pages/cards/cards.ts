@@ -40,6 +40,7 @@ export class CardsPage implements OnInit {
   protected readonly showTargetSuggestions = signal(false);
   protected readonly filterUnique = signal(false);
   protected readonly hideTargeted = signal(false);
+  protected readonly showInactive = signal(false);
   protected readonly sortBy = signal<'' | 'name-asc' | 'name-desc' | 'rarity-asc' | 'rarity-desc'>('');
 
   // ── Zoom overlay ──
@@ -96,6 +97,11 @@ export class CardsPage implements OnInit {
       cards = cards.filter(c => c.targetUserId === null);
     }
 
+    // Hide inactive cards unless explicitly shown
+    if (!this.showInactive()) {
+      cards = cards.filter(c => c.active);
+    }
+
     // Sorting
     const sort = this.sortBy();
     if (sort) {
@@ -136,6 +142,7 @@ export class CardsPage implements OnInit {
     if (this.hideTargeted()) count++;
     if (this.filterTarget()) count++;
     if (this.searchName()) count++;
+    if (this.showInactive()) count++;
     return count;
   });
 
@@ -202,6 +209,7 @@ export class CardsPage implements OnInit {
     this.filterRarity.set('');
     this.filterUnique.set(false);
     this.hideTargeted.set(false);
+    this.showInactive.set(false);
     this.filterTarget.set('');
     this.targetInput.set('');
     this.sortBy.set('');

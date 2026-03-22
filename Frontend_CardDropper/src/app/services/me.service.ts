@@ -51,6 +51,10 @@ export class MeService {
     return this.api.post<void>(`/me/cards/use?cardId=${cardId}&targetUserId=${targetUserId}`, null);
   }
 
+  deactivateCard(cardId: number): Observable<void> {
+    return this.api.patch<void>(`/me/cards/${cardId}/deactivate`);
+  }
+
   // ====== Live Feed ======
 
   getLiveFeedToday(): Observable<LiveFeedEvent[]> {

@@ -285,6 +285,11 @@ public class ServiceUser {
 
         removeUserCard(uc);
 
+        if (card.isUniqueCard()) {
+            card.setActive(false);
+            repositoryCard.save(card);
+        }
+
         log.info("User '{}' used card '{}' ({}) on user '{}' (unique={})",
                 user.getUsername(), card.getName(), card.getRarity(), target.getUsername(), card.isUniqueCard());
 
@@ -352,6 +357,24 @@ public class ServiceUser {
             case EPIC      -> Rarity.LEGENDARY;
             case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
         };
+    }
+
+    /**
+     * Désactive manuellement une carte unique appartenant à l'utilisateur.
+     * La carte reste visible mais ne peut plus être jouée ni droppée.
+     */
+    @Transactional
+    public void deactivateCard(Long userId, Long cardId) {
+        findUserOrThrow(userId);
+        Card card = repositoryCard.findById(cardId)
+                .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + cardId));
+        if (card.getCreatedBy() == null || !card.getCreatedBy().getId().equals(userId)) {
+            throw new IllegalArgumentException("User id=" + userId + " is not the creator of card id=" + cardId);
+        }
+        repositoryUserCard.deleteByCardId(cardId); // retire la carte de tous les propriétaires
+        card.setActive(false);
+        repositoryCard.save(card);
+        log.info("User id={} deactivated card id={} ('{}')", userId, cardId, card.getName());
     }
 
     /**

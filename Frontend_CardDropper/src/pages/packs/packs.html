@@ -1,8 +1,31 @@
 <section class="packs-page">
 
-  <!-- ====== Info board (dropdown) ====== -->
-  @if (phase() === 'idle') {
-    <aside class="packs-info-board" [class.packs-info-board--open]="infoBoardOpen()">
+  <!-- ====== Top bar: Sound toggle (left) + Info board (right) ====== -->
+  <div class="packs-top-bar">
+
+    <button class="sound-toggle" [class.sound-toggle--muted]="sound.muted()"
+            (click)="sound.toggleMute()">
+      <span class="sound-toggle__icon-wrap">
+        @if (sound.muted()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 010 7.07"/>
+            <path d="M19.07 4.93a10 10 0 010 14.14"/>
+          </svg>
+        }
+      </span>
+      <span class="sound-toggle__label">
+        @if (sound.muted()) { Muet } @else { Son }
+      </span>
+    </button>
+
+    @if (phase() === 'idle') {
+      <aside class="packs-info-board" [class.packs-info-board--open]="infoBoardOpen()">
       <button class="packs-info-board__toggle" (click)="infoBoardOpen.set(!infoBoardOpen())">
         <svg class="packs-info-board__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
@@ -33,8 +56,10 @@
           </li>
         </ul>
       }
-    </aside>
-  }
+      </aside>
+    }
+
+  </div><!-- /.packs-top-bar -->
 
   @if (error(); as err) {
     <div class="packs-page__error">
@@ -146,6 +171,9 @@
                 <span class="reveal__card-rarity reveal__card-rarity--{{ card.rarity | lowercase }}">
                   {{ card.rarity }}
                 </span>
+                @if (card.uniqueCard) {
+                  <span class="reveal__card-unique">Unique</span>
+                }
               }
             </div>
           }

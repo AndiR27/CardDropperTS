@@ -172,7 +172,7 @@ class TestServiceCard {
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.save(any(Card.class))).thenReturn(updatedCard);
 
-            CardDto dto = new CardDto(card.getId(), "UpdatedName", null, Rarity.COMMON, null, 0.8, false, alice.getId(), null);
+            CardDto dto = new CardDto(card.getId(), "UpdatedName", null, Rarity.COMMON, null, 0.8, false, true, alice.getId(), null);
             Optional<CardDto> result = serviceCard.update(card.getId(), dto);
 
             assertTrue(result.isPresent());
@@ -185,7 +185,7 @@ class TestServiceCard {
         void testUpdate_notFound() {
             when(repositoryCard.findById(999L)).thenReturn(Optional.empty());
 
-            CardDto dto = new CardDto(999L, "Ghost", null, Rarity.COMMON, null, 1.0, false, null, null);
+            CardDto dto = new CardDto(999L, "Ghost", null, Rarity.COMMON, null, 1.0, false, true, null, null);
             Optional<CardDto> result = serviceCard.update(999L, dto);
 
             assertTrue(result.isEmpty());
@@ -268,7 +268,7 @@ class TestServiceCard {
 
             when(repositoryCard.save(any(Card.class))).thenReturn(updatedCard);
 
-            CardDto dto = new CardDto(card.getId(), card.getName(), null, card.getRarity(), null, card.getDropRate(), false, bob.getId(), null);
+            CardDto dto = new CardDto(card.getId(), card.getName(), null, card.getRarity(), null, card.getDropRate(), false, true, bob.getId(), null);
             Optional<CardDto> result = serviceCard.update(card.getId(), dto);
 
             assertTrue(result.isPresent());
@@ -317,7 +317,7 @@ class TestServiceCard {
             MockMultipartFile image = new MockMultipartFile(
                     "image", "dragon.png", "image/png", baos.toByteArray());
 
-            CardDto dto = new CardDto(null, "Dragon", null, Rarity.EPIC, null, 0.2, false, alice.getId(), null);
+            CardDto dto = new CardDto(null, "Dragon", null, Rarity.EPIC, null, 0.2, false, true, alice.getId(), null);
             CardDto result = serviceCard.createCardWithImage(dto, image, alice.getId(), "alice");
 
             assertEquals("alice/50_dragon.png", result.imageUrl());
@@ -334,7 +334,7 @@ class TestServiceCard {
             MockMultipartFile image = new MockMultipartFile(
                     "image", "file.txt", "text/plain", new byte[]{1, 2, 3});
 
-            CardDto dto = new CardDto(null, "Bad", null, Rarity.COMMON, null, 1.0, false, alice.getId(), null);
+            CardDto dto = new CardDto(null, "Bad", null, Rarity.COMMON, null, 1.0, false, true, alice.getId(), null);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
@@ -350,7 +350,7 @@ class TestServiceCard {
             MockMultipartFile image = new MockMultipartFile(
                     "image", "big.png", "image/png", largeContent);
 
-            CardDto dto = new CardDto(null, "Big", null, Rarity.COMMON, null, 1.0, false, alice.getId(), null);
+            CardDto dto = new CardDto(null, "Big", null, Rarity.COMMON, null, 1.0, false, true, alice.getId(), null);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
@@ -365,7 +365,7 @@ class TestServiceCard {
             MockMultipartFile image = new MockMultipartFile(
                     "image", "empty.png", "image/png", new byte[0]);
 
-            CardDto dto = new CardDto(null, "Empty", null, Rarity.COMMON, null, 1.0, false, alice.getId(), null);
+            CardDto dto = new CardDto(null, "Empty", null, Rarity.COMMON, null, 1.0, false, true, alice.getId(), null);
 
             IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,

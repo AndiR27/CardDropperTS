@@ -44,6 +44,9 @@ public class Card {
     @Column(name = "is_unique", nullable = false)
     private boolean uniqueCard;
 
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
     // Propriétaires de la carte (via UserCard)
     @OneToMany(mappedBy = "card")
     private List<UserCard> userCards = new ArrayList<>();

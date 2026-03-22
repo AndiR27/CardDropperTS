@@ -603,7 +603,7 @@ class TestServiceUser {
     class UseCardTests {
 
         @Test
-        @DisplayName("carte consommée et événement persisté")
+        @DisplayName("carte unique consommée : retirée de la collection, désactivée, événement persisté")
         void testUseCard_uniqueCard_consumed() {
             Card card = cards.get(0);
             card.setUniqueCard(true);
@@ -611,16 +611,20 @@ class TestServiceUser {
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
 
             serviceUser.useCard(alice.getId(), card.getId(), bob.getId());
 
-            // Carte retirée (quantity=1 → delete)
+            // Carte retirée de la collection
             verify(repositoryUserCard).delete(uc);
 
-            // Vérifier que l'événement a été persisté via ServiceLiveFeed
+            // Carte désactivée
+            assertFalse(card.isActive());
+            verify(repositoryCard).save(card);
+
+            // Événement persisté
             var captor = org.mockito.ArgumentCaptor.forClass(ts.backend_carddropper.entity.LiveFeedEvent.class);
             verify(repositoryLiveFeed).save(captor.capture());
-
             var savedEvent = captor.getValue();
             assertEquals("alice", savedEvent.getActorUsername());
             assertEquals(card.getName(), savedEvent.getCardName());
@@ -720,6 +724,105 @@ class TestServiceUser {
 
             assertThrows(IllegalArgumentException.class,
                     () -> serviceUser.useCard(alice.getId(), 999L, bob.getId()));
+        }
+    }
+
+
+    // ========================================
+    //         DÉSACTIVATION DE CARTE
+    // ========================================
+
+    @Nested
+    @DisplayName("Désactivation manuelle de carte (deactivateCard)")
+    class DeactivateCardTests {
+
+        @Test
+        @DisplayName("désactivation réussie par le créateur : tous les UserCards supprimés, carte désactivée")
+        void testDeactivateCard_success() {
+            Card card = cards.get(0); // créé par alice
+            card.setActive(true);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            serviceUser.deactivateCard(alice.getId(), card.getId());
+
+            verify(repositoryUserCard).deleteByCardId(card.getId());
+            assertFalse(card.isActive());
+            verify(repositoryCard).save(card);
+        }
+
+        @Test
+        @DisplayName("échoue quand la carte n'existe pas")
+        void testDeactivateCard_cardNotFound() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> serviceUser.deactivateCard(alice.getId(), 999L));
+        }
+
+        @Test
+        @DisplayName("désactivation réussie pour une carte non-unique")
+        void testDeactivateCard_nonUniqueCard() {
+            Card card = cards.get(0); // créé par alice
+            card.setUniqueCard(false);
+            card.setActive(true);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            serviceUser.deactivateCard(alice.getId(), card.getId());
+
+            verify(repositoryUserCard).deleteByCardId(card.getId());
+            assertFalse(card.isActive());
+            verify(repositoryCard).save(card);
+        }
+
+        @Test
+        @DisplayName("désactivation retire la carte de tous les propriétaires, pas seulement le créateur")
+        void testDeactivateCard_removesCardFromAllOwners() {
+            Card card = cards.get(0); // créé par alice
+            card.setActive(true);
+            // Bob possède la carte mais c'est alice (créatrice) qui la désactive
+            giveCard(bob, card);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+            when(repositoryCard.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            serviceUser.deactivateCard(alice.getId(), card.getId());
+
+            // deleteByCardId supprime tous les UserCards liés à cette carte (y compris bob)
+            verify(repositoryUserCard).deleteByCardId(card.getId());
+            verify(repositoryUserCard, never()).delete(any(UserCard.class));
+            assertFalse(card.isActive());
+        }
+
+        @Test
+        @DisplayName("échoue quand l'utilisateur n'est pas le créateur de la carte")
+        void testDeactivateCard_notCreator() {
+            Card card = cards.get(0); // créé par alice
+            // Bob essaie de désactiver une carte créée par alice
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryCard.findById(card.getId())).thenReturn(Optional.of(card));
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> serviceUser.deactivateCard(bob.getId(), card.getId())
+            );
+            assertTrue(ex.getMessage().contains("is not the creator"));
+        }
+
+        @Test
+        @DisplayName("échoue quand l'utilisateur n'existe pas")
+        void testDeactivateCard_userNotFound() {
+            when(repositoryUser.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> serviceUser.deactivateCard(999L, 1L));
         }
     }
 }

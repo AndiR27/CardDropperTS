@@ -36,6 +36,11 @@ export class ApiService {
     return this.http.put<T>(`${this.baseUrl}${path}`, body);
   }
 
+  /** PATCH — mise à jour partielle d'une ressource */
+  patch<T>(path: string, body: unknown = null): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}${path}`, body);
+  }
+
   /** DELETE — supprimer une ressource */
   delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${path}`);

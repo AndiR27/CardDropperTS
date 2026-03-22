@@ -317,8 +317,8 @@ paths:
       tags: [ me ]
       summary: Utiliser une carte sur un autre utilisateur
       description: |
-        Retire la carte de la collection du propriétaire (retourne au pool)
-        et publie un événement live feed.
+        Retire la carte de la collection du propriétaire et publie un événement live feed.
+        Si la carte est unique, elle est définitivement désactivée (ne retourne pas au pool).
       operationId: useMyCard
       parameters:
         - name: cardId
@@ -340,6 +340,29 @@ paths:
           description: Utilisateur ou carte introuvable.
         '500':
           description: Erreur interne.
+
+  /me/cards/{cardId}/deactivate:
+    patch:
+      tags: [ me ]
+      summary: Désactiver une carte
+      description: |
+        Désactive manuellement une carte appartenant à l'utilisateur.
+        La carte est retirée de sa collection et ne peut plus être jouée ni droppée.
+        Elle reste visible dans la base de données.
+      operationId: deactivateMyCard
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 10
+      responses:
+        '204':
+          description: Carte désactivée avec succès.
+        '403':
+          description: L'utilisateur ne possède pas cette carte.
+        '404':
+          description: Carte ou utilisateur introuvable.
 
   # /me/live-feed/stream is hand-written (SSE — not compatible with OpenAPI codegen)
 
@@ -968,6 +991,9 @@ components:
         uniqueCard:
           type: boolean
           example: false
+        active:
+          type: boolean
+          example: true
         createdById:
           type: integer
           format: int64

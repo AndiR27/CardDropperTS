@@ -103,6 +103,13 @@
             <span>Sans cible</span>
           </button>
         }
+
+        <button class="filter-toggle filter-toggle--ghost"
+                [class.filter-toggle--active]="showInactive()"
+                (click)="showInactive.set(!showInactive())">
+          <span class="filter-toggle__icon">&#x1F4A4;</span>
+          <span>Inactives</span>
+        </button>
       </div>
     </div>
 
@@ -131,7 +138,7 @@
   @if (filteredCards().length > 0) {
     <div class="card-grid">
       @for (card of filteredCards(); track card.id) {
-        <div class="card-item" (click)="openZoom(card)">
+        <div class="card-item" [class.card-item--inactive]="!card.active" (click)="openZoom(card)">
           <div class="card-item__visual">
             @if (getImageUrl(card); as imgUrl) {
               <img [src]="imgUrl" [alt]="card.name"
@@ -140,6 +147,9 @@
               <div class="card-item__placeholder">
                 <span>?</span>
               </div>
+            }
+            @if (!card.active) {
+              <div class="card-item__inactive-badge">Inactive</div>
             }
           </div>
           <div class="card-item__info">
@@ -193,6 +203,15 @@
           }
           @if (card.uniqueCard) {
             <span class="zoom-card__unique">Carte unique</span>
+          }
+          @if (!card.active) {
+            <span class="zoom-card__inactive">
+              @if (card.uniqueCard) {
+                Désactivée · déjà utilisée une fois
+              } @else {
+                Désactivée · non jouable et non droppable
+              }
+            </span>
           }
         </div>
       </div>

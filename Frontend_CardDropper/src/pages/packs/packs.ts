@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { LowerCasePipe } from '@angular/common';
 import { MeService } from '../../app/services/me.service';
 import { CardService } from '../../app/services/card.service';
+import { SoundService } from '../../app/services/sound.service';
 import type { Card, UserPackInventory } from '../../app/models';
 
 @Component({
@@ -14,6 +15,7 @@ import type { Card, UserPackInventory } from '../../app/models';
 export class PacksPage implements OnInit {
   private readonly meService = inject(MeService);
   private readonly cardService = inject(CardService);
+  protected readonly sound = inject(SoundService);
 
   // ── Inventory ──
   protected readonly inventory = signal<UserPackInventory[]>([]);
@@ -92,6 +94,7 @@ export class PacksPage implements OnInit {
     }
     set.add(index);
     this.flippedSet.set(set);
+    this.sound.play(cards[index].rarity);
   }
 
   isFlipped(index: number): boolean {
