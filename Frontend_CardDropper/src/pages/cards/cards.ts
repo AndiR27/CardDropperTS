@@ -28,8 +28,6 @@ export class CardsPage implements OnInit {
 
   // ── Pagination ──
   protected readonly currentPage = signal(0);
-  protected readonly totalPages = signal(0);
-  protected readonly totalElements = signal(0);
   protected readonly pageSize = 20;
 
   // ── Filters ──
@@ -55,7 +53,7 @@ export class CardsPage implements OnInit {
     { value: Rarity.LEGENDARY, label: 'Légendaire', image: 'assets/cardsCreation/rarity/legendary-crystal.png' },
   ];
 
-  // ── Filtered cards ──
+  // ── Filtered cards (all pages) ──
   protected readonly filteredCards = computed(() => {
     let cards = this.allCards();
 
@@ -120,6 +118,23 @@ export class CardsPage implements OnInit {
     return cards;
   });
 
+  // ── Client-side pagination ──
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredCards().length / this.pageSize))
+  );
+  protected readonly totalElements = computed(() => this.filteredCards().length);
+
+  // Clamp current page when filters reduce total pages
+  protected readonly safePage = computed(() =>
+    Math.min(this.currentPage(), this.totalPages() - 1)
+  );
+
+  protected readonly pagedCards = computed(() => {
+    const page = this.safePage();
+    const start = page * this.pageSize;
+    return this.filteredCards().slice(start, start + this.pageSize);
+  });
+
   // ── Target suggestions (autocomplete) ──
   protected readonly targetSuggestions = computed(() => {
     const input = this.targetInput().toLowerCase().trim();
@@ -172,6 +187,7 @@ export class CardsPage implements OnInit {
   // ── Rarity filter ──
   selectRarity(value: Rarity | ''): void {
     this.filterRarity.set(value);
+    this.currentPage.set(0);
   }
 
   // ── Target autocomplete ──
@@ -180,7 +196,6 @@ export class CardsPage implements OnInit {
   }
 
   onTargetBlur(): void {
-    // Delay to allow click on suggestion
     setTimeout(() => this.showTargetSuggestions.set(false), 200);
   }
 
@@ -188,19 +203,20 @@ export class CardsPage implements OnInit {
     this.targetInput.set(username);
     this.filterTarget.set(username);
     this.showTargetSuggestions.set(false);
+    this.currentPage.set(0);
   }
 
   onTargetInputChange(value: string): void {
     this.targetInput.set(value);
-    if (!value) {
-      this.filterTarget.set('');
-    }
+    if (!value) this.filterTarget.set('');
     this.showTargetSuggestions.set(true);
+    this.currentPage.set(0);
   }
 
   clearTarget(): void {
     this.targetInput.set('');
     this.filterTarget.set('');
+    this.currentPage.set(0);
   }
 
   // ── Reset filters ──
@@ -213,6 +229,7 @@ export class CardsPage implements OnInit {
     this.filterTarget.set('');
     this.targetInput.set('');
     this.sortBy.set('');
+    this.currentPage.set(0);
   }
 
   // ── Zoom ──
@@ -234,7 +251,6 @@ export class CardsPage implements OnInit {
   goToPage(page: number): void {
     if (page < 0 || page >= this.totalPages()) return;
     this.currentPage.set(page);
-    this.loadCards();
   }
 
   nextPage(): void { this.goToPage(this.currentPage() + 1); }
@@ -243,11 +259,9 @@ export class CardsPage implements OnInit {
   // ── Data loading ──
   private loadCards(): void {
     this.loading.set(true);
-    this.cardService.getPaged(this.currentPage(), this.pageSize).subscribe({
-      next: (res) => {
-        this.allCards.set(res.content);
-        this.totalPages.set(res.page.totalPages);
-        this.totalElements.set(res.page.totalElements);
+    this.cardService.getAll().subscribe({
+      next: (cards) => {
+        this.allCards.set(cards);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

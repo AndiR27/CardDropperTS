@@ -124,7 +124,7 @@
 
   <!-- Count -->
   <p class="cards-page__count">
-    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }} / {{ totalElements() }} au total
+    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }} / {{ totalCount() }} au total
   </p>
 
   <!-- ====== Card grid ====== -->
@@ -135,9 +135,9 @@
     </div>
   }
 
-  @if (filteredCards().length > 0) {
+  @if (pagedCards().length > 0) {
     <div class="card-grid">
-      @for (card of filteredCards(); track card.id) {
+      @for (card of pagedCards(); track card.id) {
         <div class="card-item" [class.card-item--inactive]="!card.active" (click)="openZoom(card)">
           <div class="card-item__visual">
             @if (getImageUrl(card); as imgUrl) {
@@ -168,13 +168,13 @@
   <!-- Pagination -->
   @if (totalPages() > 1) {
     <div class="pagination">
-      <button class="pagination__btn" (click)="prevPage()" [disabled]="currentPage() === 0">
+      <button class="pagination__btn" (click)="prevPage()" [disabled]="safePage() === 0">
         &#x2190; Precedent
       </button>
       <span class="pagination__info">
-        Page {{ currentPage() + 1 }} / {{ totalPages() }}
+        Page {{ safePage() + 1 }} / {{ totalPages() }}
       </span>
-      <button class="pagination__btn" (click)="nextPage()" [disabled]="currentPage() + 1 >= totalPages()">
+      <button class="pagination__btn" (click)="nextPage()" [disabled]="safePage() + 1 >= totalPages()">
         Suivant &#x2192;
       </button>
     </div>
