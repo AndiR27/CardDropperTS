@@ -9,8 +9,8 @@ public record CardDto(
         Rarity rarity,
         String description,
         double dropRate,
-        boolean uniqueCard,
-        boolean active,
+        Boolean uniqueCard,
+        Boolean active,
         Long createdById,
         Long targetUserId
 ) {
