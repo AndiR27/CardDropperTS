@@ -89,7 +89,7 @@ public class ServicePack {
                 List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
                 List<Long> excludedIds = new ArrayList<>(alreadyPickedIds);
                 excludedIds.addAll(ownedUniqueCardIds);
-                Card card = pickCardFromPool(rarity, excludedIds, ownedCardIds);
+                Card card = pickCardFromPool(rarity, excludedIds, ownedCardIds, userId);
 
                 if (rarity == Rarity.LEGENDARY) {
                     eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
@@ -195,10 +195,10 @@ public class ServicePack {
         return weights.keySet().iterator().next();
     }
 
-    private Card pickCardFromPool(Rarity rarity, List<Long> excludedIds, Set<Long> ownedCardIds) {
+    private Card pickCardFromPool(Rarity rarity, List<Long> excludedIds, Set<Long> ownedCardIds, Long userId) {
         List<Card> pool = excludedIds.isEmpty()
-                ? repositoryCard.findPoolCardsByRarity(rarity)
-                : repositoryCard.findPoolCardsByRarityExcluding(rarity, excludedIds);
+                ? repositoryCard.findPoolCardsByRarity(rarity, userId)
+                : repositoryCard.findPoolCardsByRarityExcluding(rarity, userId, excludedIds);
 
         if (pool.isEmpty()) {
             throw new IllegalStateException("No " + rarity + " card available in the pool");

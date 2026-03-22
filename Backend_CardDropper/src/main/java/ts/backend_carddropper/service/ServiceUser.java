@@ -230,7 +230,7 @@ public class ServiceUser {
         Rarity nextRarity = getNextRarity(rarity);
 
         // Piocher une carte aléatoire du pool à la rareté supérieure
-        List<Card> pool = repositoryCard.findPoolCardsByRarity(nextRarity);
+        List<Card> pool = repositoryCard.findPoolCardsByRarity(nextRarity, userId);
         if (pool.isEmpty()) {
             throw new IllegalStateException("No " + nextRarity + " card available in the pool");
         }

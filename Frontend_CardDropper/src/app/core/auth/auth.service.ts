@@ -24,6 +24,7 @@ export class AuthService {
 
   /** Server-validated admin flag, set during init() */
   private _isAdmin = false;
+  private _userId: number | null = null;
 
   /**
    * Initialise la connexion OIDC.
@@ -72,6 +73,7 @@ export class AuthService {
     try {
       const user = await firstValueFrom(this.http.get<User>(`${environment.apiUrl}/auth/me`));
       this._isAdmin = user?.admin === true;
+      this._userId = user?.id ?? null;
     } catch (err) {
       console.error('Failed to sync user with backend', err);
       this._isAdmin = false;
@@ -112,5 +114,10 @@ export class AuthService {
   /** Returns whether the current user has admin role (set by backend during init) */
   get isAdmin(): boolean {
     return this._isAdmin;
+  }
+
+  /** Returns the current user's DB id (set during init) */
+  get userId(): number | null {
+    return this._userId;
   }
 }

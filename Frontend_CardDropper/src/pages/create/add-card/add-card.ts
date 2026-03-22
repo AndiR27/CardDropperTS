@@ -1,6 +1,7 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MeService } from '../../../app/services/me.service';
+import { AuthService } from '../../../app/core/auth/auth.service';
 import { Card, Rarity } from '../../../app/models';
 
 @Component({
@@ -16,6 +17,7 @@ export class AddCard {
   saved = output<string>();
 
   private readonly meService = inject(MeService);
+  private readonly auth = inject(AuthService);
 
   // ── State ──
   imageFile = signal<File | null>(null);
@@ -79,6 +81,7 @@ export class AddCard {
       rarity: this.rarity(),
       dropRate: 0,
       uniqueCard: this.uniqueCard(),
+      targetUserId: this.targeting() ? this.auth.userId : null,
       imageUrl: null,
     } as Card;
 

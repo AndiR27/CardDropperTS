@@ -425,7 +425,7 @@ class TestServiceUser {
             when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3));
 
             Card rarePoolCard = cards.get(12); // first RARE card
-            when(repositoryCard.findPoolCardsByRarity(Rarity.RARE)).thenReturn(List.of(rarePoolCard));
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.RARE), anyLong())).thenReturn(List.of(rarePoolCard));
             // alice doesn't have the result card yet
             noCard(alice, rarePoolCard);
 
@@ -457,7 +457,7 @@ class TestServiceUser {
             when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(r1, r2, r3, r4));
 
             Card epicPoolCard = cards.get(18); // first EPIC card
-            when(repositoryCard.findPoolCardsByRarity(Rarity.EPIC)).thenReturn(List.of(epicPoolCard));
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.EPIC), anyLong())).thenReturn(List.of(epicPoolCard));
             noCard(alice, epicPoolCard);
 
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
@@ -482,7 +482,7 @@ class TestServiceUser {
             when(repositoryCard.findAllById(List.of(c1.getId()))).thenReturn(List.of(c1));
 
             Card rarePoolCard = cards.get(12);
-            when(repositoryCard.findPoolCardsByRarity(Rarity.RARE)).thenReturn(List.of(rarePoolCard));
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.RARE), anyLong())).thenReturn(List.of(rarePoolCard));
             noCard(alice, rarePoolCard);
 
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
@@ -586,7 +586,7 @@ class TestServiceUser {
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3));
-            when(repositoryCard.findPoolCardsByRarity(Rarity.RARE)).thenReturn(Collections.emptyList());
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.RARE), anyLong())).thenReturn(Collections.emptyList());
 
             assertThrows(IllegalStateException.class,
                     () -> serviceUser.mergeCards(alice.getId(), cardIds));

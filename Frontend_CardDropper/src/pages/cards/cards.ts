@@ -138,7 +138,7 @@ export class CardsPage implements OnInit {
   // ── Target suggestions (autocomplete) ──
   protected readonly targetSuggestions = computed(() => {
     const input = this.targetInput().toLowerCase().trim();
-    if (!input) return this.users().map(u => u.username).slice(0, 8);
+    if (!input) return [];
     return this.users()
       .map(u => u.username)
       .filter(name => name.toLowerCase().includes(input))
@@ -196,7 +196,7 @@ export class CardsPage implements OnInit {
   }
 
   onTargetBlur(): void {
-    setTimeout(() => this.showTargetSuggestions.set(false), 200);
+    setTimeout(() => this.showTargetSuggestions.set(false), 300);
   }
 
   selectTarget(username: string): void {

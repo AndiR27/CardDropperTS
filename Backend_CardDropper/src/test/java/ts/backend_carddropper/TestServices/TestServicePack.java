@@ -89,10 +89,10 @@ class TestServicePack {
     private void mockAllPools() {
         for (Rarity rarity : Rarity.values()) {
             List<Card> pool = cards.stream().filter(c -> c.getRarity() == rarity).toList();
-            when(repositoryCard.findPoolCardsByRarity(rarity)).thenReturn(pool);
-            when(repositoryCard.findPoolCardsByRarityExcluding(eq(rarity), anyList()))
+            when(repositoryCard.findPoolCardsByRarity(eq(rarity), anyLong())).thenReturn(pool);
+            when(repositoryCard.findPoolCardsByRarityExcluding(eq(rarity), anyLong(), anyList()))
                     .thenAnswer(inv -> {
-                        List<Long> excluded = inv.getArgument(1);
+                        List<Long> excluded = inv.getArgument(2);
                         return pool.stream().filter(c -> !excluded.contains(c.getId())).toList();
                     });
         }
@@ -202,7 +202,7 @@ class TestServicePack {
             mockInventory(alice, legendaryTemplate, 1);
             when(repositoryPackTemplate.findById(legendaryTemplate.getId())).thenReturn(Optional.of(legendaryTemplate));
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(Collections.emptyList());
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.LEGENDARY), anyLong())).thenReturn(Collections.emptyList());
 
             assertThrows(IllegalStateException.class,
                     () -> servicePack.generatePack(alice.getId(), legendaryTemplate.getId()));
@@ -252,7 +252,7 @@ class TestServicePack {
 
             mockInventory(alice, singleSlot, 10000);
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
-            when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(lessOwned, moreOwned));
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), anyLong())).thenReturn(List.of(lessOwned, moreOwned));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);
                 return List.of(lessOwned, moreOwned).stream()
@@ -296,7 +296,7 @@ class TestServicePack {
 
             mockInventory(alice, singleSlot, 10000);
             when(repositoryPackTemplate.findById(singleSlot.getId())).thenReturn(Optional.of(singleSlot));
-            when(repositoryCard.findPoolCardsByRarity(Rarity.COMMON)).thenReturn(List.of(card1, card2));
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), anyLong())).thenReturn(List.of(card1, card2));
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);
                 return List.of(card1, card2).stream()
@@ -347,7 +347,7 @@ class TestServicePack {
 
             mockInventory(alice, fixedTemplate, 1);
             when(repositoryPackTemplate.findById(fixedTemplate.getId())).thenReturn(Optional.of(fixedTemplate));
-            when(repositoryCard.findPoolCardsByRarity(Rarity.EPIC)).thenReturn(epicPool);
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.EPIC), anyLong())).thenReturn(epicPool);
             when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
                 List<Long> ids = inv.getArgument(0);
                 return cards.stream().filter(c -> ids.contains(c.getId())).toList();
@@ -391,10 +391,10 @@ class TestServicePack {
 
             List<Card> legendaryPool = cards.stream().filter(c -> c.getRarity() == Rarity.LEGENDARY).toList();
 
-            when(repositoryCard.findPoolCardsByRarity(Rarity.LEGENDARY)).thenReturn(legendaryPool);
-            when(repositoryCard.findPoolCardsByRarityExcluding(eq(Rarity.LEGENDARY), anyList()))
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.LEGENDARY), anyLong())).thenReturn(legendaryPool);
+            when(repositoryCard.findPoolCardsByRarityExcluding(eq(Rarity.LEGENDARY), anyLong(), anyList()))
                     .thenAnswer(inv -> {
-                        List<Long> excluded = inv.getArgument(1);
+                        List<Long> excluded = inv.getArgument(2);
                         return legendaryPool.stream().filter(c -> !excluded.contains(c.getId())).toList();
                     });
 
@@ -410,6 +410,126 @@ class TestServicePack {
 
             assertEquals(2, result.size());
             assertNotEquals(result.get(0).id(), result.get(1).id());
+        }
+    }
+
+
+    // ========================================
+    //         TARGETED CARD TESTS
+    // ========================================
+
+    @Nested
+    @DisplayName("Targeted card exclusion from drop pool")
+    class TargetedCardTests {
+
+        private PackTemplate commonTemplate;
+        private PackSlot commonSlot;
+
+        @BeforeEach
+        void setUpTargetedTests() {
+            commonSlot = new PackSlot();
+            commonSlot.setId(40L);
+            commonSlot.setName("fixedCommonTarget");
+            commonSlot.setFixedRarity(Rarity.COMMON);
+            commonTemplate = createSingleSlotTemplate(40L, "Targeted Test", commonSlot, 1);
+        }
+
+        @Test
+        @DisplayName("targeted card never appears in its target user's pack")
+        void testTargetedCard_excludedFromTargetUserPool() {
+            Card normalCard = new Card();
+            normalCard.setId(200L);
+            normalCard.setName("normal_card");
+            normalCard.setRarity(Rarity.COMMON);
+            normalCard.setDropRate(1.0);
+            normalCard.setUniqueCard(false);
+
+            Card targetedCard = new Card();
+            targetedCard.setId(201L);
+            targetedCard.setName("targeted_card");
+            targetedCard.setRarity(Rarity.COMMON);
+            targetedCard.setDropRate(1.0);
+            targetedCard.setUniqueCard(false);
+            targetedCard.setTargetUser(alice); // targeted at alice
+
+            // Pool query for alice excludes the card targeting alice
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), eq(alice.getId())))
+                    .thenReturn(List.of(normalCard)); // only normalCard returned
+
+            mockInventory(alice, commonTemplate, 1);
+            when(repositoryPackTemplate.findById(commonTemplate.getId())).thenReturn(Optional.of(commonTemplate));
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+            when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong())).thenReturn(Optional.empty());
+            when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
+                List<Long> ids = inv.getArgument(0);
+                return List.of(normalCard, targetedCard).stream().filter(c -> ids.contains(c.getId())).toList();
+            });
+
+            List<CardDto> result = servicePack.generatePack(alice.getId(), commonTemplate.getId());
+
+            assertEquals(1, result.size());
+            assertEquals(normalCard.getId(), result.getFirst().id(),
+                    "Targeted card must not appear in alice's pack — she is the target");
+        }
+
+        @Test
+        @DisplayName("targeted card can appear in other users' packs")
+        void testTargetedCard_allowedForOtherUsers() {
+            Card targetedCard = new Card();
+            targetedCard.setId(202L);
+            targetedCard.setName("targeted_for_alice");
+            targetedCard.setRarity(Rarity.COMMON);
+            targetedCard.setDropRate(1.0);
+            targetedCard.setUniqueCard(false);
+            targetedCard.setTargetUser(alice); // targeted at alice, NOT bob
+
+            // Pool query for bob includes the targeted card (he is not the target)
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), eq(bob.getId())))
+                    .thenReturn(List.of(targetedCard));
+
+            mockInventory(bob, commonTemplate, 1);
+            when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(bob.getId(), commonTemplate.getId()))
+                    .thenAnswer(inv -> {
+                        var inventory = new UserPackInventory();
+                        inventory.setId(2L);
+                        inventory.setUser(bob);
+                        inventory.setPackTemplate(commonTemplate);
+                        inventory.setQuantity(1);
+                        return Optional.of(inventory);
+                    });
+            when(repositoryPackTemplate.findById(commonTemplate.getId())).thenReturn(Optional.of(commonTemplate));
+            when(repositoryUser.findById(bob.getId())).thenReturn(Optional.of(bob));
+            when(repositoryUserCard.findByUserId(bob.getId())).thenReturn(List.of());
+            when(repositoryUserCard.findByUserIdAndCardId(eq(bob.getId()), anyLong())).thenReturn(Optional.empty());
+            when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
+                List<Long> ids = inv.getArgument(0);
+                return List.of(targetedCard).stream().filter(c -> ids.contains(c.getId())).toList();
+            });
+
+            List<CardDto> result = servicePack.generatePack(bob.getId(), commonTemplate.getId());
+
+            assertEquals(1, result.size());
+            assertEquals(targetedCard.getId(), result.getFirst().id(),
+                    "Targeted card should appear in bob's pack — he is not the target");
+        }
+
+        @Test
+        @DisplayName("throws when only card in pool targets the opener")
+        void testTargetedCard_emptyPoolThrows() {
+            // Pool is empty because the only card targets alice and alice is opening
+            when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), eq(alice.getId())))
+                    .thenReturn(List.of());
+
+            mockInventory(alice, commonTemplate, 1);
+            when(repositoryPackTemplate.findById(commonTemplate.getId())).thenReturn(Optional.of(commonTemplate));
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+
+            assertThrows(IllegalStateException.class,
+                    () -> servicePack.generatePack(alice.getId(), commonTemplate.getId()));
         }
     }
 }
