@@ -55,6 +55,7 @@ export class PacksPage implements OnInit {
     this.opening.set(true);
     this.error.set(null);
     this.phase.set('opening');
+    this.sound.pickTheme();
 
     this.meService.generatePack(pack.templateId).subscribe({
       next: (cards) => {
@@ -116,6 +117,7 @@ export class PacksPage implements OnInit {
     this.revealedCards.set([]);
     this.focusedCard.set(null);
     this.selectedPack.set(null);
+    this.sound.clearTheme();
   }
 
   getImageUrl(card: Card): string | null {
