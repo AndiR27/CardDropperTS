@@ -1,0 +1,35 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Frontend_CardDropper/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Frontend_CardDropper/**'
+
+jobs:
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: Frontend_CardDropper/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Frontend_CardDropper
+        run: npm ci
+
+      - name: Build
+        working-directory: Frontend_CardDropper
+        run: npx ng build --configuration production
