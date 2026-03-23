@@ -2,7 +2,7 @@
 .hero {
   position: relative;
   text-align: center;
-  padding: 4rem 1rem 3rem;
+  padding: 3.5rem 1rem 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -11,81 +11,115 @@
 
 .hero__glow {
   position: absolute;
-  top: -60px;
+  top: -80px;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
+  width: 900px;
   height: 600px;
   background: radial-gradient(
-    circle,
-    rgba(240, 178, 50, 0.14) 0%,
-    rgba(200, 136, 10, 0.05) 45%,
+    ellipse,
+    rgba(240, 178, 50, 0.12) 0%,
+    rgba(200, 136, 10, 0.04) 45%,
     transparent 70%
   );
   pointer-events: none;
   z-index: 0;
 }
 
-.hero__image {
+// ── Title block ──
+.hero__header {
   position: relative;
-  z-index: 1;
-  width: 260px;
-  height: 260px;
-  object-fit: contain;
-  border-radius: 50%;
+  z-index: 2;
   margin-bottom: 2rem;
-  filter: blur(12px) drop-shadow(0 0 50px rgba(240, 178, 50, 0.25));
-  transition: filter 0.5s ease;
-
-  &--loaded {
-    filter: blur(0) drop-shadow(0 0 50px rgba(240, 178, 50, 0.25));
-  }
 }
 
-.hero__content {
-  position: relative;
-  z-index: 1;
+.hero__overline {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cd-text-muted);
+  margin-bottom: 0.55rem;
+  opacity: 0.65;
 }
 
 .hero__title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 1rem;
-  color: var(--cd-text);
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  font-size: 4rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 .hero__accent {
   color: var(--cd-gold);
+  text-shadow:
+    0 0 50px rgba(240, 178, 50, 0.45),
+    0 2px 16px rgba(0, 0, 0, 0.8);
+}
+
+.hero__tagline {
+  font-size: 1rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--cd-text-muted);
+  letter-spacing: 0.06em;
+  margin: 0;
+  opacity: 0.7;
+}
+
+// ── Immersive image ──
+.hero__visual {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto 1rem;
+}
+
+.hero__image {
+  display: block;
+  width: 340px;
+  height: 340px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.hero__visual-fade { display: none; }
+
+// ── Description + CTA ──
+.hero__footer {
+  position: relative;
+  z-index: 2;
+  padding: 1.75rem 1rem 3.5rem;
 }
 
 .hero__subtitle {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--cd-text-muted);
-  max-width: 500px;
-  margin: 0 auto 2.25rem;
-  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 2rem;
+  line-height: 1.75;
 }
 
 .hero__cta {
   display: inline-block;
-  background: linear-gradient(180deg, var(--cd-gold-light) 0%, var(--cd-gold) 40%, var(--cd-gold-deep) 100%);
+  background: linear-gradient(180deg, var(--cd-gold-light, #f5d26a) 0%, var(--cd-gold) 40%, var(--cd-gold-deep) 100%);
   color: var(--cd-text-dark);
   text-decoration: none;
   border: none;
   border-radius: 10px;
-  padding: 0.85rem 2.5rem;
-  font-size: 1.05rem;
+  padding: 0.9rem 2.75rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(240, 178, 50, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(240, 178, 50, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(240, 178, 50, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 28px rgba(240, 178, 50, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -318,8 +352,27 @@
 }
 
 .feature__icon {
-  font-size: 2.25rem;
-  margin-bottom: 0.75rem;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(240, 178, 50, 0.08);
+  border: 1px solid rgba(240, 178, 50, 0.15);
+  color: var(--cd-gold);
+  transition: background 0.2s, border-color 0.2s;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .feature:hover & {
+    background: rgba(240, 178, 50, 0.13);
+    border-color: rgba(240, 178, 50, 0.3);
+  }
 }
 
 .feature__title {
@@ -496,18 +549,30 @@
 
 // ====== Responsive ======
 @media (max-width: 600px) {
-  .hero__image {
-    width: 180px;
-    height: 180px;
+  .hero {
+    padding: 2.5rem 0 0;
   }
 
   .hero__title {
-    font-size: 1.85rem;
+    font-size: 2.8rem;
+  }
+
+  .hero__subtitle {
+    font-size: 0.95rem;
   }
 
   .hero__glow {
     width: 350px;
     height: 350px;
+  }
+
+  .hero__image {
+    width: 240px;
+    height: 240px;
+  }
+
+  .hero__footer {
+    padding-bottom: 1rem;
   }
 
   .zoom-card {

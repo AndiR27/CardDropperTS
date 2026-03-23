@@ -55,6 +55,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // CORS configuration pour autoriser les requêtes depuis le frontend
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

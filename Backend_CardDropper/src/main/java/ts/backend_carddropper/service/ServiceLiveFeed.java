@@ -16,6 +16,7 @@ import jakarta.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -93,6 +94,7 @@ public class ServiceLiveFeed {
         broadcast("legendary-drop", dto);
     }
 
+    // Diffuse un événement à tous les abonnés SSE, en supprimant les connexions déconnectées
     private void broadcast(String eventName, LiveFeedEventDto dto) {
         for (SseEmitter emitter : emitters) {
             try {
@@ -112,6 +114,6 @@ public class ServiceLiveFeed {
     public List<LiveFeedEventDto> getTodayEvents() {
         return mapperLiveFeed.toDtoList(
                 repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(
-                        LocalDate.now().atStartOfDay()));
+                        LocalDate.now(ZoneId.of("Europe/Zurich")).atStartOfDay()));
     }
 }

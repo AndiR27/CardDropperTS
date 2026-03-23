@@ -159,7 +159,6 @@ public class ServiceAdmin {
     //==============================
     //    PRIVATE HELPERS
     //==============================
-
     private PackTemplateSlot buildTemplateSlot(PackTemplate template, PackTemplateSlotDto slotDto) {
         PackSlot packSlot = repositoryPackSlot.findById(slotDto.slotId())
                 .orElseThrow(() -> new EntityNotFoundException("PackSlot not found with id: " + slotDto.slotId()));

@@ -1,34 +1,44 @@
 <header class="header">
   <div class="header__inner">
+
     <!-- Logo -->
     <a routerLink="/" class="header__logo" (click)="closeMenu()">
-      <img src="assets/logos/carddropper.jpeg" class="header__logo-img"/>
+      <img src="assets/logos/carddropper.png" class="header__logo-img"/>
       <span class="header__logo-text">CardDropper</span>
     </a>
 
     <!-- Desktop nav -->
     <nav class="header__nav">
       <a routerLink="/" routerLinkActive="header__link--active" [routerLinkActiveOptions]="{exact: true}" class="header__link">
+        <fa-icon [icon]="icons.taverne" class="header__link-icon"></fa-icon>
         <span>Taverne</span>
       </a>
       <a routerLink="/cards" routerLinkActive="header__link--active" class="header__link">
+        <fa-icon [icon]="icons.collection" class="header__link-icon"></fa-icon>
         <span>Collection</span>
       </a>
       @if (auth.isAuthenticated) {
+        <div class="header__nav-divider"></div>
         <a routerLink="/my-cards" routerLinkActive="header__link--active" class="header__link">
+          <fa-icon [icon]="icons.mesCartes" class="header__link-icon"></fa-icon>
           <span>Mes Cartes</span>
         </a>
         <a routerLink="/create" routerLinkActive="header__link--active" class="header__link">
+          <fa-icon [icon]="icons.forge" class="header__link-icon"></fa-icon>
           <span>Forge</span>
         </a>
         <a routerLink="/packs" routerLinkActive="header__link--active" class="header__link">
+          <fa-icon [icon]="icons.packs" class="header__link-icon"></fa-icon>
           <span>Packs</span>
         </a>
         <a routerLink="/trade" routerLinkActive="header__link--active" class="header__link">
-          <span>Echange</span>
+          <fa-icon [icon]="icons.echange" class="header__link-icon"></fa-icon>
+          <span>Échange</span>
         </a>
         @if (auth.isAdmin) {
-          <a routerLink="/admin" routerLinkActive="header__link--active" class="header__link">
+          <div class="header__nav-divider"></div>
+          <a routerLink="/admin" routerLinkActive="header__link--active" class="header__link header__link--admin">
+            <fa-icon [icon]="icons.admin" class="header__link-icon"></fa-icon>
             <span>Admin</span>
           </a>
         }
@@ -41,17 +51,13 @@
         @if (auth.isAuthenticated) {
           <span class="header__avatar">{{ auth.username?.charAt(0)?.toUpperCase() ?? '?' }}</span>
           <span class="header__user">{{ auth.username }}</span>
-          <button class="header__btn header__btn--outline" (click)="auth.logout()">Deconnexion</button>
+          <button class="header__btn header__btn--outline" (click)="auth.logout()">Déconnexion</button>
         } @else {
           <button class="header__btn header__btn--gold" (click)="auth.login()">Entrer dans la taverne</button>
         }
       </div>
-
-      <!-- Mobile hamburger -->
       <button class="header__burger" [class.header__burger--open]="mobileMenuOpen()" (click)="toggleMenu()">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
@@ -63,21 +69,42 @@
     <div class="header__mobile-menu">
       <nav class="header__mobile-nav">
         <a routerLink="/" routerLinkActive="header__mobile-link--active" [routerLinkActiveOptions]="{exact: true}"
-           class="header__mobile-link" (click)="closeMenu()">Taverne</a>
+           class="header__mobile-link" (click)="closeMenu()">
+          <fa-icon [icon]="icons.taverne" class="header__mobile-link-icon"></fa-icon>
+          Taverne
+        </a>
         <a routerLink="/cards" routerLinkActive="header__mobile-link--active"
-           class="header__mobile-link" (click)="closeMenu()">Collection</a>
+           class="header__mobile-link" (click)="closeMenu()">
+          <fa-icon [icon]="icons.collection" class="header__mobile-link-icon"></fa-icon>
+          Collection
+        </a>
         @if (auth.isAuthenticated) {
           <a routerLink="/my-cards" routerLinkActive="header__mobile-link--active"
-             class="header__mobile-link" (click)="closeMenu()">Mes Cartes</a>
+             class="header__mobile-link" (click)="closeMenu()">
+            <fa-icon [icon]="icons.mesCartes" class="header__mobile-link-icon"></fa-icon>
+            Mes Cartes
+          </a>
           <a routerLink="/create" routerLinkActive="header__mobile-link--active"
-             class="header__mobile-link" (click)="closeMenu()">Forge</a>
+             class="header__mobile-link" (click)="closeMenu()">
+            <fa-icon [icon]="icons.forge" class="header__mobile-link-icon"></fa-icon>
+            Forge
+          </a>
           <a routerLink="/packs" routerLinkActive="header__mobile-link--active"
-             class="header__mobile-link" (click)="closeMenu()">Packs</a>
+             class="header__mobile-link" (click)="closeMenu()">
+            <fa-icon [icon]="icons.packs" class="header__mobile-link-icon"></fa-icon>
+            Packs
+          </a>
           <a routerLink="/trade" routerLinkActive="header__mobile-link--active"
-             class="header__mobile-link" (click)="closeMenu()">Trade</a>
+             class="header__mobile-link" (click)="closeMenu()">
+            <fa-icon [icon]="icons.echange" class="header__mobile-link-icon"></fa-icon>
+            Échange
+          </a>
           @if (auth.isAdmin) {
             <a routerLink="/admin" routerLinkActive="header__mobile-link--active"
-               class="header__mobile-link" (click)="closeMenu()">Admin</a>
+               class="header__mobile-link header__mobile-link--admin" (click)="closeMenu()">
+              <fa-icon [icon]="icons.admin" class="header__mobile-link-icon"></fa-icon>
+              Admin
+            </a>
           }
         }
       </nav>
@@ -87,7 +114,7 @@
             <span class="header__avatar">{{ auth.username?.charAt(0)?.toUpperCase() ?? '?' }}</span>
             <span>{{ auth.username }}</span>
           </div>
-          <button class="header__btn header__btn--outline" (click)="auth.logout(); closeMenu()">Deconnexion</button>
+          <button class="header__btn header__btn--outline" (click)="auth.logout(); closeMenu()">Déconnexion</button>
         } @else {
           <button class="header__btn header__btn--gold" (click)="auth.login()">Entrer dans la taverne</button>
         }

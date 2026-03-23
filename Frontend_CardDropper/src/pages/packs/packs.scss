@@ -117,18 +117,17 @@
 //  INFO BOARD — Collapsible dropdown, top-right
 // ============================================================
 .packs-info-board {
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
   width: 320px;
-  margin-right: -4rem; // push past the container's right edge
-  background:
-    linear-gradient(165deg, rgba(30, 24, 14, 0.95) 0%, rgba(18, 14, 8, 0.97) 100%);
+  background: linear-gradient(165deg, rgba(30, 24, 14, 0.95) 0%, rgba(18, 14, 8, 0.97) 100%);
   border: 1px solid rgba(240, 178, 50, 0.15);
   border-radius: 12px;
   text-align: left;
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(240, 178, 50, 0.06);
-  overflow: visible; // allow dropdown to overlay content below
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(240, 178, 50, 0.06);
+  overflow: hidden;
 }
 
 .packs-info-board__toggle {
@@ -172,29 +171,18 @@
   flex-shrink: 0;
   transition: transform 0.3s ease;
 
-  .packs-info-board--open & {
-    transform: rotate(180deg);
-  }
+  .packs-info-board--open & { transform: rotate(180deg); }
 }
 
 .packs-info-board__list {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  right: 0;
   list-style: none;
   margin: 0;
   padding: 0.7rem 1rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  background: linear-gradient(165deg, rgba(30, 24, 14, 0.97) 0%, rgba(18, 14, 8, 0.99) 100%);
-  border: 1px solid rgba(240, 178, 50, 0.15);
-  border-radius: 0 0 12px 12px;
+  gap: 0.55rem;
   border-top: 1px solid rgba(240, 178, 50, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  animation: infoBoardSlideIn 0.2s ease-out;
+  animation: infoBoardSlideIn 0.25s ease-out;
 
   li {
     display: flex;

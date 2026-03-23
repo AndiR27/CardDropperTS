@@ -190,7 +190,7 @@ class TestServicePack {
         }
 
         @Test
-        @DisplayName("throws when pool is empty for a required rarity")
+        @DisplayName("skips slot and returns empty pack when pool is empty for a required rarity")
         void testGeneratePack_emptyPool() {
             PackSlot legendarySlot = new PackSlot();
             legendarySlot.setId(10L);
@@ -202,10 +202,12 @@ class TestServicePack {
             mockInventory(alice, legendaryTemplate, 1);
             when(repositoryPackTemplate.findById(legendaryTemplate.getId())).thenReturn(Optional.of(legendaryTemplate));
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
             when(repositoryCard.findPoolCardsByRarity(eq(Rarity.LEGENDARY), anyLong())).thenReturn(Collections.emptyList());
 
-            assertThrows(IllegalStateException.class,
-                    () -> servicePack.generatePack(alice.getId(), legendaryTemplate.getId()));
+            List<CardDto> result = servicePack.generatePack(alice.getId(), legendaryTemplate.getId());
+
+            assertTrue(result.isEmpty(), "Pack should have 0 cards when pool is empty — slot is skipped gracefully");
         }
     }
 
@@ -517,8 +519,8 @@ class TestServicePack {
         }
 
         @Test
-        @DisplayName("throws when only card in pool targets the opener")
-        void testTargetedCard_emptyPoolThrows() {
+        @DisplayName("skips slot and returns empty pack when only available card targets the opener")
+        void testTargetedCard_emptyPoolSkipsGracefully() {
             // Pool is empty because the only card targets alice and alice is opening
             when(repositoryCard.findPoolCardsByRarity(eq(Rarity.COMMON), eq(alice.getId())))
                     .thenReturn(List.of());
@@ -528,8 +530,9 @@ class TestServicePack {
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
 
-            assertThrows(IllegalStateException.class,
-                    () -> servicePack.generatePack(alice.getId(), commonTemplate.getId()));
+            List<CardDto> result = servicePack.generatePack(alice.getId(), commonTemplate.getId());
+
+            assertTrue(result.isEmpty(), "Pack should have 0 cards when only targeted card is excluded from pool");
         }
     }
 }

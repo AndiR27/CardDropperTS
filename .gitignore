@@ -30,6 +30,8 @@ replay_pid*
 
 # Card images (runtime data, not source)
 card-images/
-
 target/
+
+#Others
+guide.md
 

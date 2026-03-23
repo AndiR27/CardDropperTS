@@ -11,7 +11,6 @@ import ts.backend_carddropper.entity.PackSlot;
 import ts.backend_carddropper.entity.PackTemplate;
 import ts.backend_carddropper.entity.PackTemplateSlot;
 import ts.backend_carddropper.entity.User;
-import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.event.LegendaryDropEvent;
@@ -24,6 +23,7 @@ import ts.backend_carddropper.repository.RepositoryUserCard;
 import ts.backend_carddropper.repository.RepositoryUserPackInventory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +56,7 @@ public class ServicePack {
 
     @Transactional
     public List<CardDto> generatePack(Long userId, Long templateId) {
-        // Check inventory — user must own at least one pack of this template
+        // Vérifier que l'utilisateur possède au moins 1 pack de ce template dans son inventaire
         UserPackInventory inventory = repositoryUserPackInventory
                 .findByUserIdAndPackTemplateId(userId, templateId)
                 .orElseThrow(() -> new IllegalStateException("You don't own any pack of this template"));
@@ -69,37 +69,37 @@ public class ServicePack {
         User user = repositoryUser.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        // Collect card IDs already owned by this user
-        List<UserCard> ownedUserCards = repositoryUserCard.findByUserId(userId);
-        Set<Long> ownedCardIds = ownedUserCards.stream()
-                .map(uc -> uc.getCard().getId())
-                .collect(Collectors.toSet());
-
-        // Unique cards already owned must never be picked again
-        Set<Long> ownedUniqueCardIds = ownedUserCards.stream()
-                .filter(uc -> uc.getCard().isUniqueCard())
+        // Cartes possédées par l'utilisateur : utilisées pour le calcul du poids (pénalité si déjà possédée)
+        Set<Long> ownedCardIds = repositoryUserCard.findByUserId(userId).stream()
                 .map(uc -> uc.getCard().getId())
                 .collect(Collectors.toSet());
 
         List<Card> selectedCards = new ArrayList<>();
+        // Évite les doublons au sein du même pack (les uniques déjà possédés par n'importe quel joueur
+        // sont déjà exclus au niveau de la requête DB via "uniqueCard = false OR userCards IS EMPTY")
+        Set<Long> excludedIds = new HashSet<>();
 
         for (PackTemplateSlot templateSlot : template.getSlots()) {
             for (int i = 0; i < templateSlot.getCount(); i++) {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
-                List<Long> alreadyPickedIds = selectedCards.stream().map(Card::getId).toList();
-                List<Long> excludedIds = new ArrayList<>(alreadyPickedIds);
-                excludedIds.addAll(ownedUniqueCardIds);
                 Card card = pickCardFromPool(rarity, excludedIds, ownedCardIds, userId);
+
+                if (card == null) {
+                    log.warn("Pack '{}' for user id={}: no {} card available in pool, skipping slot",
+                            template.getName(), userId, rarity);
+                    continue;
+                }
 
                 if (rarity == Rarity.LEGENDARY) {
                     eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
                 }
 
                 selectedCards.add(card);
+                excludedIds.add(card.getId());
             }
         }
 
-        // Decrement inventory
+        // Mettre à jour l'inventaire de l'utilisateur : -1 pack
         inventory.setQuantity(inventory.getQuantity() - 1);
         repositoryUserPackInventory.save(inventory);
 
@@ -186,22 +186,24 @@ public class ServicePack {
         double roll  = ThreadLocalRandom.current().nextDouble() * total;
 
         double cumulative = 0;
+        Rarity last = null;
         for (Map.Entry<Rarity, Double> entry : weights.entrySet()) {
+            last = entry.getKey();
             cumulative += entry.getValue();
             if (roll <= cumulative) {
-                return entry.getKey();
+                return last;
             }
         }
-        return weights.keySet().iterator().next();
+        return last; // floating-point safety: return the last iterated rarity
     }
 
-    private Card pickCardFromPool(Rarity rarity, List<Long> excludedIds, Set<Long> ownedCardIds, Long userId) {
+    private Card pickCardFromPool(Rarity rarity, Set<Long> excludedIds, Set<Long> ownedCardIds, Long userId) {
         List<Card> pool = excludedIds.isEmpty()
                 ? repositoryCard.findPoolCardsByRarity(rarity, userId)
-                : repositoryCard.findPoolCardsByRarityExcluding(rarity, userId, excludedIds);
+                : repositoryCard.findPoolCardsByRarityExcluding(rarity, userId, new ArrayList<>(excludedIds));
 
         if (pool.isEmpty()) {
-            throw new IllegalStateException("No " + rarity + " card available in the pool");
+            return null;
         }
 
         double total = pool.stream().mapToDouble(c -> cardWeight(c, ownedCardIds)).sum();

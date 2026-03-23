@@ -67,6 +67,7 @@ public class ServiceAuth {
                 dto.cardsOwned(), dto.cardsCreated(), dto.cardsTargeting());
     }
 
+    // Vérifie si l'utilisateur courant a le rôle ADMIN dans son JWT
     private boolean isCurrentUserAdmin() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;

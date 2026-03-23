@@ -350,7 +350,7 @@ class TestServiceTradeSession {
             charlie.setId(3L);
             charlie.setKeycloakId("kc-charlie-003");
             charlie.setUsername("charlie");
-            charlie.setUserCards(new ArrayList<>());
+            charlie.setCardsOwned(new ArrayList<>());
             when(repositoryUser.findByKeycloakId("kc-charlie-003")).thenReturn(Optional.of(charlie));
             when(repositoryTradeSession.findById(session.getId())).thenReturn(Optional.of(session));
 

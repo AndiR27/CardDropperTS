@@ -18,11 +18,14 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     // Trouver toutes les cartes par rareté
     List<Card> findByRarity(Rarity rarity);
 
-    // Cartes disponibles dans le pool : non-uniques + uniques sans propriétaire, excluant les cartes ciblant l'utilisateur courant
+    // Pool de cartes droppables :
+    //  - actives uniquement
+    //  - uniques sans aucun propriétaire (si quelqu'un la possède déjà, personne d'autre ne peut la drop)
+    //  - les cartes ciblant l'utilisateur courant sont exclues (il ne peut pas dropper sa propre carte ciblée)
     @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND (c.targetUser IS NULL OR c.targetUser.id != :userId)")
     List<Card> findPoolCardsByRarity(@Param("rarity") Rarity rarity, @Param("userId") Long userId);
 
-    // Cartes du pool en excluant celles déjà sélectionnées et les cartes ciblant l'utilisateur courant
+    // Même pool en excluant une liste d'IDs (doublons déjà sélectionnés dans le même pack)
     @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND (c.targetUser IS NULL OR c.targetUser.id != :userId) AND c.id NOT IN :excludedIds")
     List<Card> findPoolCardsByRarityExcluding(@Param("rarity") Rarity rarity, @Param("userId") Long userId, @Param("excludedIds") List<Long> excludedIds);
 
@@ -38,14 +41,15 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     @Query("SELECT c FROM Card c WHERE c.targetUser.id = :userId")
     List<Card> findAllByTargetUserId(@Param("userId") Long userId);
 
-    // Paginated — all cards
+    // Pagination : toutes les cartes
     Page<Card> findAll(Pageable pageable);
 
-    // Paginated — by rarity
+    // Pagination : cartes par rareté
     Page<Card> findByRarity(Rarity rarity, Pageable pageable);
 
     boolean existsByName(String name);
 
+    // Mettre à jour le drop rate de toutes les cartes d'une rareté donnée dans le pool (non-uniques + uniques sans propriétaire)
     @Modifying
     @Query("UPDATE Card c SET c.dropRate = :dropRate WHERE c.rarity = :rarity AND (c.uniqueCard = false OR c.userCards IS EMPTY)")
     int updateDropRateByRarityForPoolCards(@Param("rarity") Rarity rarity, @Param("dropRate") double dropRate);

@@ -180,7 +180,7 @@ public class ServiceCard {
             Files.createDirectories(userDir);
             Path target = userDir.resolve(filename);
 
-            // Resize to standard card dimensions (785x1100) for consistency
+            // Calibrer l'image à la taille de carte avant de la stocker
             InputStream resizedStream = ImageUtils.resizeToCardSize(image.getInputStream());
             Files.copy(resizedStream, target, StandardCopyOption.REPLACE_EXISTING);
 

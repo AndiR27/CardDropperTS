@@ -23,6 +23,9 @@ public interface RepositoryUser extends JpaRepository<User, Long> {
 
     Optional<User> findByKeycloakId(String keycloakId);
 
+    // Méthode pour récupérer un utilisateur avec un verrou pessimiste en mode écriture
+    // Cela garantit que l'utilisateur est verrouillé pour les autres transactions jusqu'à ce que la transaction
+    // courante soit terminée
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);

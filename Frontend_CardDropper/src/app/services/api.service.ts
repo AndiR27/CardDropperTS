@@ -12,8 +12,8 @@ import { environment } from '../environments/environment';
  *   - Les méthodes retournent des Observable<T> (subscribe dans le composant)
  *
  * Exemple :
- *   this.api.get<UserDto>('/auth/me').subscribe(user => console.log(user));
- *   this.api.post<CardDto>('/me/cards', cardData).subscribe(card => ...);
+ *   this.api.get<UserDto>('/auth/me').subscribe(user => { ... });
+ *   this.api.post<CardDto>('/me/cards', cardData).subscribe(card => { ... });
  */
 @Injectable({ providedIn: 'root' })
 export class ApiService {

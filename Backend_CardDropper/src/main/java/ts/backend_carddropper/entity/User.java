@@ -32,7 +32,7 @@ public class User {
 
     //Liste des cartes possédées par l'utilisateur (via UserCard — une ligne par (user, carte) avec quantité)
     @OneToMany(mappedBy = "user")
-    private List<UserCard> userCards = new ArrayList<>();
+    private List<UserCard> cardsOwned = new ArrayList<>();
 
     //Liste des cartes créées par l'utilisateur
     @OneToMany(mappedBy = "createdBy")

@@ -19,6 +19,8 @@ public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticati
 
     private final JwtGrantedAuthoritiesConverter defaultConverter = new JwtGrantedAuthoritiesConverter();
 
+    //Convertit un JWT en un token d'authentification Spring Security, en extrayant les rôles du JWT et en les
+    // mappant aux autorités Spring Security
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
         Collection<GrantedAuthority> authorities = Stream.concat(
@@ -29,6 +31,8 @@ public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticati
         return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString("preferred_username"));
     }
 
+    // Permet d'extraire les rôles du JWT et de les mapper aux autorités Spring Security. Les rôles sont extraits de
+    // la claim "realm_access" du JWT, puis transformés en instances de SimpleGrantedAuthority avec le préfixe "ROLE_".
     @SuppressWarnings("unchecked")
     private Collection<GrantedAuthority> extractRealmRoles(Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
