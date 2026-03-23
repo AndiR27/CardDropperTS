@@ -70,7 +70,7 @@
         <label class="field">
           <span class="field__label">Nom</span>
           <input class="field__input" type="text" placeholder="Nom de la carte"
-                 maxlength="30"
+                 maxlength="55"
                  [ngModel]="name()" (ngModelChange)="name.set($event)"/>
         </label>
 
@@ -79,7 +79,7 @@
           <span class="field__label">Description</span>
           <textarea class="field__input field__input--textarea" rows="3"
                     placeholder="Texte de la carte..."
-                    maxlength="80"
+                    maxlength="150"
                     [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
         </label>
 

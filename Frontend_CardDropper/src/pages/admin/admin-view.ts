@@ -35,6 +35,11 @@ export class AdminViewPage implements OnInit {
   newSlotWeights: Record<string, number> = this.defaultWeights();
   readonly rarities = Object.values(Rarity);
 
+  // ── Filters / Search ──
+  userSearch = '';
+  cardSearch = '';
+  cardRarityFilter: Rarity | null = null;
+
   // ── New Pack Template form ──
   newTemplateName = '';
   templateSlotRows: { slotId: number | null; count: number }[] = [];
@@ -54,6 +59,7 @@ export class AdminViewPage implements OnInit {
   editName = '';
   editRarity: Rarity = Rarity.COMMON;
   editDescription = '';
+  editTargetUserId: number | null = null;
 
   // ── Template total cards ──
   protected templateTotalCards = computed(() => {
@@ -212,6 +218,7 @@ export class AdminViewPage implements OnInit {
     this.editName = card.name;
     this.editRarity = card.rarity;
     this.editDescription = card.description ?? '';
+    this.editTargetUserId = card.targetUserId;
   }
 
   cancelCardEdit(): void {
@@ -226,6 +233,7 @@ export class AdminViewPage implements OnInit {
       name: this.editName.trim(),
       rarity: this.editRarity,
       description: this.editDescription.trim() || null,
+      targetUserId: this.editTargetUserId,
     };
 
     this.cardService.update(card.id, updated).subscribe({
@@ -245,6 +253,36 @@ export class AdminViewPage implements OnInit {
 
   cardCountByRarity(rarity: Rarity): number {
     return this.cards().filter(c => c.rarity === rarity).length;
+  }
+
+  get filteredUsers(): User[] {
+    const q = this.userSearch.toLowerCase().trim();
+    return q
+      ? this.users().filter(u =>
+          u.username.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q))
+      : this.users();
+  }
+
+  get filteredCards(): Card[] {
+    const q = this.cardSearch.toLowerCase().trim();
+    const r = this.cardRarityFilter;
+    return this.cards().filter(c =>
+      (!r || c.rarity === r) &&
+      (!q || c.name.toLowerCase().includes(q))
+    );
+  }
+
+  slotWeightEntries(slot: PackSlot): { rarity: string; weight: number }[] {
+    if (!slot.rarityWeights) return [];
+    return this.rarities
+      .filter(r => (slot.rarityWeights as Record<string, number>)[r] != null)
+      .map(r => ({ rarity: r, weight: (slot.rarityWeights as Record<string, number>)[r] }));
+  }
+
+  usernameById(userId: number | null): string | null {
+    if (userId == null) return null;
+    return this.users().find(u => u.id === userId)?.username ?? `#${userId}`;
   }
 
   // ====== Slot helpers ======

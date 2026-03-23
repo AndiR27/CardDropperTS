@@ -1,6 +1,39 @@
 <section class="admin-page">
-  <h1 class="cd-page-title">Administration</h1>
-  <p class="cd-page-subtitle">Gestion des packs, utilisateurs et cartes</p>
+
+  <!-- ====== Page header ====== -->
+  <div class="admin-header">
+    <div>
+      <h1 class="cd-page-title">Administration</h1>
+      <p class="cd-page-subtitle">Gestion des packs, utilisateurs et cartes</p>
+    </div>
+    <button class="admin-header__refresh cd-btn--outline" (click)="loadAll()" title="Rafraîchir les données">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+      </svg>
+      Rafraîchir
+    </button>
+  </div>
+
+  <!-- ====== Stats bar ====== -->
+  <div class="admin-stats">
+    <div class="admin-stat">
+      <span class="admin-stat__value">{{ users().length }}</span>
+      <span class="admin-stat__label">Utilisateurs</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__value">{{ cards().length }}</span>
+      <span class="admin-stat__label">Cartes</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__value">{{ packSlots().length }}</span>
+      <span class="admin-stat__label">Slots</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat__value">{{ packTemplates().length }}</span>
+      <span class="admin-stat__label">Templates</span>
+    </div>
+  </div>
 
   <!-- ====== Error banner ====== -->
   @if (error()) {
@@ -20,6 +53,9 @@
         <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
       </svg>
       Packs
+      @if (packTemplates().length) {
+        <span class="tabs__badge">{{ packTemplates().length }}</span>
+      }
     </button>
     <button class="tabs__item"
             [class.tabs__item--active]="activeTab() === 'users'"
@@ -29,6 +65,9 @@
         <circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
       </svg>
       Users
+      @if (users().length) {
+        <span class="tabs__badge">{{ users().length }}</span>
+      }
     </button>
     <button class="tabs__item"
             [class.tabs__item--active]="activeTab() === 'cards'"
@@ -38,6 +77,9 @@
         <path d="M12 8v8M8 12h8"/>
       </svg>
       Cards
+      @if (cards().length) {
+        <span class="tabs__badge">{{ cards().length }}</span>
+      }
     </button>
     <button class="tabs__item"
             [class.tabs__item--active]="activeTab() === 'others'"
@@ -76,18 +118,24 @@
 
         <div class="slot-grid">
           @for (slot of packSlots(); track slot.id) {
-            <div class="slot-card" [attr.title]="slot.rarityWeights ? slotWeightsSummary(slot) : null">
-              <span class="slot-card__name">{{ slot.name }}</span>
-              <span class="slot-card__type" [class]="'slot-card__type--' + (slot.fixedRarity ? (slot.fixedRarity | lowercase) : 'weighted')">
-                @if (slot.fixedRarity) {
-                  {{ slot.fixedRarity }}
-                } @else {
-                  Weighted
-                }
-              </span>
+            <div class="slot-card">
+              <div class="slot-card__header">
+                <span class="slot-card__name">{{ slot.name }}</span>
+                <span class="slot-card__type" [class]="'slot-card__type--' + (slot.fixedRarity ? (slot.fixedRarity | lowercase) : 'weighted')">
+                  @if (slot.fixedRarity) {
+                    {{ slot.fixedRarity }}
+                  } @else {
+                    Weighted
+                  }
+                </span>
+              </div>
               @if (!slot.fixedRarity && slot.rarityWeights) {
-                <div class="slot-card__weights">
-                  {{ slotWeightsSummary(slot) }}
+                <div class="slot-card__weight-pills">
+                  @for (entry of slotWeightEntries(slot); track entry.rarity) {
+                    <span class="slot-card__weight-pill slot-card__weight-pill--{{ entry.rarity | lowercase }}">
+                      {{ entry.rarity.charAt(0) }}{{ entry.rarity.slice(1).toLowerCase() }} {{ entry.weight }}%
+                    </span>
+                  }
                 </div>
               }
             </div>
@@ -114,8 +162,10 @@
               @for (r of rarities; track r) {
                 <label class="weight-row__item">
                   <span class="weight-row__label" [class]="'weight-row__label--' + (r | lowercase)">{{ r }}</span>
-                  <input type="number" class="weight-row__input" min="0" max="100" [(ngModel)]="newSlotWeights[r]"/>
-                  <span class="weight-row__pct">%</span>
+                  <div class="weight-row__input-wrap">
+                    <input type="number" class="weight-row__input" min="0" max="100" [(ngModel)]="newSlotWeights[r]"/>
+                    <span class="weight-row__pct">%</span>
+                  </div>
                 </label>
               }
             </div>
@@ -198,6 +248,7 @@
           </div>
         </div>
       </div>
+
       <!-- ── GRANT PACKS section ── -->
       <div class="admin-section">
         <div class="admin-section__header">
@@ -213,41 +264,60 @@
         }
 
         <div class="admin-form">
-          <div class="admin-form__row">
-            <select class="admin-form__input admin-form__input--select" [(ngModel)]="grantTemplateId">
-              <option [ngValue]="null">-- Choisir un template --</option>
-              @for (tpl of packTemplates(); track tpl.id) {
-                <option [ngValue]="tpl.id">{{ tpl.name }}</option>
-              }
-            </select>
-            <input type="number" class="admin-form__input admin-form__input--count" min="1"
-                   [(ngModel)]="grantQuantity" placeholder="Qté"/>
-          </div>
-
-          <label class="admin-form__checkbox">
-            <input type="checkbox" [(ngModel)]="grantToAll"/>
-            <span>Distribuer à tous les utilisateurs</span>
-          </label>
-
-          @if (!grantToAll) {
-            <div class="grant-users">
-              @for (user of users(); track user.id) {
-                <label class="grant-users__item"
-                       [class.grant-users__item--selected]="isGrantUserSelected(user.id!)">
-                  <input type="checkbox" [checked]="isGrantUserSelected(user.id!)"
-                         (change)="toggleGrantUser(user.id!)"/>
-                  <span class="grant-users__avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
-                  <span class="grant-users__name">{{ user.username }}</span>
-                </label>
-              }
+          <div class="grant-steps">
+            <div class="grant-step">
+              <span class="grant-step__num">1</span>
+              <div class="grant-step__body">
+                <p class="grant-step__label">Choisir un template & quantité</p>
+                <div class="admin-form__row">
+                  <select class="admin-form__input admin-form__input--select" [(ngModel)]="grantTemplateId">
+                    <option [ngValue]="null">-- Choisir un template --</option>
+                    @for (tpl of packTemplates(); track tpl.id) {
+                      <option [ngValue]="tpl.id">{{ tpl.name }}</option>
+                    }
+                  </select>
+                  <input type="number" class="admin-form__input admin-form__input--count" min="1"
+                         [(ngModel)]="grantQuantity" placeholder="Qté"/>
+                </div>
+              </div>
             </div>
-          }
 
-          <button class="cd-btn--gold"
-                  [disabled]="!grantTemplateId || grantQuantity < 1 || (!grantToAll && grantSelectedUserIds().size === 0)"
-                  (click)="grantPacks()">
-            Distribuer
-          </button>
+            <div class="grant-step">
+              <span class="grant-step__num">2</span>
+              <div class="grant-step__body">
+                <p class="grant-step__label">Choisir les destinataires</p>
+                <label class="admin-form__checkbox">
+                  <input type="checkbox" [(ngModel)]="grantToAll"/>
+                  <span>Distribuer à tous les utilisateurs ({{ users().length }})</span>
+                </label>
+                @if (!grantToAll) {
+                  <div class="grant-users">
+                    @for (user of users(); track user.id) {
+                      <label class="grant-users__item"
+                             [class.grant-users__item--selected]="isGrantUserSelected(user.id!)">
+                        <input type="checkbox" [checked]="isGrantUserSelected(user.id!)"
+                               (change)="toggleGrantUser(user.id!)"/>
+                        <span class="grant-users__avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+                        <span class="grant-users__name">{{ user.username }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="grant-step">
+              <span class="grant-step__num">3</span>
+              <div class="grant-step__body">
+                <p class="grant-step__label">Confirmer la distribution</p>
+                <button class="cd-btn--gold"
+                        [disabled]="!grantTemplateId || grantQuantity < 1 || (!grantToAll && grantSelectedUserIds().size === 0)"
+                        (click)="grantPacks()">
+                  Distribuer les packs
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -260,25 +330,56 @@
     <div class="admin-page__content">
       <div class="admin-section">
         <div class="admin-section__header">
+          <svg class="admin-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
           <h2 class="admin-section__title">Utilisateurs</h2>
-          <span class="admin-section__count">{{ users().length }}</span>
+          <span class="admin-section__count">
+            {{ filteredUsers.length }}{{ userSearch ? ' / ' + users().length : '' }}
+          </span>
+        </div>
+
+        <div class="admin-toolbar">
+          <div class="admin-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" class="admin-search" placeholder="Rechercher par nom ou email..." [(ngModel)]="userSearch"/>
+          </div>
         </div>
 
         <div class="user-list">
-          @for (user of users(); track user.id) {
+          @for (user of filteredUsers; track user.id) {
             <div class="user-row">
-              <span class="user-row__avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+              <span class="user-row__avatar" [class.user-row__avatar--admin]="user.admin">
+                {{ user.username.charAt(0).toUpperCase() }}
+              </span>
               <div class="user-row__info">
-                <span class="user-row__name">{{ user.username }}</span>
+                <div class="user-row__name-wrap">
+                  <span class="user-row__name">{{ user.username }}</span>
+                  @if (user.admin) {
+                    <span class="user-row__admin-badge">Admin</span>
+                  }
+                </div>
                 <span class="user-row__email">{{ user.email }}</span>
               </div>
               <div class="user-row__stats">
-                <span class="user-row__stat">{{ user.cardsOwned.length }} possédées</span>
-                <span class="user-row__stat">{{ user.cardsCreated.length }} créées</span>
+                <div class="user-row__stat-pill">
+                  <span class="user-row__stat-val">{{ user.cardsOwned.length }}</span>
+                  <span class="user-row__stat-lbl">possédées</span>
+                </div>
+                <div class="user-row__stat-pill">
+                  <span class="user-row__stat-val">{{ user.cardsCreated.length }}</span>
+                  <span class="user-row__stat-lbl">créées</span>
+                </div>
               </div>
             </div>
           } @empty {
-            <p class="cd-text-muted">Aucun utilisateur.</p>
+            <div class="admin-page__placeholder">
+              <span class="admin-page__placeholder-icon">👤</span>
+              <p>Aucun utilisateur trouvé.</p>
+            </div>
           }
         </div>
       </div>
@@ -292,23 +393,51 @@
     <div class="admin-page__content">
       <div class="admin-section">
         <div class="admin-section__header">
+          <svg class="admin-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="18" rx="3"/>
+            <path d="M12 8v8M8 12h8"/>
+          </svg>
           <h2 class="admin-section__title">Cartes</h2>
-          <span class="admin-section__count">{{ cards().length }}</span>
+          <span class="admin-section__count">
+            {{ filteredCards.length }}{{ (cardRarityFilter || cardSearch) ? ' / ' + cards().length : '' }}
+          </span>
         </div>
 
-        <!-- Rarity breakdown -->
+        <!-- Rarity breakdown — clickable to filter -->
         <div class="rarity-grid">
           @for (r of rarities; track r) {
-            <div class="rarity-card rarity-card--{{ r | lowercase }}">
+            <div class="rarity-card rarity-card--{{ r | lowercase }}"
+                 [class.rarity-card--active]="cardRarityFilter === r"
+                 (click)="cardRarityFilter = (cardRarityFilter === r ? null : r)">
               <span class="rarity-card__count">{{ cardCountByRarity(r) }}</span>
               <span class="rarity-card__label">{{ r }}</span>
             </div>
           }
         </div>
 
-        <!-- Card list -->
+        <!-- Toolbar: search + rarity chips -->
+        <div class="admin-toolbar">
+          <div class="admin-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" class="admin-search" placeholder="Rechercher une carte..." [(ngModel)]="cardSearch"/>
+          </div>
+          <div class="rarity-chips">
+            <button class="rarity-chip rarity-chip--all"
+                    [class.rarity-chip--active]="!cardRarityFilter"
+                    (click)="cardRarityFilter = null">Toutes</button>
+            @for (r of rarities; track r) {
+              <button class="rarity-chip rarity-chip--{{ r | lowercase }}"
+                      [class.rarity-chip--active]="cardRarityFilter === r"
+                      (click)="cardRarityFilter = (cardRarityFilter === r ? null : r)">{{ r }}</button>
+            }
+          </div>
+        </div>
+
+        <!-- Card list (filtered) -->
         <div class="card-list">
-          @for (card of cards(); track card.id) {
+          @for (card of filteredCards; track card.id) {
             <div class="card-row" [class.card-row--editing]="editingCardId() === card.id">
               <div class="card-row__img-wrap">
                 @if (getImageUrl(card); as imgUrl) {
@@ -330,6 +459,14 @@
                     </select>
                   </div>
                   <textarea class="card-edit__textarea" placeholder="Description (optionnel)" [(ngModel)]="editDescription" rows="2"></textarea>
+                  <div class="card-edit__row">
+                    <select class="card-edit__input card-edit__input--select" [(ngModel)]="editTargetUserId">
+                      <option [ngValue]="null">— Aucun ciblage —</option>
+                      @for (user of users(); track user.id) {
+                        <option [ngValue]="user.id">🎯 {{ user.username }}</option>
+                      }
+                    </select>
+                  </div>
                   <div class="card-edit__actions">
                     <button class="cd-btn--gold card-edit__btn" (click)="saveCardEdit(card)">Sauvegarder</button>
                     <button class="cd-btn--outline card-edit__btn" (click)="cancelCardEdit()">Annuler</button>
@@ -342,6 +479,9 @@
                   <span class="card-row__rarity card-row__rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
                   @if (card.description) {
                     <span class="card-row__desc">{{ card.description }}</span>
+                  }
+                  @if (card.targetUserId) {
+                    <span class="card-row__target">🎯 {{ usernameById(card.targetUserId) }}</span>
                   }
                 </div>
                 <div class="card-row__meta">
@@ -359,7 +499,10 @@
               }
             </div>
           } @empty {
-            <p class="cd-text-muted">Aucune carte.</p>
+            <div class="admin-page__placeholder">
+              <span class="admin-page__placeholder-icon">🃏</span>
+              <p>Aucune carte trouvée.</p>
+            </div>
           }
         </div>
       </div>

@@ -35,7 +35,15 @@ export class AuthService {
    */
   async init(): Promise<void> {
     this.oauthService.configure(authConfig);
-    await this.oauthService.loadDiscoveryDocumentAndTryLogin();
+
+    try {
+      await this.oauthService.loadDiscoveryDocumentAndTryLogin();
+    } catch {
+      // Keycloak unreachable (e.g. 502) or stale OAuth state in storage.
+      // Clear local OAuth storage so the next visit starts clean.
+      this.oauthService.logOut(true);
+      return;
+    }
 
     if (this.isAuthenticated) {
       // Automatic token refresh — uses refresh_token before access_token expires
@@ -46,20 +54,28 @@ export class AuthService {
   }
 
   /**
-   * Listen for token refresh failures.
-   * When the refresh token itself is expired (SSO session ended),
-   * redirect to Keycloak login instead of leaving the UI in a broken state.
+   * Listen for OAuth errors during the session.
+   * Clears stale local storage before re-triggering login so the user
+   * never needs to manually clear cache/cookies.
    */
   private listenForAuthErrors(): void {
+    // These errors all indicate a session that can no longer be recovered
+    const recoverableErrors = [
+      'token_refresh_error',
+      'silent_refresh_error',
+      'token_error',
+      'code_error',
+      'invalid_nonce_in_state',
+    ];
+
     this.oauthService.events
       .pipe(filter((e): e is OAuthErrorEvent => e instanceof OAuthErrorEvent))
       .subscribe((e) => {
         console.warn('OAuth error event:', e.type, e);
-        if (
-          e.type === 'token_refresh_error' ||
-          e.type === 'silent_refresh_error'
-        ) {
-          // Session is truly dead — redirect to login
+        if (recoverableErrors.includes(e.type)) {
+          // logOut(true) clears local OAuth storage without redirecting to
+          // Keycloak's logout endpoint, then we trigger a fresh login.
+          this.oauthService.logOut(true);
           this.zone.run(() => this.login());
         }
       });
