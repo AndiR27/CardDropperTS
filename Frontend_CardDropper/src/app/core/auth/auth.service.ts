@@ -126,6 +126,7 @@ export class AuthService {
 
   /** Redirige vers la page de login Keycloak */
   login(): void {
+    this.clearStaleOAuthState();
     this.oauthService.initCodeFlow();
   }
 

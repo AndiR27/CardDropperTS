@@ -351,6 +351,61 @@
   }
 }
 
+// ====== Coming soon popup ======
+.coming-soon-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: csFadeIn 0.2s ease;
+}
+
+.coming-soon-popup {
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-border-strong);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: csZoomIn 0.25s ease;
+
+  &__text {
+    color: var(--cd-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 1.25rem;
+  }
+
+  &__btn {
+    background: var(--cd-gold);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 0.85; }
+  }
+}
+
+@keyframes csFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes csZoomIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 // ====== Responsive ======
 @media (max-width: 767px) {
   .choose-page__cards {

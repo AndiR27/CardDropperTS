@@ -12,6 +12,11 @@ export class UserService {
     return this.api.get<User[]>('/users');
   }
 
+  /** Public endpoint — no admin role required */
+  getAllPublic(): Observable<User[]> {
+    return this.api.get<User[]>('/me/users');
+  }
+
   getByUsername(username: string): Observable<User> {
     return this.api.get<User>(`/users/by-username?username=${username}`);
   }

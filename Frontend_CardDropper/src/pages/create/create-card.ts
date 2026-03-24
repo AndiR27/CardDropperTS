@@ -36,6 +36,7 @@ export class CreateCardPage {
   creating = signal(false);
   submitting = signal(false);
   successMessage = signal<string | null>(null);
+  showComingSoon = signal(false);
 
   // ── Form state (signals for live preview) ──
   cardType     = signal<CardType>('spell');

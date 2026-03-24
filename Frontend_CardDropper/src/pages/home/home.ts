@@ -44,7 +44,7 @@ export class HomePage implements OnInit, OnDestroy {
       this.cardService.getAll().subscribe({
         next: (cards) => this.allCards.set(cards),
       });
-      this.userService.getAll().subscribe({
+      this.userService.getAllPublic().subscribe({
         next: (users) => this.allUsers.set(users.length),
       });
     }

@@ -174,16 +174,22 @@
 
             <div class="confirm-page__actions">
               <button class="confirm-page__btn confirm-page__btn--back" (click)="onBack()">Retour</button>
-              <button class="confirm-page__btn confirm-page__btn--validate" (click)="onConfirm()" [disabled]="submitting()">
-                @if (submitting()) {
-                  Envoi en cours...
-                } @else {
-                  Valider
-                }
+              <button class="confirm-page__btn confirm-page__btn--validate" (click)="showComingSoon.set(true)">
+                Valider
               </button>
             </div>
           </div>
         </div>
+
+        @if (showComingSoon()) {
+          <div class="coming-soon-overlay" (click)="showComingSoon.set(false)">
+            <div class="coming-soon-popup" (click)="$event.stopPropagation()">
+              <p class="coming-soon-popup__text">Merci d'avoir essayé cette fonctionnalité ! Pour être honnête, elle n'est pas complétement opérationnelle.
+                La compression de l'image est difficile à ajuster avec celles du site hearthcard pour avoir les mêmes tailles/formats/qualité, donc pour l'instant je vais simplement bloquer ici ! Merci de plutôt passer par "Importer une carte"</p>
+              <button class="coming-soon-popup__btn" (click)="showComingSoon.set(false)">Compris</button>
+            </div>
+          </div>
+        }
       </div>
 
     }
