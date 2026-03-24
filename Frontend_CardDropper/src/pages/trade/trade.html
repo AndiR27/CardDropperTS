@@ -69,7 +69,7 @@
   <section class="trade-online">
     <div class="trade-online__header">
       <h2>Joueurs en ligne</h2>
-      <span class="trade-online__count">{{ onlineUsers().length }}</span>
+      <span class="trade-online__count">{{ onlineUsers().length - 1 >= 0 ? onlineUsers().length - 1 : 0 }}</span>
     </div>
 
     @if (onlineUsers().length === 0) {

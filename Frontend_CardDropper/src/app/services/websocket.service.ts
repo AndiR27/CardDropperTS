@@ -1,6 +1,6 @@
 import { Injectable, inject, NgZone } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-import { Subject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AuthService } from '../core/auth/auth.service';
 
@@ -12,7 +12,7 @@ export class WebSocketService {
   private client: Client | null = null;
   private subscriptions: StompSubscription[] = [];
 
-  readonly connected$ = new Subject<boolean>();
+  readonly connected$ = new ReplaySubject<boolean>(1);
 
   connect(): void {
     if (this.client?.connected) return;
@@ -28,7 +28,7 @@ export class WebSocketService {
     this.client = new Client({
       brokerURL: wsUrl,
       connectHeaders: { Authorization: `Bearer ${token}` },
-      reconnectDelay: 5000,
+      reconnectDelay: 10000,
       onConnect: () => this.zone.run(() => this.connected$.next(true)),
       onDisconnect: () => this.zone.run(() => this.connected$.next(false)),
       onStompError: (frame) => console.error('STOMP error:', frame.headers['message']),

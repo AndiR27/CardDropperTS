@@ -1,4 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener, inject, signal, computed } from '@angular/core';
+import { LowerCasePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TradeService } from '../../../app/services/trade.service';
 import { WebSocketService } from '../../../app/services/websocket.service';
@@ -11,6 +13,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-trade-card',
   standalone: true,
+  imports: [LowerCasePipe, FormsModule],
   templateUrl: './trade-card.html',
   styleUrl: './trade-card.scss',
 })
@@ -30,6 +33,35 @@ export class TradeCardPage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly currentUsername = signal<string | null>(null);
   protected readonly phase = signal<'live' | 'trading' | 'done'>('live');
+  protected readonly pickerSearch = signal('');
+
+  private readonly countMap = computed(() => {
+    const map = new Map<number, number>();
+    for (const c of this.myCards()) {
+      if (c.id !== null) map.set(c.id!, (map.get(c.id!) ?? 0) + 1);
+    }
+    return map;
+  });
+
+  private readonly uniqueMyCards = computed(() => {
+    const seen = new Set<number>();
+    return this.myCards().filter(c => {
+      if (c.id === null || seen.has(c.id!)) return false;
+      seen.add(c.id!);
+      return true;
+    });
+  });
+
+  protected readonly filteredMyCards = computed(() => {
+    const search = this.pickerSearch().toLowerCase().trim();
+    const cards = this.uniqueMyCards();
+    if (!search) return cards;
+    return cards.filter(c => c.name.toLowerCase().includes(search));
+  });
+
+  getCount(card: Card): number {
+    return card.id !== null ? (this.countMap().get(card.id!) ?? 1) : 1;
+  }
 
   protected readonly isInitiator = computed(() => {
     const s = this.session();

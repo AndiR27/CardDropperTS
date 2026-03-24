@@ -1,0 +1,62 @@
+// ============================================================
+//  Shared card rarity aura / drop-shadow system
+//  Reference: collections page (cards.scss)
+// ============================================================
+
+@mixin card-shadow($rarity) {
+  @if $rarity == 'common' {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  } @else if $rarity == 'rare' {
+    filter: drop-shadow(0 0 10px rgba(74, 144, 217, 0.4)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  } @else if $rarity == 'epic' {
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  } @else if $rarity == 'legendary' {
+    filter: drop-shadow(0 0 10px rgba(240, 178, 50, 0.5)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  }
+}
+
+@mixin card-shadow-hover($rarity) {
+  @if $rarity == 'common' {
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.6));
+  } @else if $rarity == 'rare' {
+    filter: drop-shadow(0 0 18px rgba(74, 144, 217, 0.6)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  } @else if $rarity == 'epic' {
+    filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.6)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  } @else if $rarity == 'legendary' {
+    filter: drop-shadow(0 0 20px rgba(240, 178, 50, 0.7)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  }
+}
+
+// Generates all rarity modifier classes for a given parent hover selector
+// Usage: @include card-shadow-classes('.card-item');
+// Produces: &--common, &--rare, &--epic, &--legendary with hover variants
+@mixin card-shadow-classes($hover-parent) {
+  $rarities: 'common', 'rare', 'epic', 'legendary';
+
+  @each $r in $rarities {
+    &--#{$r} {
+      @include card-shadow($r);
+      #{$hover-parent}:hover & { @include card-shadow-hover($r); }
+    }
+  }
+}
+
+// Rarity badge styling
+@mixin rarity-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--common   { background: var(--cd-rarity-common); color: #fff; }
+  &--rare     { background: var(--cd-rarity-rare);   color: #fff; }
+  &--epic     { background: var(--cd-rarity-epic);   color: #fff; }
+  &--legendary {
+    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
+    color: var(--cd-text-dark);
+  }
+}

@@ -1,3 +1,5 @@
+@use '../../../styles/card-rarity' as rarity;
+
 :host {
   display: block;
 }
@@ -114,23 +116,7 @@
   width: 100%;
   display: block;
   transition: filter 0.25s;
-
-  &--common {
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-    .cl__card:hover & { filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.6)); }
-  }
-  &--rare {
-    filter: drop-shadow(0 0 10px rgba(74, 144, 217, 0.4)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-    .cl__card:hover & { filter: drop-shadow(0 0 18px rgba(74, 144, 217, 0.6)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5)); }
-  }
-  &--epic {
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-    .cl__card:hover & { filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.6)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5)); }
-  }
-  &--legendary {
-    filter: drop-shadow(0 0 10px rgba(240, 178, 50, 0.5)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-    .cl__card:hover & { filter: drop-shadow(0 0 20px rgba(240, 178, 50, 0.7)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5)); }
-  }
+  @include rarity.card-shadow-classes('.cl__card');
 }
 
 .cl__card-placeholder {
@@ -158,21 +144,9 @@
 }
 
 .cl__badge {
+  @include rarity.rarity-badge;
   font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   padding: 0.1rem 0.45rem;
-  border-radius: 3px;
-  flex-shrink: 0;
-
-  &--common    { background: var(--cd-rarity-common); color: #fff; }
-  &--rare      { background: var(--cd-rarity-rare);   color: #fff; }
-  &--epic      { background: var(--cd-rarity-epic);   color: #fff; }
-  &--legendary {
-    background: linear-gradient(135deg, var(--cd-gold) 0%, var(--cd-rarity-legendary) 100%);
-    color: var(--cd-text-dark);
-  }
 }
 
 // ── Hover preview popover ──
@@ -185,10 +159,10 @@
   pointer-events: none;
   animation: previewFadeIn 0.15s ease;
 
-  &--rare      { filter: drop-shadow(0 0 14px rgba(33, 150, 243, 0.55)); }
-  &--epic      { filter: drop-shadow(0 0 14px rgba(156, 39, 176, 0.55)); }
-  &--legendary { filter: drop-shadow(0 0 14px rgba(240, 178, 50, 0.6)); }
-  &--common    { filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5)); }
+  &--common    { @include rarity.card-shadow('common'); }
+  &--rare      { @include rarity.card-shadow('rare'); }
+  &--epic      { @include rarity.card-shadow('epic'); }
+  &--legendary { @include rarity.card-shadow('legendary'); }
 }
 
 .cl__preview-img {

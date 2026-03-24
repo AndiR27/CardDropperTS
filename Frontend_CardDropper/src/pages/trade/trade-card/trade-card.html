@@ -41,10 +41,11 @@
             @if (myCard(); as card) {
               <div class="trade-room__card trade-room__card--appear">
                 @if (card.imageUrl) {
-                  <img [src]="imageUrl(card)" [alt]="card.name">
+                  <img [src]="imageUrl(card)" [alt]="card.name"
+                       class="trade-room__card__img trade-room__card__img--{{ card.rarity | lowercase }}">
                 }
                 <span class="trade-room__card-name">{{ card.name }}</span>
-                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                <span class="trade-room__card-rarity trade-room__card-rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
                 @if (myLocked()) {
                   <div class="trade-room__lock-overlay">
                     <span>VERROUILLE</span>
@@ -79,10 +80,11 @@
             @if (theirCard(); as card) {
               <div class="trade-room__card trade-room__card--appear">
                 @if (card.imageUrl) {
-                  <img [src]="imageUrl(card)" [alt]="card.name">
+                  <img [src]="imageUrl(card)" [alt]="card.name"
+                       class="trade-room__card__img trade-room__card__img--{{ card.rarity | lowercase }}">
                 }
                 <span class="trade-room__card-name">{{ card.name }}</span>
-                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                <span class="trade-room__card-rarity trade-room__card-rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
                 @if (theirLocked()) {
                   <div class="trade-room__lock-overlay">
                     <span>VERROUILLE</span>
@@ -106,17 +108,29 @@
       <!-- Card picker -->
       <section class="trade-room__picker">
         <h3>Vos Cartes</h3>
+        <div class="trade-room__picker-search-wrap">
+          <svg class="trade-room__picker-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+          </svg>
+          <input class="trade-room__picker-search" type="text" placeholder="Rechercher une carte..."
+                 [ngModel]="pickerSearch()" (ngModelChange)="pickerSearch.set($event)"/>
+        </div>
         <div class="trade-room__picker-grid">
-          @for (card of myCards(); track card.id) {
+          @for (card of filteredMyCards(); track card.id) {
             <div
               class="trade-room__picker-card"
               [class.trade-room__picker-card--selected]="myCard()?.id === card.id"
               (click)="selectCard(card.id!)">
-              @if (card.imageUrl) {
-                <img [src]="imageUrl(card)" [alt]="card.name">
-              }
+              <div class="trade-room__picker-card-visual">
+                @if (card.imageUrl) {
+                  <img [src]="imageUrl(card)" [alt]="card.name">
+                }
+                @if (getCount(card) > 1) {
+                  <span class="trade-room__picker-qty">&times;{{ getCount(card) }}</span>
+                }
+              </div>
               <span>{{ card.name }}</span>
-              <small>{{ card.rarity }}</small>
+              <small class="trade-room__card-rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</small>
             </div>
           }
         </div>
@@ -166,10 +180,11 @@
             @if (givenCard(); as card) {
               <div class="trade-room__result-card trade-room__result-card--out">
                 @if (card.imageUrl) {
-                  <img [src]="imageUrl(card)" [alt]="card.name">
+                  <img [src]="imageUrl(card)" [alt]="card.name"
+                       class="trade-room__card__img trade-room__card__img--{{ card.rarity | lowercase }}">
                 }
                 <span class="trade-room__card-name">{{ card.name }}</span>
-                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                <span class="trade-room__card-rarity trade-room__card-rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
               </div>
             }
           </div>
@@ -181,10 +196,11 @@
             @if (receivedCard(); as card) {
               <div class="trade-room__result-card trade-room__result-card--in">
                 @if (card.imageUrl) {
-                  <img [src]="imageUrl(card)" [alt]="card.name">
+                  <img [src]="imageUrl(card)" [alt]="card.name"
+                       class="trade-room__card__img trade-room__card__img--{{ card.rarity | lowercase }}">
                 }
                 <span class="trade-room__card-name">{{ card.name }}</span>
-                <span class="trade-room__card-rarity" [attr.data-rarity]="card.rarity">{{ card.rarity }}</span>
+                <span class="trade-room__card-rarity trade-room__card-rarity--{{ card.rarity | lowercase }}">{{ card.rarity }}</span>
               </div>
             }
           </div>

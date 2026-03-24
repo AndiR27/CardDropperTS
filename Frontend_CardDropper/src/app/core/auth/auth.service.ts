@@ -22,9 +22,9 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly zone = inject(NgZone);
 
-  /** Server-validated admin flag, set during init() */
   private _isAdmin = false;
   private _userId: number | null = null;
+  private _loginInProgress = false;
 
   /**
    * Initialise la connexion OIDC.
@@ -36,21 +36,47 @@ export class AuthService {
   async init(): Promise<void> {
     this.oauthService.configure(authConfig);
 
+    // If we're NOT returning from a Keycloak callback but there's stale
+    // OAuth state in sessionStorage from a previous failed attempt, clear
+    // it so loadDiscoveryDocumentAndTryLogin() doesn't choke on it.
+    const isCallback = window.location.search.includes('code=');
+    if (!isCallback) {
+      this.clearStaleOAuthState();
+    }
+
     try {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
     } catch {
-      // Keycloak unreachable (e.g. 502) or stale OAuth state in storage.
-      // Clear local OAuth storage so the next visit starts clean.
+      // Keycloak unreachable or stale state — full cleanup
+      this.clearStaleOAuthState();
       this.oauthService.logOut(true);
       return;
     }
 
+    // After consuming the ?code=...&state=... callback, remove the params
+    // from the URL so a page reload won't re-submit the consumed code
+    if (isCallback) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (this.isAuthenticated) {
-      // Automatic token refresh — uses refresh_token before access_token expires
+      this._loginInProgress = false;
       this.oauthService.setupAutomaticSilentRefresh();
       this.listenForAuthErrors();
       await this.ensureUserInDb();
     }
+  }
+
+  /**
+   * Clears leftover OAuth keys from sessionStorage that logOut(true)
+   * doesn't clean — PKCE verifier, nonce, state params.
+   * This is what "clear browser history" does manually.
+   */
+  private clearStaleOAuthState(): void {
+    const keysToRemove = Object.keys(sessionStorage).filter(
+      k => k.startsWith('PKCE_') || k.startsWith('nonce') || k.startsWith('session_state')
+    );
+    keysToRemove.forEach(k => sessionStorage.removeItem(k));
   }
 
   /**
@@ -59,7 +85,6 @@ export class AuthService {
    * never needs to manually clear cache/cookies.
    */
   private listenForAuthErrors(): void {
-    // These errors all indicate a session that can no longer be recovered
     const recoverableErrors = [
       'token_refresh_error',
       'silent_refresh_error',
@@ -73,8 +98,11 @@ export class AuthService {
       .subscribe((e) => {
         console.warn('OAuth error event:', e.type, e);
         if (recoverableErrors.includes(e.type)) {
-          // logOut(true) clears local OAuth storage without redirecting to
-          // Keycloak's logout endpoint, then we trigger a fresh login.
+          // Guard against redirect loops: if a login is already in progress
+          // (e.g. the redirect itself triggered another error), just bail out.
+          if (this._loginInProgress) return;
+
+          this._loginInProgress = true;
           this.oauthService.logOut(true);
           this.zone.run(() => this.login());
         }
@@ -101,8 +129,8 @@ export class AuthService {
     this.oauthService.initCodeFlow();
   }
 
-  /** Déconnexion : révoque le token et redirige vers Keycloak logout */
   logout(): void {
+    this._loginInProgress = false;
     this.oauthService.logOut();
   }
 

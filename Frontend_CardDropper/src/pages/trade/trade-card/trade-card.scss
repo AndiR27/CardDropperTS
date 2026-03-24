@@ -1,3 +1,5 @@
+@use '../../../styles/card-rarity' as rarity;
+
 .trade-room {
   max-width: 960px;
   margin: 1.5rem auto;
@@ -99,7 +101,7 @@
 
   &__side {
     flex: 1;
-    max-width: 260px;
+    max-width: 300px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -122,14 +124,15 @@
 
   // ===== CARD SLOT =====
   &__slot {
-    width: 180px;
-    height: 280px;
+    width: 220px;
+    min-height: 320px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px dashed var(--cd-border, #3a3a4e);
     border-radius: 12px;
     position: relative;
+    overflow: visible;
     transition: border-color 0.3s, box-shadow 0.3s;
 
     // When a card is inside, hide the dashed border
@@ -158,18 +161,18 @@
     gap: 0.4rem;
     position: relative;
 
-    img {
-      width: 160px;
-      height: 224px;
-      object-fit: cover;
-      border-radius: 10px;
+    &__img {
+      width: 100%;
+      display: block;
+      transition: filter 0.25s;
+      @include rarity.card-shadow-classes('.trade-room__card');
     }
 
     &-name {
       color: var(--cd-text, #eee);
       font-weight: 600;
       font-size: 0.9rem;
-      max-width: 160px;
+      max-width: 200px;
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -177,16 +180,7 @@
     }
 
     &-rarity {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--cd-text-muted, #aaa);
-
-      &[data-rarity="LEGENDARY"] { color: #ff8c00; }
-      &[data-rarity="EPIC"]      { color: #a855f7; }
-      &[data-rarity="RARE"]      { color: #3b82f6; }
-      &[data-rarity="COMMON"]    { color: #9ca3af; }
+      @include rarity.rarity-badge;
     }
 
     &--appear {
@@ -276,20 +270,56 @@
     }
   }
 
+  &__picker-search-wrap {
+    position: relative;
+    max-width: 360px;
+    margin: 0 auto 1rem;
+  }
+
+  &__picker-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--cd-text-muted);
+    pointer-events: none;
+  }
+
+  &__picker-search {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--cd-text);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.65rem 1rem 0.65rem 2.5rem;
+    font-size: 0.82rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &::placeholder { color: var(--cd-text-muted); }
+    &:focus {
+      outline: none;
+      border-color: rgba(240, 178, 50, 0.4);
+      box-shadow: 0 0 0 3px rgba(240, 178, 50, 0.1);
+    }
+  }
+
   &__picker-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 0.4rem;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
   }
 
   &__picker-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.4rem;
+    gap: 0.3rem;
+    padding: 0.5rem;
     border: 1px solid var(--cd-border, #333);
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.02);
     transition: border-color 0.2s, background 0.2s, transform 0.15s;
@@ -297,7 +327,7 @@
     &:hover {
       border-color: var(--cd-gold, #d4a843);
       background: rgba(212, 168, 67, 0.06);
-      transform: translateY(-2px);
+      transform: translateY(-4px);
     }
 
     &--selected {
@@ -305,16 +335,20 @@
       background: rgba(212, 168, 67, 0.12);
     }
 
+    &-visual {
+      position: relative;
+    }
+
     img {
-      width: 56px;
-      height: 78px;
-      object-fit: cover;
-      border-radius: 4px;
+      width: 100%;
+      display: block;
+      border-radius: 6px;
     }
 
     span {
       color: var(--cd-text, #eee);
-      font-size: 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -323,10 +357,24 @@
     }
 
     small {
-      color: var(--cd-text-muted, #888);
+      @include rarity.rarity-badge;
       font-size: 0.55rem;
-      text-transform: uppercase;
     }
+  }
+
+  &__picker-qty {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--cd-gold, #f0b232);
+    color: var(--cd-text-dark, #1a1209);
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 3px 5px;
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   }
 
   // ===== FOOTER (cancel) =====
@@ -372,9 +420,8 @@
 
   &__card {
     img {
-      width: 140px;
-      height: 196px;
-      object-fit: cover;
+      width: 180px;
+      display: block;
       border-radius: 10px;
     }
 
@@ -491,9 +538,8 @@
     }
 
     img {
-      width: 160px;
-      height: 224px;
-      object-fit: cover;
+      width: 200px;
+      display: block;
       border-radius: 10px;
     }
 
@@ -625,14 +671,12 @@
   }
 
   .trade-room__slot {
-    width: 140px;
-    height: 220px;
+    width: 160px;
+    min-height: 240px;
   }
 
-  .trade-room__card img,
   .trade-room__result-card img {
-    width: 120px;
-    height: 168px;
+    width: 150px;
   }
 
   .btn--lock { width: 140px; }
