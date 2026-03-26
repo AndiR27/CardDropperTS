@@ -277,7 +277,10 @@ export class CardsPage implements OnInit {
     this.currentPage.set(page);
   }
 
-  nextPage(): void { this.goToPage(this.currentPage() + 1); }
+  nextPage(): void {
+    this.goToPage(this.currentPage() + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
   prevPage(): void { this.goToPage(this.currentPage() - 1); }
 
   // ── Data loading ──
