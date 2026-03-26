@@ -49,7 +49,11 @@ public class ServiceLiveFeed {
         emitters.add(emitter);
 
         emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> {
+            emitters.remove(emitter);
+            emitter.complete();
+            log.debug("SSE emitter timed out, client will reconnect");
+        });
         emitter.onError(e -> emitters.remove(emitter));
 
         log.info("Nouvel abonné SSE connecté ({} au total)", emitters.size());

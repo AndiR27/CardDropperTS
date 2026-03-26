@@ -21,17 +21,23 @@
       </div>
 
       @if (auth.isAuthenticated) {
-        <div class="filters__input-wrap">
-          <svg class="filters__search-icon filters__search-icon--purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
-          </svg>
-          <input class="filters__input filters__input--target" type="text" placeholder="Rechercher par cible..."
-                 [ngModel]="targetInput()"
-                 (ngModelChange)="onTargetInputChange($event)"
-                 (focus)="onTargetFocus()"
-                 (blur)="onTargetBlur()"/>
-          @if (filterTarget()) {
-            <button class="filters__input-clear" (click)="clearTarget()">&#x2715;</button>
+        <div class="filters__input-wrap filters__input-wrap--target">
+          <div class="target-box" (click)="targetInputEl.focus()">
+            @for (name of selectedTargets(); track name) {
+              <span class="target-chip">
+                {{ name }}
+                <button class="target-chip__remove" (mousedown)="$event.preventDefault(); removeTarget(name)">&#x2715;</button>
+              </span>
+            }
+            <input #targetInputEl class="target-box__input" type="text"
+                   [placeholder]="selectedTargets().length > 0 ? 'Ajouter...' : 'Rechercher par cible...'"
+                   [ngModel]="targetInput()"
+                   (ngModelChange)="onTargetInputChange($event)"
+                   (focus)="onTargetFocus()"
+                   (blur)="onTargetBlur()"/>
+          </div>
+          @if (selectedTargets().length > 0) {
+            <button class="filters__input-clear" (click)="clearAllTargets()">&#x2715;</button>
           }
           @if (showTargetSuggestions() && targetSuggestions().length > 0) {
             <div class="target-dropdown">

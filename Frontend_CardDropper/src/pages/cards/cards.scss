@@ -379,6 +379,77 @@
   &:hover { color: var(--cd-gold-light, #f5d78e); }
 }
 
+// ── Target multi-select (tag input) ──
+.filters__input-wrap--target {
+  position: relative;
+}
+
+.target-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.45rem 2.2rem 0.45rem 0.65rem;
+  min-height: 44px;
+  cursor: text;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+  }
+}
+
+.target-box__input {
+  flex: 1;
+  min-width: 80px;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--cd-text);
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+
+  &::placeholder { color: var(--cd-text-muted); }
+}
+
+.target-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(168, 85, 247, 0.18);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.target-chip__remove {
+  background: none;
+  border: none;
+  color: #c084fc;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.15rem;
+  line-height: 1;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(168, 85, 247, 0.3);
+    color: #fff;
+  }
+}
+
 // ── Target dropdown ──
 .target-dropdown {
   position: absolute;
@@ -392,25 +463,31 @@
   overflow: hidden;
   z-index: 200;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  max-height: 200px;
+  max-height: 180px;
   overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+  &::-webkit-scrollbar-thumb { background: var(--cd-border-strong); border-radius: 3px; }
+  scrollbar-width: thin;
+  scrollbar-color: var(--cd-border-strong) rgba(255,255,255,0.03);
 }
 
 .target-dropdown__option {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.55rem 0.85rem;
+  padding: 0.5rem 0.85rem;
   border: none;
   background: none;
   color: var(--cd-text);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.15s;
 
   &:hover {
-    background: rgba(240, 178, 50, 0.1);
-    color: var(--cd-gold);
+    background: rgba(168, 85, 247, 0.1);
+    color: #c084fc;
   }
 }
 

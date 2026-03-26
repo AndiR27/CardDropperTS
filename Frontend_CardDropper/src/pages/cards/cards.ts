@@ -33,7 +33,7 @@ export class CardsPage implements OnInit {
   // ── Filters ──
   protected readonly searchName = signal('');
   protected readonly filterRarity = signal<Rarity | ''>('');
-  protected readonly filterTarget = signal('');
+  protected readonly selectedTargets = signal<string[]>([]);
   protected readonly targetInput = signal('');
   protected readonly showTargetSuggestions = signal(false);
   protected readonly filterUnique = signal(false);
@@ -75,12 +75,14 @@ export class CardsPage implements OnInit {
       cards = cards.filter(c => c.rarity === rarity);
     }
 
-    // Target filter (by username → userId)
-    const target = this.filterTarget();
-    if (target) {
-      const targetUser = this.users().find(u => u.username === target);
-      if (targetUser) {
-        cards = cards.filter(c => c.targetUserId === targetUser.id);
+    // Target filter (by selected usernames → userIds)
+    const targets = this.selectedTargets();
+    if (targets.length > 0) {
+      const targetIds = new Set(
+        targets.map(name => this.users().find(u => u.username === name)?.id).filter(id => id != null)
+      );
+      if (targetIds.size > 0) {
+        cards = cards.filter(c => c.targetUserId !== null && targetIds.has(c.targetUserId));
       } else {
         cards = [];
       }
@@ -141,14 +143,14 @@ export class CardsPage implements OnInit {
     return this.filteredCards().slice(start, start + this.pageSize);
   });
 
-  // ── Target suggestions (autocomplete) ──
+  // ── Target suggestions (alphabetical, excludes already selected) ──
   protected readonly targetSuggestions = computed(() => {
     const input = this.targetInput().toLowerCase().trim();
-    if (!input) return [];
+    const selected = new Set(this.selectedTargets());
     return this.users()
       .map(u => u.username)
-      .filter(name => name.toLowerCase().includes(input))
-      .slice(0, 8);
+      .filter(name => !selected.has(name) && (!input || name.toLowerCase().includes(input)))
+      .sort((a, b) => a.localeCompare(b));
   });
 
   // ── Card count ──
@@ -161,7 +163,7 @@ export class CardsPage implements OnInit {
     if (this.filterRarity()) count++;
     if (this.filterUnique()) count++;
     if (this.hideTargeted()) count++;
-    if (this.filterTarget()) count++;
+    if (this.selectedTargets().length > 0) count++;
     if (this.searchName()) count++;
     if (this.showInactive()) count++;
     if (this.showNewest()) count++;
@@ -197,7 +199,7 @@ export class CardsPage implements OnInit {
     this.currentPage.set(0);
   }
 
-  // ── Target autocomplete ──
+  // ── Target multi-select ──
   onTargetFocus(): void {
     this.showTargetSuggestions.set(true);
   }
@@ -207,22 +209,27 @@ export class CardsPage implements OnInit {
   }
 
   selectTarget(username: string): void {
-    this.targetInput.set(username);
-    this.filterTarget.set(username);
+    if (!this.selectedTargets().includes(username)) {
+      this.selectedTargets.update(list => [...list, username]);
+    }
+    this.targetInput.set('');
     this.showTargetSuggestions.set(false);
+    this.currentPage.set(0);
+  }
+
+  removeTarget(username: string): void {
+    this.selectedTargets.update(list => list.filter(n => n !== username));
     this.currentPage.set(0);
   }
 
   onTargetInputChange(value: string): void {
     this.targetInput.set(value);
-    if (!value) this.filterTarget.set('');
     this.showTargetSuggestions.set(true);
-    this.currentPage.set(0);
   }
 
-  clearTarget(): void {
+  clearAllTargets(): void {
     this.targetInput.set('');
-    this.filterTarget.set('');
+    this.selectedTargets.set([]);
     this.currentPage.set(0);
   }
 
@@ -241,7 +248,7 @@ export class CardsPage implements OnInit {
     this.filterUnique.set(false);
     this.hideTargeted.set(false);
     this.showInactive.set(false);
-    this.filterTarget.set('');
+    this.selectedTargets.set([]);
     this.targetInput.set('');
     this.sortBy.set('');
     this.showNewest.set(false);
