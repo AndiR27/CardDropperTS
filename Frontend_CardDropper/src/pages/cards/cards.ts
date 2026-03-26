@@ -40,6 +40,7 @@ export class CardsPage implements OnInit {
   protected readonly hideTargeted = signal(false);
   protected readonly showInactive = signal(false);
   protected readonly sortBy = signal<'' | 'name-asc' | 'name-desc' | 'rarity-asc' | 'rarity-desc'>('');
+  protected readonly showNewest = signal(sessionStorage.getItem('cd-show-newest') === 'true');
 
   // ── Zoom overlay ──
   protected readonly zoomedCard = signal<Card | null>(null);
@@ -115,6 +116,11 @@ export class CardsPage implements OnInit {
       });
     }
 
+    // Newest first (by id descending)
+    if (this.showNewest()) {
+      cards = [...cards].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+    }
+
     return cards;
   });
 
@@ -158,6 +164,7 @@ export class CardsPage implements OnInit {
     if (this.filterTarget()) count++;
     if (this.searchName()) count++;
     if (this.showInactive()) count++;
+    if (this.showNewest()) count++;
     return count;
   });
 
@@ -219,6 +226,14 @@ export class CardsPage implements OnInit {
     this.currentPage.set(0);
   }
 
+  // ── Newest toggle (session-persistent) ──
+  toggleNewest(): void {
+    const next = !this.showNewest();
+    this.showNewest.set(next);
+    sessionStorage.setItem('cd-show-newest', String(next));
+    this.currentPage.set(0);
+  }
+
   // ── Reset filters ──
   resetFilters(): void {
     this.searchName.set('');
@@ -229,6 +244,8 @@ export class CardsPage implements OnInit {
     this.filterTarget.set('');
     this.targetInput.set('');
     this.sortBy.set('');
+    this.showNewest.set(false);
+    sessionStorage.removeItem('cd-show-newest');
     this.currentPage.set(0);
   }
 

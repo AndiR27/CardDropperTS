@@ -71,7 +71,7 @@
       </div>
     </div>
 
-    <!-- Rarity badges + toggle filters on same row -->
+    <!-- Rarity badges + toggle filters -->
     <div class="filters__badges-row">
       <div class="rarity-badges">
         @for (opt of rarityOptions; track opt.value) {
@@ -109,6 +109,13 @@
                 (click)="showInactive.set(!showInactive())">
           <span class="filter-toggle__icon">&#x1F4A4;</span>
           <span>Inactives</span>
+        </button>
+
+        <button class="filter-toggle filter-toggle--newest"
+                [class.filter-toggle--active]="showNewest()"
+                (click)="toggleNewest()">
+          <span class="filter-toggle__icon">&#x1F195;</span>
+          <span>Plus recentes</span>
         </button>
       </div>
     </div>

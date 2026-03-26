@@ -495,6 +495,19 @@
                       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
+                  @if (deletingCardId() === card.id) {
+                    <div class="card-row__delete-confirm">
+                      <span class="card-row__delete-warn">Supprimer cette carte ?</span>
+                      <button class="cd-btn--danger card-row__delete-yes" (click)="deleteCard(card)">Oui</button>
+                      <button class="cd-btn--outline card-row__delete-no" (click)="cancelDeleteCard()">Non</button>
+                    </div>
+                  } @else {
+                    <button class="card-row__delete-btn" (click)="confirmDeleteCard(card)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  }
                 </div>
               }
             </div>

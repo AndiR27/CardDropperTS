@@ -136,7 +136,8 @@ public class ServiceCard {
     }
 
     /**
-     * Supprimer une carte par son id (admin)
+     * Supprimer une carte par son id (admin).
+     * Les entrées UserCard liées sont supprimées automatiquement via CascadeType.REMOVE.
      */
     @Transactional
     public void delete(Long id) {

@@ -48,7 +48,7 @@ public class Card {
     private boolean active = true;
 
     // Propriétaires de la carte (via UserCard)
-    @OneToMany(mappedBy = "card")
+    @OneToMany(mappedBy = "card", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<UserCard> userCards = new ArrayList<>();
 
     // Créateur de la carte

@@ -54,8 +54,9 @@ export class AdminViewPage implements OnInit {
   grantSelectedUserIds = signal<Set<number>>(new Set());
   protected readonly grantSuccess = signal<string | null>(null);
 
-  // ── Card editing ──
+  // ── Card editing / deletion ──
   protected readonly editingCardId = signal<number | null>(null);
+  protected readonly deletingCardId = signal<number | null>(null);
   editName = '';
   editRarity: Rarity = Rarity.COMMON;
   editDescription = '';
@@ -242,6 +243,27 @@ export class AdminViewPage implements OnInit {
         this.editingCardId.set(null);
       },
       error: err => this.handleError('Update Card', err),
+    });
+  }
+
+  // ====== Card delete ======
+
+  confirmDeleteCard(card: Card): void {
+    this.deletingCardId.set(card.id);
+  }
+
+  cancelDeleteCard(): void {
+    this.deletingCardId.set(null);
+  }
+
+  deleteCard(card: Card): void {
+    if (!card.id) return;
+    this.cardService.delete(card.id).subscribe({
+      next: () => {
+        this.cards.update(cards => cards.filter(c => c.id !== card.id));
+        this.deletingCardId.set(null);
+      },
+      error: err => this.handleError('Delete Card', err),
     });
   }
 
