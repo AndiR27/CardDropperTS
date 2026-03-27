@@ -2,7 +2,9 @@ package ts.backend_carddropper.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,14 +20,17 @@ public interface RepositoryCard extends JpaRepository<Card, Long> {
     // Trouver toutes les cartes par rareté
     List<Card> findByRarity(Rarity rarity);
 
-    // Pool de cartes droppables :
+    // Pool de cartes droppables (avec verrouillage pessimiste pour protéger les cartes uniques) :
     //  - actives uniquement
     //  - uniques sans aucun propriétaire (si quelqu'un la possède déjà, personne d'autre ne peut la drop)
     //  - les cartes ciblant l'utilisateur courant sont exclues (il ne peut pas dropper sa propre carte ciblée)
+    //  - SELECT ... FOR UPDATE empêche deux transactions concurrentes de dropper la même carte unique
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND (c.targetUser IS NULL OR c.targetUser.id != :userId)")
     List<Card> findPoolCardsByRarity(@Param("rarity") Rarity rarity, @Param("userId") Long userId);
 
     // Même pool en excluant une liste d'IDs (doublons déjà sélectionnés dans le même pack)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Card c WHERE c.rarity = :rarity AND c.active = true AND (c.uniqueCard = false OR c.userCards IS EMPTY) AND (c.targetUser IS NULL OR c.targetUser.id != :userId) AND c.id NOT IN :excludedIds")
     List<Card> findPoolCardsByRarityExcluding(@Param("rarity") Rarity rarity, @Param("userId") Long userId, @Param("excludedIds") List<Long> excludedIds);
 

@@ -24,7 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -41,12 +44,13 @@ public class ServiceUser {
     private final RepositoryUserCard repositoryUserCard;
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final double OWNED_PENALTY = 0.5;
+
     private static int mergeRequiredCount(Rarity rarity) {
         return switch (rarity) {
             case COMMON -> 3;
-            case RARE   -> 4;
-            case EPIC   -> 5;
-            case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
+            case RARE   -> 5;
+            case EPIC, LEGENDARY -> throw new IllegalArgumentException(rarity + " cards cannot be merged");
         };
     }
 
@@ -229,12 +233,16 @@ public class ServiceUser {
 
         Rarity nextRarity = getNextRarity(rarity);
 
-        // Piocher une carte aléatoire du pool à la rareté supérieure
+        // Piocher une carte du pool à la rareté supérieure (pondération identique au pack opening)
+        Set<Long> ownedCardIds = repositoryUserCard.findByUserId(userId).stream()
+                .map(uc -> uc.getCard().getId())
+                .collect(Collectors.toSet());
+
         List<Card> pool = repositoryCard.findPoolCardsByRarity(nextRarity, userId);
         if (pool.isEmpty()) {
             throw new IllegalStateException("No " + nextRarity + " card available in the pool");
         }
-        Card result = pool.get(new Random().nextInt(pool.size()));
+        Card result = pickWeightedCard(pool, ownedCardIds);
 
         // Déduire les cartes consommées
         for (Card card : distinctCards) {
@@ -350,12 +358,37 @@ public class ServiceUser {
         }
     }
 
+    /**
+     * Sélection pondérée identique au pack opening :
+     * poids = 1/(1+owners), pénalité si déjà possédée.
+     */
+    private Card pickWeightedCard(List<Card> pool, Set<Long> ownedCardIds) {
+        double total = pool.stream().mapToDouble(c -> cardWeight(c, ownedCardIds)).sum();
+        double roll = ThreadLocalRandom.current().nextDouble() * total;
+
+        double cumulative = 0;
+        for (Card card : pool) {
+            cumulative += cardWeight(card, ownedCardIds);
+            if (roll <= cumulative) {
+                return card;
+            }
+        }
+        return pool.getLast();
+    }
+
+    private double cardWeight(Card card, Set<Long> ownedCardIds) {
+        double weight = 1.0 / (1 + card.getUserCards().size());
+        if (ownedCardIds.contains(card.getId())) {
+            weight *= OWNED_PENALTY;
+        }
+        return weight;
+    }
+
     private Rarity getNextRarity(Rarity rarity) {
         return switch (rarity) {
             case COMMON    -> Rarity.RARE;
             case RARE      -> Rarity.EPIC;
-            case EPIC      -> Rarity.LEGENDARY;
-            case LEGENDARY -> throw new IllegalArgumentException("LEGENDARY cards cannot be merged further");
+            case EPIC, LEGENDARY -> throw new IllegalArgumentException(rarity + " cards cannot be merged");
         };
     }
 

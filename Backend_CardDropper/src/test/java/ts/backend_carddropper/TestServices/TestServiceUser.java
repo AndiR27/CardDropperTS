@@ -440,21 +440,23 @@ class TestServiceUser {
         }
 
         @Test
-        @DisplayName("merge 4 RARE cards returns an EPIC card")
+        @DisplayName("merge 5 RARE cards returns an EPIC card")
         void testMergeCards_rareToEpic() {
             Card r1 = cards.get(12);
             Card r2 = cards.get(13);
             Card r3 = cards.get(14);
             Card r4 = cards.get(15);
+            Card r5 = cards.get(16);
             giveCard(alice, r1);
             giveCard(alice, r2);
             giveCard(alice, r3);
             giveCard(alice, r4);
+            giveCard(alice, r5);
 
-            List<Long> cardIds = List.of(r1.getId(), r2.getId(), r3.getId(), r4.getId());
+            List<Long> cardIds = List.of(r1.getId(), r2.getId(), r3.getId(), r4.getId(), r5.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(r1, r2, r3, r4));
+            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(r1, r2, r3, r4, r5));
 
             Card epicPoolCard = cards.get(18); // first EPIC card
             when(repositoryCard.findPoolCardsByRarity(eq(Rarity.EPIC), anyLong())).thenReturn(List.of(epicPoolCard));
@@ -463,7 +465,7 @@ class TestServiceUser {
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
 
             assertEquals(Rarity.EPIC, result.rarity());
-            verify(repositoryUserCard, times(4)).delete(any(UserCard.class));
+            verify(repositoryUserCard, times(5)).delete(any(UserCard.class));
             verify(repositoryUserCard).save(argThat(uc -> uc.getCard().getId().equals(epicPoolCard.getId())));
         }
 

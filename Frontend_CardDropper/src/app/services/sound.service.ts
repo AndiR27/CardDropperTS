@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Rarity } from '../models';
 
-const THEMES = ['Busi', 'Stofonde'];
+const THEMES = ['Busi', 'Stofonde', 'CoachD'];
 
 const SOUND_FILES: Record<Rarity, string> = {
   [Rarity.COMMON]:    'Commune.mp3',

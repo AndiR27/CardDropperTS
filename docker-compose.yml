@@ -38,6 +38,8 @@ services:
       # Card images
       # ==========================
       CARD_IMAGES_DIR: /data/card-images
+      TZ: Europe/Zurich
+      JAVA_OPTS: -Duser.timezone=Europe/Zurich
     volumes:
       - carddropper-images:/data/card-images
     restart: unless-stopped

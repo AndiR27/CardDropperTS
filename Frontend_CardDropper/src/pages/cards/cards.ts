@@ -279,7 +279,7 @@ export class CardsPage implements OnInit {
 
   nextPage(): void {
     this.goToPage(this.currentPage() + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
   prevPage(): void { this.goToPage(this.currentPage() - 1); }
 

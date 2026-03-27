@@ -535,4 +535,128 @@ class TestServicePack {
             assertTrue(result.isEmpty(), "Pack should have 0 cards when only targeted card is excluded from pool");
         }
     }
+
+
+    // ========================================
+    //   CLASSIC PACK RARITY DISTRIBUTION
+    // ========================================
+
+    @Nested
+    @DisplayName("Classic pack rarity distribution (3x weighted + 1x fixedRare)")
+    class ClassicPackDistributionTests {
+
+        private PackTemplate classicTemplate;
+
+        @BeforeEach
+        void setUpClassicPack() {
+            // Reproduce the real "Pack Classique": 3x randomClassic + 1x fixedRare
+            PackSlot randomClassic = new PackSlot();
+            randomClassic.setId(50L);
+            randomClassic.setName("randomClassicTest");
+            randomClassic.setRarityWeights(Map.of(
+                    Rarity.COMMON, 70.0,
+                    Rarity.RARE, 25.0,
+                    Rarity.EPIC, 4.0,
+                    Rarity.LEGENDARY, 1.0
+            ));
+
+            PackSlot fixedRare = new PackSlot();
+            fixedRare.setId(51L);
+            fixedRare.setName("fixedRareTest");
+            fixedRare.setFixedRarity(Rarity.RARE);
+
+            classicTemplate = new PackTemplate();
+            classicTemplate.setId(50L);
+            classicTemplate.setName("Pack Classique Test");
+
+            PackTemplateSlot ts1 = new PackTemplateSlot();
+            ts1.setId(50L);
+            ts1.setPackTemplate(classicTemplate);
+            ts1.setPackSlot(randomClassic);
+            ts1.setCount(3); // 3 weighted slots
+
+            PackTemplateSlot ts2 = new PackTemplateSlot();
+            ts2.setId(51L);
+            ts2.setPackTemplate(classicTemplate);
+            ts2.setPackSlot(fixedRare);
+            ts2.setCount(1); // 1 guaranteed rare
+
+            classicTemplate.setSlots(List.of(ts1, ts2));
+        }
+
+        @Test
+        @DisplayName("4 cards per pack: 3 weighted + 1 guaranteed rare")
+        void testClassicPack_cardCount() {
+            mockInventory(alice, classicTemplate, 1);
+            when(repositoryPackTemplate.findById(classicTemplate.getId())).thenReturn(Optional.of(classicTemplate));
+            mockAllPools();
+            mockPackInfrastructure();
+
+            List<CardDto> result = servicePack.generatePack(alice.getId(), classicTemplate.getId());
+
+            assertEquals(4, result.size(), "Classic pack should contain 4 cards");
+        }
+
+        @Test
+        @DisplayName("weighted slots follow expected rarity distribution (70/25/4/1)")
+        void testClassicPack_rarityDistribution() {
+            mockAllPools();
+
+            // Use a single-slot template with count=1 to isolate weighted rarity rolls
+            PackSlot randomClassic = new PackSlot();
+            randomClassic.setId(60L);
+            randomClassic.setName("singleWeightedTest");
+            randomClassic.setRarityWeights(Map.of(
+                    Rarity.COMMON, 70.0,
+                    Rarity.RARE, 25.0,
+                    Rarity.EPIC, 4.0,
+                    Rarity.LEGENDARY, 1.0
+            ));
+            PackTemplate singleWeighted = createSingleSlotTemplate(60L, "Single Weighted", randomClassic, 1);
+
+            int iterations = 10000;
+            Map<Rarity, Integer> rarityCounts = new EnumMap<>(Rarity.class);
+            for (Rarity r : Rarity.values()) rarityCounts.put(r, 0);
+
+            for (int i = 0; i < iterations; i++) {
+                reset(repositoryUserCard);
+                when(repositoryUserCard.findByUserId(alice.getId())).thenReturn(List.of());
+                when(repositoryUserCard.findByUserIdAndCardId(eq(alice.getId()), anyLong())).thenReturn(Optional.empty());
+                when(repositoryUserCard.save(any(UserCard.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                mockInventory(alice, singleWeighted, 1);
+                when(repositoryPackTemplate.findById(singleWeighted.getId())).thenReturn(Optional.of(singleWeighted));
+                when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+                when(repositoryCard.findAllById(anyList())).thenAnswer(inv -> {
+                    List<Long> ids = inv.getArgument(0);
+                    return cards.stream().filter(c -> ids.contains(c.getId())).toList();
+                });
+
+                List<CardDto> result = servicePack.generatePack(alice.getId(), singleWeighted.getId());
+                assertEquals(1, result.size());
+                rarityCounts.merge(result.getFirst().rarity(), 1, Integer::sum);
+            }
+
+            double commonPct    = 100.0 * rarityCounts.get(Rarity.COMMON) / iterations;
+            double rarePct      = 100.0 * rarityCounts.get(Rarity.RARE) / iterations;
+            double epicPct      = 100.0 * rarityCounts.get(Rarity.EPIC) / iterations;
+            double legendaryPct = 100.0 * rarityCounts.get(Rarity.LEGENDARY) / iterations;
+
+            System.out.printf("%n=== Weighted Slot Rarity Distribution (%d rolls) ===%n", iterations);
+            System.out.printf("  COMMON:    %.2f%% (expected ~70%%)%n", commonPct);
+            System.out.printf("  RARE:      %.2f%% (expected ~25%%)%n", rarePct);
+            System.out.printf("  EPIC:      %.2f%% (expected  ~4%%)%n", epicPct);
+            System.out.printf("  LEGENDARY: %.2f%% (expected  ~1%%)%n", legendaryPct);
+
+            // Tolerance: ±5% for COMMON/RARE, ±2.5% for EPIC, ±1.5% for LEGENDARY
+            assertTrue(commonPct > 65 && commonPct < 75,
+                    "COMMON should be ~70%, was " + commonPct + "%");
+            assertTrue(rarePct > 20 && rarePct < 30,
+                    "RARE should be ~25%, was " + rarePct + "%");
+            assertTrue(epicPct > 1.5 && epicPct < 7,
+                    "EPIC should be ~4%, was " + epicPct + "%");
+            assertTrue(legendaryPct > 0.1 && legendaryPct < 2.5,
+                    "LEGENDARY should be ~1%, was " + legendaryPct + "%");
+        }
+    }
 }

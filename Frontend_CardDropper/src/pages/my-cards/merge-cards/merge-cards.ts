@@ -15,7 +15,7 @@ const NEXT_RARITY: Record<MergeRarity, Rarity> = {
 
 const MERGE_REQUIRED: Record<MergeRarity, number> = {
   [Rarity.COMMON]: 3,
-  [Rarity.RARE]:   4,
+  [Rarity.RARE]:   5,
   // [Rarity.EPIC]: 5, // disabled — re-add to re-enable legendary crafting
 };
 
