@@ -54,16 +54,16 @@ class TestServiceLiveFeed {
     // ========================================
 
     @Nested
-    @DisplayName("Récupération des événements du jour")
-    class TodayEventsTests {
+    @DisplayName("Récupération des événements de la semaine")
+    class WeekEventsTests {
 
         @Test
-        @DisplayName("retourne la liste des événements du jour")
-        void testGetTodayEvents_success() {
+        @DisplayName("retourne la liste des événements de la semaine")
+        void testGetWeekEvents_success() {
             when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
                     .thenReturn(List.of(sampleEvent));
 
-            List<LiveFeedEventDto> result = serviceLiveFeed.getTodayEvents();
+            List<LiveFeedEventDto> result = serviceLiveFeed.getWeekEvents();
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -75,28 +75,28 @@ class TestServiceLiveFeed {
         }
 
         @Test
-        @DisplayName("retourne une liste vide quand aucun événement aujourd'hui")
-        void testGetTodayEvents_empty() {
+        @DisplayName("retourne une liste vide quand aucun événement cette semaine")
+        void testGetWeekEvents_empty() {
             when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
                     .thenReturn(List.of());
 
-            List<LiveFeedEventDto> result = serviceLiveFeed.getTodayEvents();
+            List<LiveFeedEventDto> result = serviceLiveFeed.getWeekEvents();
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
         }
 
         @Test
-        @DisplayName("la requête utilise le début de la journée comme borne inférieure")
-        void testGetTodayEvents_queriesFromStartOfDay() {
+        @DisplayName("la requête utilise 7 jours en arrière comme borne inférieure")
+        void testGetWeekEvents_queriesFromSevenDaysAgo() {
             when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
                     .thenReturn(List.of());
 
-            serviceLiveFeed.getTodayEvents();
+            serviceLiveFeed.getWeekEvents();
 
-            // Vérifier que la requête est faite avec le début du jour (00:00)
+            // Vérifier que la requête est faite avec le début du jour il y a 7 jours (00:00)
             verify(repositoryLiveFeed).findByCreatedAtAfterOrderByCreatedAtDesc(
-                    LocalDate.now().atStartOfDay());
+                    LocalDate.now().minusDays(7).atStartOfDay());
         }
     }
 

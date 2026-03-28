@@ -154,6 +154,6 @@ public class RestControllerMe implements MeApi {
 
     @Override
     public ResponseEntity<List<LiveFeedEventDto>> getTodayLiveFeed() {
-        return ResponseEntity.ok(serviceLiveFeed.getTodayEvents());
+        return ResponseEntity.ok(serviceLiveFeed.getWeekEvents());
     }
 }

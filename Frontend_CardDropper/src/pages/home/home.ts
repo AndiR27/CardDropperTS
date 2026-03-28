@@ -62,24 +62,29 @@ export class HomePage implements OnInit, OnDestroy {
     const date = new Date(dateString);
     const now = new Date();
 
-    const isToday =
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate();
-
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const time = `${hours}h${minutes}`;
 
-    if (isToday) {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round((today.getTime() - eventDay.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
       return `Aujourd'hui, à ${time}`;
     }
+    if (diffDays === 1) {
+      return `Hier, à ${time}`;
+    }
 
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
+    const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate();
+    const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const month = monthNames[date.getMonth()];
 
-    return `${day}/${month}/${year}, à ${time}`;
+    return `${dayName} ${day} ${month}, à ${time}`;
   }
 
   // ── Card zoom ──

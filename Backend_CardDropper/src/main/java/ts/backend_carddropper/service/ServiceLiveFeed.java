@@ -113,11 +113,11 @@ public class ServiceLiveFeed {
     }
 
     /**
-     * Retourne tous les événements du live feed depuis le début de la journée.
+     * Retourne tous les événements du live feed des 7 derniers jours.
      */
-    public List<LiveFeedEventDto> getTodayEvents() {
+    public List<LiveFeedEventDto> getWeekEvents() {
         return mapperLiveFeed.toDtoList(
                 repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(
-                        LocalDate.now(ZoneId.of("Europe/Zurich")).atStartOfDay()));
+                        LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(7).atStartOfDay()));
     }
 }
