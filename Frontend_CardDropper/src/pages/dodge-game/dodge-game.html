@@ -1,0 +1,10 @@
+<div class="dodge-game" [class.dodge-game--playing]="gameState() === 'playing'">
+  <canvas
+    #gameCanvas
+    class="dodge-game__canvas"
+    (mousemove)="onCanvasMouseMove($event)"
+    (touchmove)="onCanvasTouchMove($event)"
+    (touchstart)="onCanvasTouchStart($event)"
+    (click)="onCanvasClick()">
+  </canvas>
+</div>
