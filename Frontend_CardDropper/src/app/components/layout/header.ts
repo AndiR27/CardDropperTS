@@ -9,6 +9,7 @@ import {
   faGift,
   faRightLeft,
   faShieldHalved,
+  faCrosshairs,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -31,6 +32,7 @@ export class Header {
     packs:       faGift,
     echange:     faRightLeft,
     admin:       faShieldHalved,
+    dodge:       faCrosshairs,
   };
 
   toggleMenu(): void {

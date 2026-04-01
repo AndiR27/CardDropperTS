@@ -12,5 +12,6 @@ export const routes: Routes = [
   { path: 'trade',   loadComponent: () => import('../pages/trade/trade').then(m => m.TradePage), canActivate: [authGuard] },
   { path: 'trade/session/:id', loadComponent: () => import('../pages/trade/trade-card/trade-card').then(m => m.TradeCardPage), canActivate: [authGuard], canDeactivate: [canLeaveTrade] },
   { path: 'admin',   loadComponent: () => import('../pages/admin/admin-view').then(m => m.AdminViewPage), canActivate: [adminGuard] },
+  { path: 'dodge',   loadComponent: () => import('../pages/dodge-game/dodge-game').then(m => m.DodgeGamePage) },
   { path: 'test',    loadComponent: () => import('../pages/test/test').then(m => m.TestPage) },
 ];
