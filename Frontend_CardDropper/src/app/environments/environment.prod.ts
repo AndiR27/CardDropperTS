@@ -3,7 +3,7 @@ export const environment = {
   // Same-origin proxy: nginx forwards /api/ to backend
   apiUrl: '/api',
   keycloak: {
-    issuer: 'https://keycloak.andi27.synology.me/auth/realms/carddropperts',
+    issuer: 'https://auth.carddropper.ch/auth/realms/carddropperts',
     clientId: 'carddropper-frontend',
     // Resolved at runtime via window.location.origin
     redirectUri: '',
