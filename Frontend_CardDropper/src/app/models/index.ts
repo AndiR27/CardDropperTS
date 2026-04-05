@@ -9,3 +9,4 @@ export { Rarity } from './rarity.enum';
 export type { TradeSession, OnlineUser, TradeSessionStatus } from './trade-session.model';
 export type { PageResponse } from './page-response.model';
 export type { DodgeScore } from './dodge-score.model';
+export type { RerollResponse, RerollCooldown } from './reroll.model';

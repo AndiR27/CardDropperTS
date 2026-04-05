@@ -3,7 +3,7 @@ import { LowerCasePipe, UpperCasePipe } from '@angular/common';
 import { MeService } from '../../app/services/me.service';
 import { CardService } from '../../app/services/card.service';
 import { AuthService } from '../../app/core/auth/auth.service';
-import { Card } from '../../app/models';
+import { Card, Rarity, RerollCooldown } from '../../app/models';
 import type { User } from '../../app/models';
 import { MergeCardsComponent } from './merge-cards/merge-cards';
 import { CardListComponent } from './card-list/card-list';
@@ -20,20 +20,35 @@ export class MyCardsPage implements OnInit {
   private readonly cardService = inject(CardService);
   private readonly authService = inject(AuthService);
 
-  // ── Tabs ──
-  protected readonly activeTab = signal<'cards' | 'merge' | 'creations' | 'targets'>('cards');
-
   // ── Data ──
   protected readonly ownedCards = signal<Card[]>([]);
   protected readonly createdCards = signal<Card[]>([]);
-  protected readonly targetingCards = signal<Card[]>([]);
   protected readonly users = signal<User[]>([]);
+  protected readonly cooldowns = signal<RerollCooldown[]>([]);
   protected readonly loading = signal(false);
 
-  // ── View mode ──
-  protected readonly viewMode = signal<'carousel' | 'list'>('carousel');
-  protected readonly listSearch = signal('');
+  // ── Filters ──
+  protected readonly searchName = signal('');
+  protected readonly filterRarity = signal<Rarity | ''>('');
+  protected readonly sortBy = signal<'' | 'name-asc' | 'name-desc' | 'rarity-asc' | 'rarity-desc' | 'qty-desc'>('');
 
+  // ── Tabs ──
+  protected readonly activeTab = signal<'cards' | 'merge' | 'creations'>('cards');
+
+  // ── Rarity filter options ──
+  readonly rarityOptions: { value: Rarity | ''; label: string; image?: string }[] = [
+    { value: '',              label: 'Toutes' },
+    { value: Rarity.COMMON,   label: 'Commune', image: 'assets/cardsCreation/rarity/common-crystal.png' },
+    { value: Rarity.RARE,     label: 'Rare',    image: 'assets/cardsCreation/rarity/rare-crystal.png' },
+    { value: Rarity.EPIC,     label: 'Épique',  image: 'assets/cardsCreation/rarity/epic-crystal.png' },
+    { value: Rarity.LEGENDARY, label: 'Légendaire', image: 'assets/cardsCreation/rarity/legendary-crystal.png' },
+  ];
+
+  private static readonly RARITY_ORDER: Record<string, number> = {
+    COMMON: 0, RARE: 1, EPIC: 2, LEGENDARY: 3,
+  };
+
+  // ── Counts ──
   protected readonly countMap = computed(() => {
     const map = new Map<number, number>();
     for (const c of this.ownedCards()) {
@@ -55,41 +70,45 @@ export class MyCardsPage implements OnInit {
     return card.id !== null ? (this.countMap().get(card.id) ?? 1) : 1;
   }
 
-  protected readonly filteredOwnedCards = computed(() => {
-    const search = this.listSearch().toLowerCase().trim();
-    const cards = this.uniqueOwnedCards();
-    if (!search) return cards;
-    return cards.filter(c =>
-      c.name.toLowerCase().includes(search) ||
-      c.rarity.toLowerCase().includes(search)
-    );
-  });
+  // ── Filtered + sorted cards ──
+  protected readonly filteredCards = computed(() => {
+    let cards = this.uniqueOwnedCards();
 
-  toggleViewMode(): void {
-    this.viewMode.update(m => m === 'carousel' ? 'list' : 'carousel');
-  }
-
-  selectCardFromList(card: Card): void {
-    const index = this.uniqueOwnedCards().findIndex(c => c.id === card.id);
-    if (index >= 0) {
-      this.activeIndex.set(index);
-      this.viewMode.set('carousel');
+    const search = this.searchName().toLowerCase().trim();
+    if (search) {
+      cards = cards.filter(c => c.name.toLowerCase().includes(search));
     }
-  }
 
-  // ── Carousel ──
-  protected readonly activeIndex = signal(0);
+    const rarity = this.filterRarity();
+    if (rarity) {
+      cards = cards.filter(c => c.rarity === rarity);
+    }
 
-  protected readonly activeCard = computed(() => {
-    const cards = this.uniqueOwnedCards();
-    if (cards.length === 0) return null;
-    return cards[this.activeIndex()];
+    const sort = this.sortBy();
+    if (sort) {
+      const countMap = this.countMap();
+      cards = [...cards].sort((a, b) => {
+        switch (sort) {
+          case 'name-asc':    return a.name.localeCompare(b.name);
+          case 'name-desc':   return b.name.localeCompare(a.name);
+          case 'rarity-asc':  return (MyCardsPage.RARITY_ORDER[a.rarity] ?? 0) - (MyCardsPage.RARITY_ORDER[b.rarity] ?? 0);
+          case 'rarity-desc': return (MyCardsPage.RARITY_ORDER[b.rarity] ?? 0) - (MyCardsPage.RARITY_ORDER[a.rarity] ?? 0);
+          case 'qty-desc':    return (countMap.get(b.id!) ?? 1) - (countMap.get(a.id!) ?? 1);
+          default: return 0;
+        }
+      });
+    }
+
+    return cards;
   });
 
-  protected readonly canPrev = computed(() => this.activeIndex() > 0);
-  protected readonly canNext = computed(() => this.activeIndex() < this.uniqueOwnedCards().length - 1);
+  protected readonly cardCount = computed(() => this.filteredCards().length);
+  protected readonly totalUniqueCount = computed(() => this.uniqueOwnedCards().length);
 
-  // ── Use card modal ──
+  // ── Detail modal ──
+  protected readonly selectedCard = signal<Card | null>(null);
+
+  // ── Use card flow ──
   protected readonly showUseModal = signal(false);
   protected readonly selectedTarget = signal<User | null>(null);
   protected readonly useStep = signal<'choose' | 'confirm'>('choose');
@@ -97,6 +116,8 @@ export class MyCardsPage implements OnInit {
   protected readonly showUseSuccess = signal(false);
   protected readonly usedCardName = signal('');
   protected readonly usedTargetName = signal('');
+  protected readonly useError = signal<string | null>(null);
+  protected readonly using = signal(false);
 
   protected readonly filteredUsers = computed(() => {
     const search = this.userSearch().toLowerCase().trim();
@@ -106,17 +127,34 @@ export class MyCardsPage implements OnInit {
     return all.filter(u => u.username.toLowerCase().includes(search));
   });
 
+  // ── Reroll flow ──
+  protected readonly rerolling = signal(false);
+  protected readonly rerollResult = signal<Card | null>(null);
+  protected readonly rerollError = signal<string | null>(null);
+
+  // ── Deactivate modal (for creations) ──
+  protected readonly showDeactivateModal = signal(false);
+  protected readonly deactivateCardData = signal<Card | null>(null);
+  protected readonly deactivateStep = signal<'info' | 'confirm'>('info');
+  protected readonly deactivating = signal(false);
+  protected readonly deactivateError = signal<string | null>(null);
+
+
+  // ========================================
+  //              LIFECYCLE
+  // ========================================
+
   ngOnInit(): void {
     this.loading.set(true);
     this.loadOwnedCards();
     this.meService.getCardsCreated().subscribe({
       next: (cards) => this.createdCards.set(cards),
     });
-    this.meService.getCardsTargeting().subscribe({
-      next: (cards) => this.targetingCards.set(cards),
-    });
     this.meService.getAllUsers().subscribe({
       next: (data) => this.users.set(data),
+    });
+    this.meService.getRerollCooldowns().subscribe({
+      next: (cds) => this.cooldowns.set(cds),
     });
   }
 
@@ -127,41 +165,48 @@ export class MyCardsPage implements OnInit {
     });
   }
 
-  onMerged(): void {
-    this.loadOwnedCards();
+
+  // ========================================
+  //              FILTERS
+  // ========================================
+
+  selectRarity(value: Rarity | ''): void {
+    this.filterRarity.set(this.filterRarity() === value ? '' : value);
   }
 
-  // ── Carousel navigation ──
-  prev(): void {
-    if (this.canPrev()) this.activeIndex.update(i => i - 1);
+
+  // ========================================
+  //            CARD DETAIL MODAL
+  // ========================================
+
+  openDetail(card: Card): void {
+    this.selectedCard.set(card);
+    this.rerollResult.set(null);
+    this.rerollError.set(null);
   }
 
-  next(): void {
-    if (this.canNext()) this.activeIndex.update(i => i + 1);
+  closeDetail(): void {
+    this.selectedCard.set(null);
   }
 
-  goTo(index: number): void {
-    this.activeIndex.set(index);
+  onDetailOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('detail-modal')) {
+      this.closeDetail();
+    }
   }
 
-  // ── Image helper ──
-  getImageUrl(card: Card): string | null {
-    return this.cardService.imageUrl(card);
-  }
 
-  getTargetName(card: Card): string | null {
-    if (!card.targetUserId) return null;
-    const user = this.users().find(u => u.id === card.targetUserId);
-    return user?.username ?? null;
-  }
+  // ========================================
+  //            USE CARD FLOW
+  // ========================================
 
-  // ── Use card flow ──
   openUseModal(): void {
-    const card = this.activeCard();
+    const card = this.selectedCard();
     if (!card) return;
 
     this.selectedTarget.set(null);
     this.userSearch.set('');
+    this.useError.set(null);
 
     if (card.targetUserId) {
       const target = this.users().find(u => u.id === card.targetUserId) ?? null;
@@ -184,11 +229,8 @@ export class MyCardsPage implements OnInit {
     this.useStep.set('choose');
   }
 
-  protected readonly useError = signal<string | null>(null);
-  protected readonly using = signal(false);
-
   confirmUse(): void {
-    const card = this.activeCard();
+    const card = this.selectedCard();
     const target = this.selectedTarget();
     if (!card?.id || !target?.id || this.using()) return;
 
@@ -199,21 +241,17 @@ export class MyCardsPage implements OnInit {
       next: () => {
         this.using.set(false);
         this.showUseModal.set(false);
+        this.selectedCard.set(null);
 
-        // Show success popup
         this.usedCardName.set(card.name);
         this.usedTargetName.set(target.username);
         this.showUseSuccess.set(true);
         setTimeout(() => this.showUseSuccess.set(false), 2500);
 
-        // Remove one copy of the card; if more copies remain the badge just decrements
         this.ownedCards.update(cards => {
           const idx = cards.findIndex(c => c.id === card.id);
           return idx >= 0 ? [...cards.slice(0, idx), ...cards.slice(idx + 1)] : cards;
         });
-        if (this.activeIndex() >= this.uniqueOwnedCards().length) {
-          this.activeIndex.set(Math.max(0, this.uniqueOwnedCards().length - 1));
-        }
       },
       error: (err) => {
         this.using.set(false);
@@ -226,21 +264,87 @@ export class MyCardsPage implements OnInit {
     this.showUseModal.set(false);
   }
 
-  onModalOverlayClick(event: MouseEvent): void {
+  onUseOverlayClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('use-modal')) {
       this.closeUseModal();
     }
   }
 
-  // ── Deactivate card modal (creations tab) ──
-  protected readonly showDeactivateModal = signal(false);
-  protected readonly deactivateCard = signal<Card | null>(null);
-  protected readonly deactivateStep = signal<'info' | 'confirm'>('info');
-  protected readonly deactivating = signal(false);
-  protected readonly deactivateError = signal<string | null>(null);
+
+  // ========================================
+  //              REROLL
+  // ========================================
+
+  isOnCooldown(rarity: Rarity): boolean {
+    const cd = this.cooldowns().find(c => c.rarity === rarity);
+    if (!cd) return false;
+    return new Date(cd.availableAt) > new Date();
+  }
+
+  getCooldownEnd(rarity: Rarity): string | null {
+    const cd = this.cooldowns().find(c => c.rarity === rarity);
+    if (!cd) return null;
+    const end = new Date(cd.availableAt);
+    if (end <= new Date()) return null;
+    return end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  reroll(): void {
+    const card = this.selectedCard();
+    if (!card?.id || this.rerolling()) return;
+
+    this.rerolling.set(true);
+    this.rerollError.set(null);
+
+    this.meService.rerollCard(card.id).subscribe({
+      next: (response) => {
+        this.rerolling.set(false);
+        this.rerollResult.set(response.receivedCard);
+
+        // Update owned cards: remove sacrificed, add received
+        this.ownedCards.update(cards => {
+          const idx = cards.findIndex(c => c.id === card.id);
+          const updated = idx >= 0 ? [...cards.slice(0, idx), ...cards.slice(idx + 1)] : [...cards];
+          updated.push(response.receivedCard);
+          return updated;
+        });
+
+        // Refresh cooldowns
+        this.meService.getRerollCooldowns().subscribe({
+          next: (cds) => this.cooldowns.set(cds),
+        });
+      },
+      error: (err) => {
+        this.rerolling.set(false);
+        this.rerollError.set(err?.error?.detail ?? 'Erreur lors du reroll.');
+      },
+    });
+  }
+
+  closeRerollResult(): void {
+    const result = this.rerollResult();
+    this.rerollResult.set(null);
+    if (result) {
+      this.selectedCard.set(result);
+    }
+  }
+
+
+  // ========================================
+  //          MERGE CALLBACK
+  // ========================================
+
+  onMerged(): void {
+    this.loadOwnedCards();
+  }
+
+
+  // ========================================
+  //         DEACTIVATE (CREATIONS)
+  // ========================================
 
   openDeactivateModal(card: Card): void {
-    this.deactivateCard.set(card);
+    this.deactivateCardData.set(card);
     this.deactivateStep.set('info');
     this.deactivateError.set(null);
     this.showDeactivateModal.set(true);
@@ -257,7 +361,7 @@ export class MyCardsPage implements OnInit {
   }
 
   confirmDeactivate(): void {
-    const card = this.deactivateCard();
+    const card = this.deactivateCardData();
     if (!card?.id || this.deactivating()) return;
 
     this.deactivating.set(true);
@@ -267,7 +371,6 @@ export class MyCardsPage implements OnInit {
       next: () => {
         this.deactivating.set(false);
         this.showDeactivateModal.set(false);
-        // Update the card in createdCards to reflect inactive state
         this.createdCards.update(cards =>
           cards.map(c => c.id === card.id ? { ...c, active: false } : c)
         );
@@ -277,5 +380,20 @@ export class MyCardsPage implements OnInit {
         this.deactivateError.set(err?.error?.detail ?? 'Erreur lors de la désactivation.');
       },
     });
+  }
+
+
+  // ========================================
+  //              HELPERS
+  // ========================================
+
+  getImageUrl(card: Card): string | null {
+    return this.cardService.imageUrl(card);
+  }
+
+  getTargetName(card: Card): string | null {
+    if (!card.targetUserId) return null;
+    const user = this.users().find(u => u.id === card.targetUserId);
+    return user?.username ?? null;
   }
 }

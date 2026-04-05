@@ -30,182 +30,107 @@
       </svg>
       Créations
     </button>
-    <button class="tabs__item"
-            [class.tabs__item--active]="activeTab() === 'targets'"
-            (click)="activeTab.set('targets')">
-      <svg class="tabs__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-      </svg>
-      Cibles
-    </button>
   </nav>
 
   <!-- ====== Tab: Mes Cartes ====== -->
   @if (activeTab() === 'cards') {
 
-    <!-- View mode toggle -->
-    <div class="view-toggle">
-      <button class="view-toggle__btn"
-              [class.view-toggle__btn--active]="viewMode() === 'carousel'"
-              (click)="viewMode.set('carousel')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="18" rx="3"/>
-          <path d="M8 21V3M16 21V3"/>
-        </svg>
-      </button>
-      <button class="view-toggle__btn"
-              [class.view-toggle__btn--active]="viewMode() === 'list'"
-              (click)="viewMode.set('list')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/>
-          <line x1="8" y1="12" x2="21" y2="12"/>
-          <line x1="8" y1="18" x2="21" y2="18"/>
-          <line x1="3" y1="6" x2="3.01" y2="6"/>
-          <line x1="3" y1="12" x2="3.01" y2="12"/>
-          <line x1="3" y1="18" x2="3.01" y2="18"/>
-        </svg>
-      </button>
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filters__glow"></div>
+
+    <!-- Search -->
+    <div class="filters__input-wrap">
+      <svg class="filters__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+      </svg>
+      <input class="filters__input" type="text" placeholder="Rechercher par nom..."
+             [value]="searchName()"
+             (input)="searchName.set($any($event.target).value)"/>
+      @if (searchName()) {
+        <button class="filters__input-clear" (click)="searchName.set('')">&#x2715;</button>
+      }
     </div>
 
-    @if (loading()) {
-      <div class="my-cards-page__status">
-        <span class="my-cards-page__loader"></span>
-        Chargement de ton grimoire...
-      </div>
-    } @else if (ownedCards().length === 0) {
-      <div class="my-cards-page__empty">
-        <span class="my-cards-page__empty-icon">&#x1F0CF;</span>
-        <p>Tu ne possèdes aucune carte pour le moment.</p>
-        <p class="cd-text-muted">Ouvre des packs ou forge tes propres cartes !</p>
-      </div>
-    } @else {
-
-      <!-- ====== Carousel view ====== -->
-      @if (viewMode() === 'carousel') {
-      <div class="carousel">
-        <button class="carousel__arrow carousel__arrow--left"
-                [class.carousel__arrow--disabled]="!canPrev()"
-                (click)="prev()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-
-        <div class="carousel__stage">
-          @for (card of uniqueOwnedCards(); track card.id; let i = $index) {
-            <div class="carousel__card carousel__card--rarity-{{ card.rarity | lowercase }}"
-                 [class.carousel__card--active]="i === activeIndex()"
-                 [class.carousel__card--prev]="i === activeIndex() - 1"
-                 [class.carousel__card--next]="i === activeIndex() + 1"
-                 [class.carousel__card--far-left]="i < activeIndex() - 1"
-                 [class.carousel__card--far-right]="i > activeIndex() + 1"
-                 (click)="goTo(i)">
-              <div class="carousel__card-inner">
-                @if (getImageUrl(card); as imgUrl) {
-                  <img [src]="imgUrl" [alt]="card.name" class="carousel__card-img"/>
-                } @else {
-                  <div class="carousel__card-placeholder">
-                    <span>?</span>
-                  </div>
-                }
-                @if (getCount(card) > 1) {
-                  <span class="carousel__qty">×{{ getCount(card) }}</span>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <button class="carousel__arrow carousel__arrow--right"
-                [class.carousel__arrow--disabled]="!canNext()"
-                (click)="next()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
-
-      @if (activeCard(); as card) {
-        <div class="card-info">
-          <h2 class="card-info__name">{{ card.name }}</h2>
-          <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
-            {{ card.rarity }}
-          </span>
-          @if (card.description) {
-            <p class="card-info__desc">{{ card.description }}</p>
-          }
-          @if (card.targetUserId) {
-            <span class="card-info__target">
-              Cible : <strong>{{ getTargetName(card) ?? 'Inconnu' }}</strong>
-            </span>
-          }
-          @if (card.uniqueCard) {
-            <span class="card-info__unique">Carte unique</span>
-          }
-
-          <button class="use-btn" (click)="openUseModal()">
-            <svg class="use-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-            Utiliser
+    <!-- Rarity badges + sort -->
+    <div class="filters__badges-row">
+      <div class="rarity-badges">
+        @for (opt of rarityOptions; track opt.value) {
+          <button class="rarity-badge"
+                  [class.rarity-badge--active]="filterRarity() === opt.value"
+                  [attr.data-rarity]="opt.value ? (opt.value | lowercase) : 'all'"
+                  (click)="selectRarity(opt.value)">
+            @if (opt.image) {
+              <img [src]="opt.image" [alt]="opt.label" class="rarity-badge__crystal"/>
+            }
+            <span>{{ opt.label }}</span>
           </button>
-        </div>
-      }
-
-      <div class="carousel__dots">
-        @for (card of uniqueOwnedCards(); track card.id; let i = $index) {
-          <button class="carousel__dot"
-                  [class.carousel__dot--active]="i === activeIndex()"
-                  (click)="goTo(i)"></button>
         }
       </div>
 
-      <p class="carousel__counter">{{ activeIndex() + 1 }} / {{ uniqueOwnedCards().length }}</p>
-      }
+      <div class="filters__sort-wrap">
+        <span class="filters__sort-label">Trier:</span>
+        <select class="filters__sort" [value]="sortBy()" (change)="sortBy.set($any($event.target).value)">
+          <option value="">Par défaut</option>
+          <option value="name-asc">Nom A-Z</option>
+          <option value="name-desc">Nom Z-A</option>
+          <option value="rarity-asc">Rareté croissante</option>
+          <option value="rarity-desc">Rareté décroissante</option>
+          <option value="qty-desc">Quantité</option>
+        </select>
+      </div>
+    </div>
+  </div>
 
-      <!-- ====== List view ====== -->
-      @if (viewMode() === 'list') {
-        <div class="card-list-view">
-          <div class="card-list-view__search-wrap">
-            <svg class="card-list-view__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
-            </svg>
-            <input class="card-list-view__search" type="text" placeholder="Rechercher une carte..."
-                   [value]="listSearch()"
-                   (input)="listSearch.set($any($event.target).value)"/>
-          </div>
+  <!-- Count -->
+  <p class="my-cards-page__count">
+    {{ cardCount() }} carte{{ cardCount() > 1 ? 's' : '' }} unique{{ cardCount() > 1 ? 's' : '' }}
+    ({{ ownedCards().length }} au total)
+  </p>
 
-          <div class="card-list-view__items">
-            @for (card of filteredOwnedCards(); track card.id) {
-              <button class="card-list-view__item" (click)="selectCardFromList(card)">
-                <div class="card-list-view__thumb">
-                  @if (getImageUrl(card); as imgUrl) {
-                    <img [src]="imgUrl" [alt]="card.name" class="card-list-view__thumb-img"/>
-                  } @else {
-                    <div class="card-list-view__thumb-placeholder">?</div>
-                  }
-                  @if (getCount(card) > 1) {
-                    <span class="card-list-view__qty">×{{ getCount(card) }}</span>
-                  }
-                </div>
-                <div class="card-list-view__info">
-                  <span class="card-list-view__name">{{ card.name }}</span>
-                  <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
-                    {{ card.rarity }}
-                  </span>
-                </div>
-                <svg class="card-list-view__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            } @empty {
-              <p class="card-list-view__empty">Aucune carte trouvée</p>
+  <!-- ====== Card Grid ====== -->
+  @if (loading()) {
+    <div class="my-cards-page__status">
+      <span class="my-cards-page__loader"></span>
+      Chargement de ton grimoire...
+    </div>
+  } @else if (ownedCards().length === 0) {
+    <div class="my-cards-page__empty">
+      <span class="my-cards-page__empty-icon">&#x1F0CF;</span>
+      <p>Tu ne possèdes aucune carte pour le moment.</p>
+      <p class="cd-text-muted">Ouvre des packs ou forge tes propres cartes !</p>
+    </div>
+  } @else if (filteredCards().length === 0) {
+    <p class="my-cards-page__status">Aucune carte ne correspond à ta recherche.</p>
+  } @else {
+    <div class="card-grid">
+      @for (card of filteredCards(); track card.id) {
+        <div class="card-item" (click)="openDetail(card)">
+          <div class="card-item__visual">
+            @if (getImageUrl(card); as imgUrl) {
+              <img [src]="imgUrl" [alt]="card.name"
+                   class="card-item__img card-item__img--{{ card.rarity | lowercase }}"/>
+            } @else {
+              <div class="card-item__placeholder">
+                <span>?</span>
+              </div>
             }
+            @if (getCount(card) > 1) {
+              <span class="card-item__qty">×{{ getCount(card) }}</span>
+            }
+          </div>
+          <div class="card-item__info">
+            <span class="card-item__name">{{ card.name }}</span>
+            <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
+              {{ card.rarity }}
+            </span>
           </div>
         </div>
       }
-    }
+    </div>
   }
+
+  } <!-- end Tab: Mes Cartes -->
 
   <!-- ====== Tab: Fusion ====== -->
   @if (activeTab() === 'merge') {
@@ -217,18 +142,107 @@
     <app-card-list [cards]="createdCards()" [title]="'Mes Créations'"
                    [clickable]="true" (cardClick)="openDeactivateModal($event)"/>
   }
-
-  <!-- ====== Tab: Cibles ====== -->
-  @if (activeTab() === 'targets') {
-    <app-card-list [cards]="targetingCards()" [title]="'Mes Cibles'"/>
-  }
 </section>
 
+<!-- ====== Card Detail Modal ====== -->
+@if (selectedCard(); as card) {
+  <div class="detail-modal" (click)="onDetailOverlayClick($event)">
+    <div class="detail-modal__content">
+      <button class="detail-modal__close" (click)="closeDetail()">&#x2715;</button>
+
+      <div class="detail-modal__card">
+        @if (getImageUrl(card); as imgUrl) {
+          <img [src]="imgUrl" [alt]="card.name"
+               class="detail-modal__card-img detail-modal__card-img--{{ card.rarity | lowercase }}"/>
+        }
+      </div>
+
+      <div class="detail-modal__info">
+        <h2 class="detail-modal__name">{{ card.name }}</h2>
+        <span class="detail-modal__rarity detail-modal__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+        @if (getCount(card) > 1) {
+          <span class="detail-modal__qty">×{{ getCount(card) }} exemplaires</span>
+        }
+        @if (card.description) {
+          <p class="detail-modal__desc">{{ card.description }}</p>
+        }
+        @if (card.targetUserId) {
+          <span class="detail-modal__target">Cible : <strong>{{ getTargetName(card) ?? 'Inconnu' }}</strong></span>
+        }
+        @if (card.uniqueCard) {
+          <span class="detail-modal__unique">Carte unique</span>
+        }
+      </div>
+
+      <!-- Actions -->
+      <div class="detail-modal__actions">
+        <button class="detail-modal__btn detail-modal__btn--use" (click)="openUseModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          Utiliser
+        </button>
+        <button class="detail-modal__btn detail-modal__btn--reroll"
+                [disabled]="isOnCooldown(card.rarity) || rerolling()"
+                (click)="reroll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+          @if (rerolling()) {
+            Reroll...
+          } @else if (isOnCooldown(card.rarity)) {
+            Cooldown
+          } @else {
+            Reroll
+          }
+        </button>
+      </div>
+
+      @if (isOnCooldown(card.rarity)) {
+        <p class="detail-modal__cooldown">
+          Reroll {{ card.rarity }} disponible le {{ getCooldownEnd(card.rarity) }}
+        </p>
+      }
+
+      @if (rerollError(); as err) {
+        <p class="detail-modal__error">{{ err }}</p>
+      }
+    </div>
+  </div>
+}
+
+<!-- ====== Reroll Result Overlay ====== -->
+@if (rerollResult(); as result) {
+  <div class="reroll-reveal" (click)="closeRerollResult()">
+    <div class="reroll-reveal__content">
+      <p class="reroll-reveal__subtitle">Nouvelle carte obtenue !</p>
+      <div class="reroll-reveal__card reroll-reveal__card--{{ result.rarity | lowercase }}">
+        @if (getImageUrl(result); as imgUrl) {
+          <img [src]="imgUrl" [alt]="result.name" class="reroll-reveal__card-img"/>
+        } @else {
+          <div class="reroll-reveal__card-placeholder">?</div>
+        }
+      </div>
+      <h2 class="reroll-reveal__name">{{ result.name }}</h2>
+      <span class="reroll-reveal__rarity reroll-reveal__rarity--{{ result.rarity | lowercase }}">
+        {{ result.rarity }}
+      </span>
+      @if (result.description) {
+        <p class="reroll-reveal__desc">{{ result.description }}</p>
+      }
+      <button class="reroll-reveal__close-btn" (click)="closeRerollResult()">Fermer</button>
+    </div>
+  </div>
+}
+
 <!-- ====== Use Card Modal ====== -->
-@if (showUseModal() && activeCard(); as card) {
-  <div class="use-modal" (click)="onModalOverlayClick($event)">
+@if (showUseModal() && selectedCard(); as card) {
+  <div class="use-modal" (click)="onUseOverlayClick($event)">
     <div class="use-modal__content">
-      <button class="use-modal__close" (click)="closeUseModal()">✕</button>
+      <button class="use-modal__close" (click)="closeUseModal()">&#x2715;</button>
 
       <div class="use-modal__card">
         @if (getImageUrl(card); as imgUrl) {
@@ -236,7 +250,7 @@
                class="use-modal__card-img use-modal__card-img--{{ card.rarity | lowercase }}"/>
         }
         <h3 class="use-modal__card-name">{{ card.name }}</h3>
-        <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+        <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
           {{ card.rarity }}
         </span>
       </div>
@@ -291,8 +305,6 @@
             <p class="use-modal__fixed-note">Cette carte cible spécifiquement ce joueur.</p>
           }
 
-          <p class="use-modal__confirm-text">Confirmer votre choix ?</p>
-
           @if (useError(); as err) {
             <p class="use-modal__error">{{ err }}</p>
           }
@@ -330,24 +342,22 @@
 }
 
 <!-- ====== Deactivate Card Modal ====== -->
-@if (showDeactivateModal() && deactivateCard(); as card) {
+@if (showDeactivateModal() && deactivateCardData(); as card) {
   <div class="deactivate-modal" (click)="onDeactivateOverlayClick($event)">
     <div class="deactivate-modal__content">
-      <button class="use-modal__close" (click)="closeDeactivateModal()">✕</button>
+      <button class="use-modal__close" (click)="closeDeactivateModal()">&#x2715;</button>
 
-      <!-- Card preview -->
       <div class="use-modal__card">
         @if (getImageUrl(card); as imgUrl) {
           <img [src]="imgUrl" [alt]="card.name"
                class="use-modal__card-img use-modal__card-img--{{ card.rarity | lowercase }}"/>
         }
         <h3 class="use-modal__card-name">{{ card.name }}</h3>
-        <span class="card-info__rarity card-info__rarity--{{ card.rarity | lowercase }}">
+        <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
           {{ card.rarity }}
         </span>
       </div>
 
-      <!-- Step: info -->
       @if (deactivateStep() === 'info') {
         <div class="deactivate-modal__info">
           @if (!card.active) {
@@ -363,7 +373,6 @@
         </div>
       }
 
-      <!-- Step: confirm -->
       @if (deactivateStep() === 'confirm') {
         <div class="deactivate-modal__confirm">
           <div class="deactivate-modal__warning">
@@ -372,7 +381,7 @@
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            <p>Cette action est <strong>irréversible</strong>. La carte sera définitivement désactivée et ne pourra plus être jouée ni droppée.</p>
+            <p>Cette action est <strong>irréversible</strong>. La carte sera définitivement désactivée.</p>
           </div>
 
           @if (deactivateError(); as err) {
@@ -387,7 +396,7 @@
               @if (deactivating()) {
                 Désactivation...
               } @else {
-                Confirmer la désactivation
+                Confirmer
               }
             </button>
           </div>

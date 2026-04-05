@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Card } from '../models';
-import type { User, LiveFeedEvent, UserPackInventory } from '../models';
+import type { User, LiveFeedEvent, UserPackInventory, RerollResponse, RerollCooldown } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
@@ -53,6 +53,16 @@ export class MeService {
 
   deactivateCard(cardId: number): Observable<void> {
     return this.api.patch<void>(`/me/cards/${cardId}/deactivate`);
+  }
+
+  // ====== Reroll ======
+
+  rerollCard(cardId: number): Observable<RerollResponse> {
+    return this.api.post<RerollResponse>('/me/reroll', { cardId });
+  }
+
+  getRerollCooldowns(): Observable<RerollCooldown[]> {
+    return this.api.get<RerollCooldown[]>('/me/reroll/cooldowns');
   }
 
   // ====== Live Feed ======

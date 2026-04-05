@@ -9,21 +9,32 @@
   }
 </div>
 
-<!-- Compact grid -->
-<div class="merge__grid">
+<!-- Card grid (same style as my-cards) -->
+<div class="merge__card-grid">
   @for (card of filteredCards(); track $index) {
-    <button class="merge__thumb"
-            [class.merge__thumb--selected]="isSelected($index)"
-            (click)="toggleCard($index)">
-      <div class="merge__thumb-img-wrap">
+    <div class="card-item"
+         [class.card-item--selected]="isSelected($index)"
+         (click)="toggleCard($index)">
+      <div class="card-item__visual">
         @if (getImageUrl(card); as imgUrl) {
-          <img [src]="imgUrl" [alt]="card.name" class="merge__thumb-img"/>
+          <img [src]="imgUrl" [alt]="card.name"
+               class="card-item__img card-item__img--{{ card.rarity | lowercase }}"/>
         } @else {
-          <div class="merge__thumb-placeholder">?</div>
+          <div class="card-item__placeholder">
+            <span>?</span>
+          </div>
+        }
+        @if (isSelected($index)) {
+          <span class="card-item__check">&#x2714;</span>
         }
       </div>
-      <span class="merge__thumb-name">{{ card.name }}</span>
-    </button>
+      <div class="card-item__info">
+        <span class="card-item__name">{{ card.name }}</span>
+        <span class="card-item__rarity card-item__rarity--{{ card.rarity | lowercase }}">
+          {{ card.rarity }}
+        </span>
+      </div>
+    </div>
   } @empty {
     <p class="merge__empty">Aucune carte de cette rareté</p>
   }
