@@ -80,6 +80,8 @@ public class ServicePack {
         // sont déjà exclus au niveau de la requête DB via "uniqueCard = false OR userCards IS EMPTY")
         Set<Long> excludedIds = new HashSet<>();
 
+        List<Rarity> selectedRarities = new ArrayList<>();
+
         for (PackTemplateSlot templateSlot : template.getSlots()) {
             for (int i = 0; i < templateSlot.getCount(); i++) {
                 Rarity rarity = determineRarity(templateSlot.getPackSlot());
@@ -91,15 +93,8 @@ public class ServicePack {
                     continue;
                 }
 
-                if (rarity == Rarity.LEGENDARY) {
-                    eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
-                }
-
-                eventPublisher.publishEvent(new PackOpenEvent(
-                        this, user.getUsername(), card.getName(),
-                        rarity.name(), template.getName()));
-
                 selectedCards.add(card);
+                selectedRarities.add(rarity);
                 excludedIds.add(card.getId());
             }
         }
@@ -111,7 +106,22 @@ public class ServicePack {
         List<Long> cardIds = selectedCards.stream().map(Card::getId).toList();
         log.info("Generated pack '{}' for user id={} : {} card(s) (remaining: {})",
                 template.getName(), userId, cardIds.size(), inventory.getQuantity());
-        return serviceUser.openPack(userId, cardIds);
+        List<CardDto> result = serviceUser.openPack(userId, cardIds);
+
+        // Publish events after successful pack generation
+        for (int i = 0; i < selectedCards.size(); i++) {
+            Card card = selectedCards.get(i);
+            Rarity rarity = selectedRarities.get(i);
+
+            if (rarity == Rarity.LEGENDARY) {
+                eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
+            }
+            eventPublisher.publishEvent(new PackOpenEvent(
+                    this, user.getUsername(), card.getName(),
+                    rarity.name(), template.getName()));
+        }
+
+        return result;
     }
 
 

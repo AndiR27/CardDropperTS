@@ -9,4 +9,6 @@ import java.util.List;
 public interface RepositoryLiveFeed extends JpaRepository<LiveFeedEvent, Long> {
 
     List<LiveFeedEvent> findByCreatedAtAfterOrderByCreatedAtDesc(LocalDateTime since);
+
+    List<LiveFeedEvent> findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(LocalDateTime since, String eventType);
 }

@@ -133,7 +133,7 @@ public class ServiceLiveFeed {
      */
     public List<LiveFeedEventDto> getWeekEvents() {
         return mapperLiveFeed.toDtoList(
-                repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(
-                        LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(7).atStartOfDay()));
+                repositoryLiveFeed.findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(
+                        LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(7).atStartOfDay(), "PACK_OPEN"));
     }
 }
