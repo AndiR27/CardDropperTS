@@ -19,6 +19,7 @@ import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
 import ts.backend_carddropper.service.ServiceCard;
+import ts.backend_carddropper.trade.repository.RepositoryTradeSession;
 import ts.backend_carddropper.utils.ImageUtils;
 
 import java.awt.image.BufferedImage;
@@ -52,6 +53,9 @@ class TestServiceCard {
 
     @MockitoBean
     private RepositoryUser repositoryUser;
+
+    @MockitoBean
+    private RepositoryTradeSession repositoryTradeSession;
 
     private List<User> users;
     private List<Card> cards;
@@ -193,22 +197,26 @@ class TestServiceCard {
         }
 
         @Test
-        @DisplayName("delete card successfully")
+        @DisplayName("delete card successfully and nullifies trade session references")
         void testDelete_success() {
             when(repositoryCard.existsById(1L)).thenReturn(true);
 
             serviceCard.delete(1L);
 
+            verify(repositoryTradeSession).nullifyInitiatorCard(1L);
+            verify(repositoryTradeSession).nullifyReceiverCard(1L);
             verify(repositoryCard).deleteById(1L);
         }
 
         @Test
-        @DisplayName("delete throws when card not found")
+        @DisplayName("delete throws when card not found and does not touch trade sessions")
         void testDelete_notFound() {
             when(repositoryCard.existsById(999L)).thenReturn(false);
 
             assertThrows(EntityNotFoundException.class, () -> serviceCard.delete(999L));
             verify(repositoryCard, never()).deleteById(any());
+            verify(repositoryTradeSession, never()).nullifyInitiatorCard(any());
+            verify(repositoryTradeSession, never()).nullifyReceiverCard(any());
         }
     }
 

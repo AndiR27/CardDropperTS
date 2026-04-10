@@ -18,6 +18,7 @@ import ts.backend_carddropper.mapping.MapperCard;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.repository.RepositoryCard;
 import ts.backend_carddropper.repository.RepositoryUser;
+import ts.backend_carddropper.trade.repository.RepositoryTradeSession;
 import ts.backend_carddropper.utils.ImageUtils;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ public class ServiceCard {
     private final MapperCard mapperCard;
     private final RepositoryCard repositoryCard;
     private final RepositoryUser repositoryUser;
+    private final RepositoryTradeSession repositoryTradeSession;
 
     @Value("${app.card-images.dir}")
     private String cardImagesDir;
@@ -144,6 +146,8 @@ public class ServiceCard {
         if (!repositoryCard.existsById(id)) {
             throw new EntityNotFoundException("Card not found with id: " + id);
         }
+        repositoryTradeSession.nullifyInitiatorCard(id);
+        repositoryTradeSession.nullifyReceiverCard(id);
         repositoryCard.deleteById(id);
         log.info("Deleted card with id: {}", id);
     }

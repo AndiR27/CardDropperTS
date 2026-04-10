@@ -1,6 +1,7 @@
 package ts.backend_carddropper.trade.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -24,6 +25,14 @@ public interface RepositoryTradeSession extends JpaRepository<TradeSession, UUID
             "ts.backend_carddropper.trade.enums.TradeSessionStatus.ACTIVE, " +
             "ts.backend_carddropper.trade.enums.TradeSessionStatus.LOCKED)")
     Optional<TradeSession> findActiveSessionForUser(@Param("user") User user);
+
+    @Modifying
+    @Query("UPDATE TradeSession t SET t.initiatorCard = null WHERE t.initiatorCard.id = :cardId")
+    void nullifyInitiatorCard(@Param("cardId") Long cardId);
+
+    @Modifying
+    @Query("UPDATE TradeSession t SET t.receiverCard = null WHERE t.receiverCard.id = :cardId")
+    void nullifyReceiverCard(@Param("cardId") Long cardId);
 
     @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TradeSession t " +
             "WHERE ((t.initiator = :user AND t.initiatorCard.id = :cardId) " +
