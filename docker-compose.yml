@@ -46,6 +46,7 @@ services:
     networks:
       - proxy
       - db-network
+      - monitoring
 
   frontend:
     build:
@@ -59,8 +60,55 @@ services:
     networks:
       - proxy
 
+
+  # ══════════════════════════════════════════
+  # NOUVEAUX SERVICES : MONITORING
+  # ══════════════════════════════════════════
+
+  # Prometheus — collecte les métriques toutes les 15s
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+      - proxy
+      - db-network
+      - keycloak_default
+
+  # Exporter PostgreSQL — base CardDropper
+  postgres-exporter-carddropper:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter-carddropper
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://root:${SPRING_DATASOURCE_PASSWORD}@PostgreSQL:5432/CardDropper?sslmode=disable"
+    networks:
+      - monitoring
+      - db-network
+
+  # Exporter PostgreSQL — base Keycloak
+  postgres-exporter-keycloak:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter-keycloak
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://keycloakuser:keycloakpass@Keycloak-DB:5432/keycloak?sslmode=disable"
+    networks:
+      - monitoring
+      - keycloak_default
+
 volumes:
   carddropper-images:
+  prometheus_data:
 
 networks:
   proxy:
@@ -68,3 +116,7 @@ networks:
   db-network:
     external: true
     name: postgresql_default
+  monitoring:
+    external: true
+  keycloak_default:
+    external: true
