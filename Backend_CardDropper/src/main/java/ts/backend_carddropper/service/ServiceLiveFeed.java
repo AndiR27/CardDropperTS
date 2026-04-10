@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ts.backend_carddropper.entity.LiveFeedEvent;
 import ts.backend_carddropper.event.LegendaryDropEvent;
+import ts.backend_carddropper.event.PackOpenEvent;
 import ts.backend_carddropper.event.UseCardEvent;
 import ts.backend_carddropper.mapping.MapperLiveFeed;
 import ts.backend_carddropper.models.LiveFeedEventDto;
@@ -79,6 +80,21 @@ public class ServiceLiveFeed {
                 dto.actorUsername(), dto.cardName(), dto.cardRarity(), dto.targetUsername());
 
         broadcast("use-card", dto);
+    }
+
+    @EventListener
+    public void onPackOpenEvent(PackOpenEvent event) {
+        LiveFeedEvent entity = new LiveFeedEvent();
+        entity.setEventType("PACK_OPEN");
+        entity.setActorUsername(event.getActorUsername());
+        entity.setCardName(event.getCardName());
+        entity.setCardRarity(event.getCardRarity());
+        entity.setTargetUsername(event.getPackName());
+
+        repositoryLiveFeed.save(entity);
+
+        log.debug("LiveFeed: {} opened '{}' and got '{}' ({})",
+                event.getActorUsername(), event.getPackName(), event.getCardName(), event.getCardRarity());
     }
 
     @EventListener

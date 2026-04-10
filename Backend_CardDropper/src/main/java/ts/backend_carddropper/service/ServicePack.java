@@ -14,6 +14,7 @@ import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.event.LegendaryDropEvent;
+import ts.backend_carddropper.event.PackOpenEvent;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserPackInventoryDto;
 import ts.backend_carddropper.repository.RepositoryCard;
@@ -93,6 +94,10 @@ public class ServicePack {
                 if (rarity == Rarity.LEGENDARY) {
                     eventPublisher.publishEvent(new LegendaryDropEvent(this, user.getUsername()));
                 }
+
+                eventPublisher.publishEvent(new PackOpenEvent(
+                        this, user.getUsername(), card.getName(),
+                        rarity.name(), template.getName()));
 
                 selectedCards.add(card);
                 excludedIds.add(card.getId());
