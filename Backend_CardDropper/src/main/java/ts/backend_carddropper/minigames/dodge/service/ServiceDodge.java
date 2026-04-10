@@ -1,14 +1,14 @@
-package ts.backend_carddropper.dodge.service;
+package ts.backend_carddropper.minigames.dodge.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ts.backend_carddropper.dodge.entity.DodgeScore;
-import ts.backend_carddropper.dodge.mapping.MapperDodge;
-import ts.backend_carddropper.dodge.models.DodgeScoreDto;
-import ts.backend_carddropper.dodge.repository.RepositoryDodge;
+import ts.backend_carddropper.minigames.dodge.entity.DodgeScore;
+import ts.backend_carddropper.minigames.dodge.mapping.MapperDodge;
+import ts.backend_carddropper.minigames.dodge.models.DodgeScoreDto;
+import ts.backend_carddropper.minigames.dodge.repository.RepositoryDodge;
 import ts.backend_carddropper.entity.User;
 import ts.backend_carddropper.repository.RepositoryUser;
 

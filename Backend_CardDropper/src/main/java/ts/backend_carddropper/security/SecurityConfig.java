@@ -47,6 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         // WebSocket — le handshake HTTP passe ici, l'auth réelle se fait au niveau STOMP
                         .requestMatchers("/ws/**").permitAll()
+                        // Actuator prometheus
+                        .requestMatchers("/actuator/prometheus").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         // Tout le reste — authentifié
                         .anyRequest().authenticated()
                 )

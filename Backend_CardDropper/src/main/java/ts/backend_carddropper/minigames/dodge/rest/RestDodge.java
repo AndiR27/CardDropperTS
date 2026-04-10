@@ -1,13 +1,13 @@
-package ts.backend_carddropper.dodge.rest;
+package ts.backend_carddropper.minigames.dodge.rest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.backend_carddropper.dodge.models.DodgeScoreDto;
-import ts.backend_carddropper.dodge.models.DodgeScoreRequest;
-import ts.backend_carddropper.dodge.models.DodgeStartResponse;
-import ts.backend_carddropper.dodge.service.ServiceDodge;
+import ts.backend_carddropper.minigames.dodge.models.DodgeScoreDto;
+import ts.backend_carddropper.minigames.dodge.models.DodgeScoreRequest;
+import ts.backend_carddropper.minigames.dodge.models.DodgeStartResponse;
+import ts.backend_carddropper.minigames.dodge.service.ServiceDodge;
 import ts.backend_carddropper.security.SecurityUtils;
 
 import java.util.List;

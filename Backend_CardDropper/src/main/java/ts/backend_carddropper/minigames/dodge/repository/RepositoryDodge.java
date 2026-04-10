@@ -1,8 +1,8 @@
-package ts.backend_carddropper.dodge.repository;
+package ts.backend_carddropper.minigames.dodge.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ts.backend_carddropper.dodge.entity.DodgeScore;
+import ts.backend_carddropper.minigames.dodge.entity.DodgeScore;
 import ts.backend_carddropper.entity.User;
 
 import java.time.LocalDate;

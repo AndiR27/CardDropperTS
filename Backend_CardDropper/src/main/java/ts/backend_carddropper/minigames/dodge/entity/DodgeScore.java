@@ -1,4 +1,4 @@
-package ts.backend_carddropper.dodge.entity;
+package ts.backend_carddropper.minigames.dodge.entity;
 
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;

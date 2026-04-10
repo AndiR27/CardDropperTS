@@ -1,4 +1,4 @@
-package ts.backend_carddropper.dodge.models;
+package ts.backend_carddropper.minigames.dodge.models;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

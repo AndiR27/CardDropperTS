@@ -17,10 +17,7 @@ import ts.backend_carddropper.helper.TestDataHelper;
 import ts.backend_carddropper.mapping.MapperUser;
 import ts.backend_carddropper.models.CardDto;
 import ts.backend_carddropper.models.UserDto;
-import ts.backend_carddropper.repository.RepositoryCard;
-import ts.backend_carddropper.repository.RepositoryLiveFeed;
-import ts.backend_carddropper.repository.RepositoryUser;
-import ts.backend_carddropper.repository.RepositoryUserCard;
+import ts.backend_carddropper.repository.*;
 import ts.backend_carddropper.service.ServiceUser;
 
 import java.util.ArrayList;
@@ -50,6 +47,9 @@ class TestServiceUser {
 
     @MockitoBean
     private RepositoryCard repositoryCard;
+
+    @MockitoBean
+    private RepositoryPackTemplate repositoryPackTemplate;
 
     @MockitoBean
     private RepositoryUserCard repositoryUserCard;
@@ -593,6 +593,8 @@ class TestServiceUser {
             assertThrows(IllegalStateException.class,
                     () -> serviceUser.mergeCards(alice.getId(), cardIds));
         }
+
+
     }
 
 

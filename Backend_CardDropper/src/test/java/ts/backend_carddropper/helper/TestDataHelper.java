@@ -123,6 +123,35 @@ public class TestDataHelper {
         return template;
     }
 
+    public PackTemplate createPackTemplateClassic(){
+        List<PackSlot> slots = createPackSlots();
+
+        PackTemplate template = new PackTemplate();
+        template.setId(1L);
+        template.setName("Pack Classic");
+
+        PackTemplateSlot ts1 = new PackTemplateSlot();
+        ts1.setId(1L);
+        ts1.setPackTemplate(template);
+        ts1.setPackSlot(slots.get(0));
+        ts1.setCount(1);
+
+        PackTemplateSlot ts2 = new PackTemplateSlot();
+        ts2.setId(2L);
+        ts2.setPackTemplate(template);
+        ts2.setPackSlot(slots.get(1));
+        ts2.setCount(1);
+
+        PackTemplateSlot ts3 = new PackTemplateSlot();
+        ts3.setId(3L);
+        ts3.setPackTemplate(template);
+        ts3.setPackSlot(slots.get(2));
+        ts3.setCount(1);
+
+        template.setSlots(List.of(ts1, ts2, ts3));
+        return template;
+    }
+
     private long addCards(List<Card> cards, long startId, User creator,
                           Rarity rarity, int count, double dropRate) {
         for (int i = 1; i <= count; i++) {

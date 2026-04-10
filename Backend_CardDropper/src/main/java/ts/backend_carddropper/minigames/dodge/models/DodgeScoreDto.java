@@ -1,4 +1,4 @@
-package ts.backend_carddropper.dodge.models;
+package ts.backend_carddropper.minigames.dodge.models;
 
 import java.time.LocalDate;
 
