@@ -18,6 +18,7 @@ import ts.backend_carddropper.service.ServiceLiveFeed;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,7 +61,7 @@ class TestServiceLiveFeed {
         @Test
         @DisplayName("retourne la liste des événements de la semaine")
         void testGetWeekEvents_success() {
-            when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
+            when(repositoryLiveFeed.findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(any(LocalDateTime.class), any(String.class)))
                     .thenReturn(List.of(sampleEvent));
 
             List<LiveFeedEventDto> result = serviceLiveFeed.getWeekEvents();
@@ -77,7 +78,7 @@ class TestServiceLiveFeed {
         @Test
         @DisplayName("retourne une liste vide quand aucun événement cette semaine")
         void testGetWeekEvents_empty() {
-            when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
+            when(repositoryLiveFeed.findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(any(LocalDateTime.class), any(String.class)))
                     .thenReturn(List.of());
 
             List<LiveFeedEventDto> result = serviceLiveFeed.getWeekEvents();
@@ -89,14 +90,14 @@ class TestServiceLiveFeed {
         @Test
         @DisplayName("la requête utilise 7 jours en arrière comme borne inférieure")
         void testGetWeekEvents_queriesFromSevenDaysAgo() {
-            when(repositoryLiveFeed.findByCreatedAtAfterOrderByCreatedAtDesc(any(LocalDateTime.class)))
+            when(repositoryLiveFeed.findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(any(LocalDateTime.class), any(String.class)))
                     .thenReturn(List.of());
 
             serviceLiveFeed.getWeekEvents();
 
             // Vérifier que la requête est faite avec le début du jour il y a 7 jours (00:00)
-            verify(repositoryLiveFeed).findByCreatedAtAfterOrderByCreatedAtDesc(
-                    LocalDate.now().minusDays(7).atStartOfDay());
+            verify(repositoryLiveFeed).findByCreatedAtAfterAndEventTypeNotOrderByCreatedAtDesc(
+                    LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(7).atStartOfDay(), "PACK_OPEN");
         }
     }
 

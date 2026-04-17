@@ -11,6 +11,7 @@ import ts.backend_carddropper.entity.PackSlot;
 import ts.backend_carddropper.entity.PackTemplate;
 import ts.backend_carddropper.entity.PackTemplateSlot;
 import ts.backend_carddropper.entity.User;
+import ts.backend_carddropper.entity.UserCard;
 import ts.backend_carddropper.entity.UserPackInventory;
 import ts.backend_carddropper.enums.Rarity;
 import ts.backend_carddropper.event.LegendaryDropEvent;
@@ -122,6 +123,57 @@ public class ServicePack {
         }
 
         return result;
+    }
+
+
+    //==============================
+    //       RECYCLE EPIC → PACK
+    //==============================
+
+    private static final String CLASSIC_TEMPLATE_NAME = "Pack Classic";
+
+    @Transactional
+    public void recycleEpicForPack(Long userId, Long cardId) {
+        User user = repositoryUser.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        UserCard uc = repositoryUserCard.findByUserIdAndCardId(userId, cardId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "User id=" + userId + " does not own card id=" + cardId));
+
+        Card card = uc.getCard();
+        if (card.getRarity() != Rarity.EPIC) {
+            throw new IllegalArgumentException("Only EPIC cards can be recycled, got " + card.getRarity());
+        }
+
+        PackTemplate classicTemplate = repositoryPackTemplate.findByName(CLASSIC_TEMPLATE_NAME)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Pack template '" + CLASSIC_TEMPLATE_NAME + "' not found"));
+
+        // Retirer 1 carte EPIC de l'inventaire de l'utilisateur
+        if (uc.getQuantity() > 1) {
+            uc.setQuantity(uc.getQuantity() - 1);
+            repositoryUserCard.save(uc);
+        } else {
+            repositoryUserCard.delete(uc);
+        }
+
+        // Donner le pack à l'utilisateur
+        UserPackInventory inventory = repositoryUserPackInventory
+                .findByUserIdAndPackTemplateId(userId, classicTemplate.getId())
+                .orElseGet(() -> {
+                    UserPackInventory inv = new UserPackInventory();
+                    inv.setUser(user);
+                    inv.setPackTemplate(classicTemplate);
+                    inv.setQuantity(0);
+                    return inv;
+                });
+
+        inventory.setQuantity(inventory.getQuantity() + 1);
+        repositoryUserPackInventory.save(inventory);
+
+        log.info("User '{}' recycled EPIC card '{}' (id={}) → received 1 '{}'",
+                user.getUsername(), card.getName(), cardId, CLASSIC_TEMPLATE_NAME);
     }
 
 

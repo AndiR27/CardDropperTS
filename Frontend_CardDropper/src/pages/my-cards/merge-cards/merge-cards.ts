@@ -5,18 +5,17 @@ import { Card, Rarity } from '../../../app/models';
 import { CardService } from '../../../app/services/card.service';
 import { MeService } from '../../../app/services/me.service';
 
-type MergeRarity = Rarity.COMMON | Rarity.RARE /* | Rarity.EPIC — LEGENDARY craft disabled */;
+type MergeRarity = Rarity.COMMON | Rarity.RARE;
+type FilterRarity = MergeRarity | Rarity.EPIC;
 
 const NEXT_RARITY: Record<MergeRarity, Rarity> = {
   [Rarity.COMMON]: Rarity.RARE,
   [Rarity.RARE]:   Rarity.EPIC,
-  // [Rarity.EPIC]: Rarity.LEGENDARY, // disabled — re-add to re-enable legendary crafting
 };
 
 const MERGE_REQUIRED: Record<MergeRarity, number> = {
   [Rarity.COMMON]: 3,
   [Rarity.RARE]:   5,
-  // [Rarity.EPIC]: 5, // disabled — re-add to re-enable legendary crafting
 };
 
 @Component({
@@ -34,26 +33,32 @@ export class MergeCardsComponent {
   readonly cards = input.required<Card[]>();
   readonly merged = output<Card>();
 
-  protected readonly rarityFilter = signal<MergeRarity>(Rarity.COMMON);
+  protected readonly rarityFilter = signal<FilterRarity>(Rarity.COMMON);
   protected readonly selectedIndices = signal<Set<number>>(new Set());
   protected readonly merging = signal(false);
   protected readonly mergeResult = signal<Card | null>(null);
   protected readonly showConfirm = signal(false);
   protected readonly mergeError = signal<string | null>(null);
+  protected readonly recycleSuccess = signal(false);
 
-  protected readonly rarities: { value: MergeRarity; label: string }[] = [
+  protected readonly isRecycleMode = computed(() => this.rarityFilter() === Rarity.EPIC);
+
+  protected readonly rarities: { value: FilterRarity; label: string }[] = [
     { value: Rarity.COMMON, label: 'Commune' },
     { value: Rarity.RARE,   label: 'Rare' },
-    // { value: Rarity.EPIC, label: 'Épique' }, // disabled — re-add to re-enable legendary crafting
+    { value: Rarity.EPIC,   label: 'Épique' },
   ];
 
   protected readonly filteredCards = computed(() => {
     return this.cards().filter(c => c.rarity === this.rarityFilter());
   });
 
-  protected readonly requiredCount = computed(() => MERGE_REQUIRED[this.rarityFilter()]);
+  protected readonly requiredCount = computed(() =>
+    this.isRecycleMode() ? 1 : MERGE_REQUIRED[this.rarityFilter() as MergeRarity]
+  );
+
   protected readonly selectionCount = computed(() => this.selectedIndices().size);
-  protected readonly canMerge = computed(() => this.selectedIndices().size === this.requiredCount());
+  protected readonly canAct = computed(() => this.selectedIndices().size === this.requiredCount());
 
   protected readonly selectedCards = computed(() => {
     const indices = this.selectedIndices();
@@ -62,10 +67,11 @@ export class MergeCardsComponent {
   });
 
   protected readonly resultRarity = computed(() => {
-    return NEXT_RARITY[this.rarityFilter()];
+    if (this.isRecycleMode()) return null;
+    return NEXT_RARITY[this.rarityFilter() as MergeRarity];
   });
 
-  setRarity(r: MergeRarity): void {
+  setRarity(r: FilterRarity): void {
     this.rarityFilter.set(r);
     this.selectedIndices.set(new Set());
   }
@@ -89,7 +95,7 @@ export class MergeCardsComponent {
   }
 
   openConfirm(): void {
-    if (!this.canMerge()) return;
+    if (!this.canAct()) return;
     this.mergeError.set(null);
     this.showConfirm.set(true);
   }
@@ -104,8 +110,16 @@ export class MergeCardsComponent {
     }
   }
 
-  confirmMerge(): void {
-    if (!this.canMerge() || this.merging()) return;
+  confirmAction(): void {
+    if (this.isRecycleMode()) {
+      this.confirmRecycle();
+    } else {
+      this.confirmMerge();
+    }
+  }
+
+  private confirmMerge(): void {
+    if (!this.canAct() || this.merging()) return;
     this.merging.set(true);
     this.mergeError.set(null);
     const cards = this.filteredCards();
@@ -127,9 +141,40 @@ export class MergeCardsComponent {
     });
   }
 
+  private confirmRecycle(): void {
+    const card = this.selectedCards()[0];
+    if (!card || card.id === null || this.merging()) return;
+    this.merging.set(true);
+    this.mergeError.set(null);
+    this.meService.recycleCard(card.id).subscribe({
+      next: () => {
+        this.merging.set(false);
+        this.showConfirm.set(false);
+        this.selectedIndices.set(new Set());
+        this.recycleSuccess.set(true);
+      },
+      error: (err) => {
+        this.merging.set(false);
+        this.mergeError.set(err?.error?.detail ?? 'Erreur lors du recyclage.');
+      },
+    });
+  }
+
+  closeRecycleSuccess(): void {
+    this.recycleSuccess.set(false);
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate(['/my-cards']);
+    });
+  }
+
+  onRecycleSuccessOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('merge-reveal')) {
+      this.closeRecycleSuccess();
+    }
+  }
+
   closeResult(): void {
     this.mergeResult.set(null);
-    // Navigate away then back to force component reload
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['/my-cards']);
     });

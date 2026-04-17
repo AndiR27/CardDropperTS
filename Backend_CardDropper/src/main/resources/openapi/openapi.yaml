@@ -341,6 +341,30 @@ paths:
         '500':
           description: Erreur interne.
 
+  /me/cards/{cardId}/recycle:
+    post:
+      tags: [ me ]
+      summary: Recycler une carte EPIC en pack
+      description: |
+        Sacrifie une carte EPIC pour recevoir un pack "Pack Classic".
+        La carte est retirée de la collection de l'utilisateur et un pack est ajouté à son inventaire.
+      operationId: recycleMyCard
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 10
+      responses:
+        '204':
+          description: Carte recyclée, pack ajouté à l'inventaire.
+        '400':
+          description: La carte n'est pas EPIC ou l'utilisateur ne la possède pas.
+        '404':
+          description: Carte ou template introuvable.
+        '500':
+          description: Erreur interne.
+
   /me/cards/{cardId}/deactivate:
     patch:
       tags: [ me ]

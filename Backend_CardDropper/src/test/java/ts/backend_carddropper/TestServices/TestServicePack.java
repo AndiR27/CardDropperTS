@@ -1,5 +1,6 @@
 package ts.backend_carddropper.TestServices;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -533,6 +534,140 @@ class TestServicePack {
             List<CardDto> result = servicePack.generatePack(alice.getId(), commonTemplate.getId());
 
             assertTrue(result.isEmpty(), "Pack should have 0 cards when only targeted card is excluded from pool");
+        }
+    }
+
+
+    // ========================================
+    //         RECYCLE EPIC FOR PACK TESTS
+    // ========================================
+
+    @Nested
+    @DisplayName("recycleEpicForPack")
+    class RecycleEpicTests {
+
+        private PackTemplate classicTemplate;
+        private Card epicCard;
+        private UserCard aliceEpicUc;
+
+        @BeforeEach
+        void setUpRecycle() {
+            classicTemplate = testDataHelper.createPackTemplateClassic();
+
+            epicCard = cards.stream()
+                    .filter(c -> c.getRarity() == Rarity.EPIC)
+                    .findFirst().orElseThrow();
+
+            aliceEpicUc = new UserCard(alice, epicCard, 1);
+            aliceEpicUc.setId(100L);
+        }
+
+        @Test
+        @DisplayName("recycles epic card and grants 1 classic pack")
+        void testRecycle_success() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), epicCard.getId()))
+                    .thenReturn(Optional.of(aliceEpicUc));
+            when(repositoryPackTemplate.findByName("Pack Classic"))
+                    .thenReturn(Optional.of(classicTemplate));
+            when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(alice.getId(), classicTemplate.getId()))
+                    .thenReturn(Optional.empty());
+            when(repositoryUserPackInventory.save(any(UserPackInventory.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            servicePack.recycleEpicForPack(alice.getId(), epicCard.getId());
+
+            // Card should be deleted (quantity was 1)
+            verify(repositoryUserCard).delete(aliceEpicUc);
+            // Pack inventory should be saved with quantity 1
+            verify(repositoryUserPackInventory).save(argThat(inv ->
+                    inv.getQuantity() == 1 && inv.getPackTemplate().equals(classicTemplate)));
+        }
+
+        @Test
+        @DisplayName("decrements quantity when user has multiple copies")
+        void testRecycle_decrements() {
+            aliceEpicUc.setQuantity(3);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), epicCard.getId()))
+                    .thenReturn(Optional.of(aliceEpicUc));
+            when(repositoryPackTemplate.findByName("Pack Classic"))
+                    .thenReturn(Optional.of(classicTemplate));
+            when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(alice.getId(), classicTemplate.getId()))
+                    .thenReturn(Optional.empty());
+            when(repositoryUserPackInventory.save(any(UserPackInventory.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            servicePack.recycleEpicForPack(alice.getId(), epicCard.getId());
+
+            // Card should be saved with decremented quantity
+            verify(repositoryUserCard).save(argThat(uc -> uc.getQuantity() == 2));
+            verify(repositoryUserCard, never()).delete(any(UserCard.class));
+        }
+
+        @Test
+        @DisplayName("adds to existing pack inventory")
+        void testRecycle_addsToExistingInventory() {
+            UserPackInventory existingInv = new UserPackInventory();
+            existingInv.setId(50L);
+            existingInv.setUser(alice);
+            existingInv.setPackTemplate(classicTemplate);
+            existingInv.setQuantity(2);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), epicCard.getId()))
+                    .thenReturn(Optional.of(aliceEpicUc));
+            when(repositoryPackTemplate.findByName("Pack Classic"))
+                    .thenReturn(Optional.of(classicTemplate));
+            when(repositoryUserPackInventory.findByUserIdAndPackTemplateId(alice.getId(), classicTemplate.getId()))
+                    .thenReturn(Optional.of(existingInv));
+            when(repositoryUserPackInventory.save(any(UserPackInventory.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            servicePack.recycleEpicForPack(alice.getId(), epicCard.getId());
+
+            verify(repositoryUserPackInventory).save(argThat(inv -> inv.getQuantity() == 3));
+        }
+
+        @Test
+        @DisplayName("throws when card is not EPIC")
+        void testRecycle_notEpic() {
+            Card commonCard = cards.stream()
+                    .filter(c -> c.getRarity() == Rarity.COMMON)
+                    .findFirst().orElseThrow();
+            UserCard commonUc = new UserCard(alice, commonCard, 1);
+
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), commonCard.getId()))
+                    .thenReturn(Optional.of(commonUc));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> servicePack.recycleEpicForPack(alice.getId(), commonCard.getId()));
+        }
+
+        @Test
+        @DisplayName("throws when user does not own the card")
+        void testRecycle_notOwned() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), epicCard.getId()))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> servicePack.recycleEpicForPack(alice.getId(), epicCard.getId()));
+        }
+
+        @Test
+        @DisplayName("throws when Pack Classic template does not exist")
+        void testRecycle_templateNotFound() {
+            when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
+            when(repositoryUserCard.findByUserIdAndCardId(alice.getId(), epicCard.getId()))
+                    .thenReturn(Optional.of(aliceEpicUc));
+            when(repositoryPackTemplate.findByName("Pack Classic"))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(EntityNotFoundException.class,
+                    () -> servicePack.recycleEpicForPack(alice.getId(), epicCard.getId()));
         }
     }
 

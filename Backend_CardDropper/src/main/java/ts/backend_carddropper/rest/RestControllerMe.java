@@ -135,6 +135,13 @@ public class RestControllerMe implements MeApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Override
+    public ResponseEntity<Void> recycleMyCard(Long cardId) {
+        Long userId = serviceAuth.getCurrentUserId();
+        servicePack.recycleEpicForPack(userId, cardId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/me/cards/{cardId}/deactivate")
     public ResponseEntity<Void> deactivateMyCard(@PathVariable Long cardId) {
         Long userId = serviceAuth.getCurrentUserId();

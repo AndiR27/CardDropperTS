@@ -45,6 +45,12 @@ export class MeService {
     return this.api.post<Card>('/me/cards/merge', cardIds);
   }
 
+  // ====== Recycle ======
+
+  recycleCard(cardId: number): Observable<void> {
+    return this.api.post<void>(`/me/cards/${cardId}/recycle`, null);
+  }
+
   // ====== Use Card ======
 
   useCard(cardId: number, targetUserId: number): Observable<void> {

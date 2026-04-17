@@ -9,7 +9,12 @@
   }
 </div>
 
-<!-- Card grid (same style as my-cards) -->
+<!-- Recycle hint (only in epic mode) -->
+@if (isRecycleMode()) {
+  <p class="merge__hint">Sacrifiez 1 carte EPIC pour recevoir 1 Pack Classic</p>
+}
+
+<!-- Card grid -->
 <div class="merge__card-grid">
   @for (card of filteredCards(); track $index) {
     <div class="card-item"
@@ -40,14 +45,18 @@
   }
 </div>
 
-<!-- Selection count + merge button -->
+<!-- Selection count + action button -->
 <div class="merge__actions">
-  <span class="merge__count">{{ selectionCount() }} / {{ requiredCount() }} sélectionnées</span>
+  <span class="merge__count">{{ selectionCount() }} / {{ requiredCount() }} sélectionnée{{ requiredCount() > 1 ? 's' : '' }}</span>
   <button class="merge__btn"
-          [class.merge__btn--ready]="canMerge()"
-          [disabled]="!canMerge()"
+          [class.merge__btn--ready]="canAct()"
+          [disabled]="!canAct()"
           (click)="openConfirm()">
-    Fusionner
+    @if (isRecycleMode()) {
+      Recycler
+    } @else {
+      Fusionner
+    }
   </button>
 </div>
 
@@ -58,7 +67,13 @@
          [class.merge-confirm__content--wide-md]="selectedCards().length === 4"
          [class.merge-confirm__content--wide-lg]="selectedCards().length >= 5">
       <button class="merge-confirm__close" (click)="closeConfirm()">&#x2715;</button>
-      <h3 class="merge-confirm__title">Confirmer la fusion</h3>
+      <h3 class="merge-confirm__title">
+        @if (isRecycleMode()) {
+          Confirmer le recyclage
+        } @else {
+          Confirmer la fusion
+        }
+      </h3>
 
       <div class="merge-confirm__cards">
         @for (card of selectedCards(); track $index) {
@@ -79,10 +94,17 @@
       </div>
 
       <div class="merge-confirm__result">
-        <span class="merge-confirm__result-label">Résultat</span>
-        <span class="merge-confirm__result-rarity merge-confirm__result-rarity--{{ resultRarity() | lowercase }}">
-          {{ resultRarity() }}
-        </span>
+        @if (isRecycleMode()) {
+          <span class="merge-confirm__result-label">Récompense</span>
+          <span class="merge-confirm__result-rarity merge-confirm__result-rarity--pack">
+            1x Pack Classic
+          </span>
+        } @else {
+          <span class="merge-confirm__result-label">Résultat</span>
+          <span class="merge-confirm__result-rarity merge-confirm__result-rarity--{{ resultRarity()! | lowercase }}">
+            {{ resultRarity() }}
+          </span>
+        }
       </div>
 
       @if (mergeError(); as err) {
@@ -93,9 +115,13 @@
         <button class="merge-confirm__btn merge-confirm__btn--back" (click)="closeConfirm()" [disabled]="merging()">
           Annuler
         </button>
-        <button class="merge-confirm__btn merge-confirm__btn--go" (click)="confirmMerge()" [disabled]="merging()">
+        <button class="merge-confirm__btn merge-confirm__btn--go" (click)="confirmAction()" [disabled]="merging()">
           @if (merging()) {
-            Fusion...
+            @if (isRecycleMode()) {
+              Recyclage...
+            } @else {
+              Fusion...
+            }
           } @else {
             Confirmer
           }
@@ -105,7 +131,7 @@
   </div>
 }
 
-<!-- ====== Card reveal overlay ====== -->
+<!-- ====== Card reveal overlay (merge result) ====== -->
 @if (mergeResult(); as result) {
   <div class="merge-reveal" (click)="onResultOverlayClick($event)">
     <div class="merge-reveal__content">
@@ -125,6 +151,32 @@
         <p class="merge-reveal__desc">{{ result.description }}</p>
       }
       <button class="merge-reveal__close-btn" (click)="closeResult()">Fermer</button>
+    </div>
+  </div>
+}
+
+<!-- ====== Recycle success overlay ====== -->
+@if (recycleSuccess()) {
+  <div class="merge-reveal" (click)="onRecycleSuccessOverlayClick($event)">
+    <div class="merge-reveal__content">
+      <p class="merge-reveal__subtitle">Pack obtenu !</p>
+
+      <div class="pack-reveal__box">
+        <div class="pack-reveal__icon">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="16" width="48" height="36" rx="4" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M8 28h48" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M26 16l-4 12h20l-4-12" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M32 28v24" stroke="currentColor" stroke-width="2"/>
+            <circle cx="32" cy="28" r="4" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 class="merge-reveal__name">Pack Classic</h2>
+      <span class="pack-reveal__badge">+1 Pack</span>
+      <p class="merge-reveal__desc">Un pack a été ajouté à votre inventaire.</p>
+      <button class="merge-reveal__close-btn" (click)="closeRecycleSuccess()">Fermer</button>
     </div>
   </div>
 }
