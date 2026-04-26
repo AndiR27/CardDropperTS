@@ -410,32 +410,33 @@ class TestServiceUser {
     class MergeTests {
 
         @Test
-        @DisplayName("merge 3 COMMON cards returns a RARE card")
+        @DisplayName("merge 5 COMMON cards returns a RARE card")
         void testMergeCards_commonToRare() {
             Card c1 = cards.get(0);
             Card c2 = cards.get(1);
             Card c3 = cards.get(2);
+            Card c4 = cards.get(3);
+            Card c5 = cards.get(4);
             giveCard(alice, c1);
             giveCard(alice, c2);
             giveCard(alice, c3);
+            giveCard(alice, c4);
+            giveCard(alice, c5);
 
-            List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId());
+            List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId(), c4.getId(), c5.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3));
+            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3, c4, c5));
 
             Card rarePoolCard = cards.get(12); // first RARE card
             when(repositoryCard.findPoolCardsByRarity(eq(Rarity.RARE), anyLong())).thenReturn(List.of(rarePoolCard));
-            // alice doesn't have the result card yet
             noCard(alice, rarePoolCard);
 
             CardDto result = serviceUser.mergeCards(alice.getId(), cardIds);
 
             assertNotNull(result);
             assertEquals(Rarity.RARE, result.rarity());
-            // All 3 consumed cards should be deleted (each has quantity=1)
-            verify(repositoryUserCard, times(3)).delete(any(UserCard.class));
-            // Result card should be saved as new UserCard
+            verify(repositoryUserCard, times(5)).delete(any(UserCard.class));
             verify(repositoryUserCard).save(argThat(uc -> uc.getCard().getId().equals(rarePoolCard.getId())));
         }
 
@@ -470,14 +471,12 @@ class TestServiceUser {
         }
 
         @Test
-        @DisplayName("merge 3 copies of same card (duplicate IDs) reduces quantity correctly")
-        void testMergeCards_triplicateCard() {
+        @DisplayName("merge 5 copies of same card (duplicate IDs) reduces quantity correctly")
+        void testMergeCards_quintuplicateCard() {
             Card c1 = cards.get(0);
-            // alice has 3 copies of c1
-            giveCards(alice, c1, 3);
+            giveCards(alice, c1, 5);
 
-            // All 3 IDs are the same
-            List<Long> cardIds = List.of(c1.getId(), c1.getId(), c1.getId());
+            List<Long> cardIds = List.of(c1.getId(), c1.getId(), c1.getId(), c1.getId(), c1.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
             // findAllById returns distinct
@@ -491,7 +490,7 @@ class TestServiceUser {
 
             assertNotNull(result);
             assertEquals(Rarity.RARE, result.rarity());
-            // c1 had quantity=3, all 3 consumed → deleted
+            // c1 had quantity=5, all 5 consumed → deleted
             verify(repositoryUserCard).delete(any(UserCard.class));
         }
 
@@ -580,14 +579,18 @@ class TestServiceUser {
             Card c1 = cards.get(0);
             Card c2 = cards.get(1);
             Card c3 = cards.get(2);
+            Card c4 = cards.get(3);
+            Card c5 = cards.get(4);
             giveCard(alice, c1);
             giveCard(alice, c2);
             giveCard(alice, c3);
+            giveCard(alice, c4);
+            giveCard(alice, c5);
 
-            List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId());
+            List<Long> cardIds = List.of(c1.getId(), c2.getId(), c3.getId(), c4.getId(), c5.getId());
 
             when(repositoryUser.findById(alice.getId())).thenReturn(Optional.of(alice));
-            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3));
+            when(repositoryCard.findAllById(cardIds)).thenReturn(List.of(c1, c2, c3, c4, c5));
             when(repositoryCard.findPoolCardsByRarity(eq(Rarity.RARE), anyLong())).thenReturn(Collections.emptyList());
 
             assertThrows(IllegalStateException.class,

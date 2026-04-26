@@ -137,9 +137,8 @@ public class RestControllerMe implements MeApi {
 
     @Override
     public ResponseEntity<Void> recycleMyCard(Long cardId) {
-        Long userId = serviceAuth.getCurrentUserId();
-        servicePack.recycleEpicForPack(userId, cardId);
-        return ResponseEntity.noContent().build();
+        // Temporarily disabled
+        return ResponseEntity.status(403).build();
     }
 
     @PatchMapping("/me/cards/{cardId}/deactivate")

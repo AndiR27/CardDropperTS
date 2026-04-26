@@ -48,7 +48,7 @@ public class ServiceUser {
 
     private static int mergeRequiredCount(Rarity rarity) {
         return switch (rarity) {
-            case COMMON -> 3;
+            case COMMON -> 5;
             case RARE   -> 5;
             case EPIC, LEGENDARY -> throw new IllegalArgumentException(rarity + " cards cannot be merged");
         };
@@ -187,7 +187,7 @@ public class ServiceUser {
      * Supporte les IDs dupliqués (fusion de plusieurs copies de la même carte).
      *
      * Règles :
-     *   - COMMON  x3 → RARE
+     *   - COMMON  x5 → RARE
      *   - RARE    x3 → EPIC
      *   - EPIC    x3 → LEGENDARY
      *   - LEGENDARY : fusion impossible

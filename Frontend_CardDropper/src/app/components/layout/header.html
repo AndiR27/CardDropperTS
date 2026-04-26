@@ -17,9 +17,9 @@
         <fa-icon [icon]="icons.collection" class="header__link-icon"></fa-icon>
         <span>Collection</span>
       </a>
-      <a routerLink="/dodge" routerLinkActive="header__link--active" class="header__link">
-        <fa-icon [icon]="icons.dodge" class="header__link-icon"></fa-icon>
-        <span>Dodge</span>
+      <a href="https://clickerino.carddropper.ch" target="_blank" class="header__link">
+        <fa-icon [icon]="icons.clickerino" class="header__link-icon"></fa-icon>
+        <span>Clickerino</span>
       </a>
       @if (auth.isAuthenticated) {
         <div class="header__nav-divider"></div>
@@ -82,10 +82,10 @@
           <fa-icon [icon]="icons.collection" class="header__mobile-link-icon"></fa-icon>
           Collection
         </a>
-        <a routerLink="/dodge" routerLinkActive="header__mobile-link--active"
+        <a href="https://clickerino.carddropper.ch" target="_blank"
            class="header__mobile-link" (click)="closeMenu()">
-          <fa-icon [icon]="icons.dodge" class="header__mobile-link-icon"></fa-icon>
-          Dodge
+          <fa-icon [icon]="icons.clickerino" class="header__mobile-link-icon"></fa-icon>
+          Clickerino
         </a>
         @if (auth.isAuthenticated) {
           <a routerLink="/my-cards" routerLinkActive="header__mobile-link--active"

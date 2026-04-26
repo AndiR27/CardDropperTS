@@ -14,7 +14,7 @@ const NEXT_RARITY: Record<MergeRarity, Rarity> = {
 };
 
 const MERGE_REQUIRED: Record<MergeRarity, number> = {
-  [Rarity.COMMON]: 3,
+  [Rarity.COMMON]: 5,
   [Rarity.RARE]:   5,
 };
 
@@ -46,7 +46,7 @@ export class MergeCardsComponent {
   protected readonly rarities: { value: FilterRarity; label: string }[] = [
     { value: Rarity.COMMON, label: 'Commune' },
     { value: Rarity.RARE,   label: 'Rare' },
-    { value: Rarity.EPIC,   label: 'Épique' },
+    // { value: Rarity.EPIC,   label: 'Épique' },  // temporarily disabled
   ];
 
   protected readonly filteredCards = computed(() => {
